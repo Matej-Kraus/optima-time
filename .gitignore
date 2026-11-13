@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+dist/
+build/
+*.egg-info/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Models are downloaded by scripts/fetch_models.py, never committed
+models/
+spikes/**/models/
+
+# Outputs of spikes and tools
+spikes/**/out/
+*.log
+
+# Large sample media stay out of git (photos/XML are fine)
+samples/**/*.mp4
+samples/**/*.mov
+samples/**/*.mkv
+samples/**/*.ts
+
+# OS
+.DS_Store
+Thumbs.db

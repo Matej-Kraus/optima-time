@@ -1,0 +1,34 @@
+# Third-party software and models
+
+| Component | Version | Licence | Use |
+|---|---|---|---|
+| numpy | 2.5.4 | BSD-3-Clause and others | arrays |
+| opencv-python-headless | 5.0.0.93 | Apache-2.0 | image processing, capture devices |
+| onnxruntime | 1.32.0 | MIT | running PP-OCR models (CPU) |
+| pydantic | 2.14.3 | MIT | configuration models |
+| fastapi | 0.162.7 | MIT | API |
+| uvicorn | 0.54.0 | BSD-3-Clause | ASGI server |
+| cyndilib | 0.1.3 | MIT | NDI receiving |
+| NDI® runtime (bundled in the cyndilib wheel) | – | NDI SDK licence (`libndi_licenses.txt` in the wheel) | NDI |
+| PP-OCRv6_tiny_rec (ONNX) | HF rev `2612ab3…` | Apache-2.0 | text recognition |
+| PP-OCRv6_small_rec (ONNX) | HF rev `b8f84f0…` | Apache-2.0 | text recognition |
+| React, React DOM | 19.3.1 | MIT | UI |
+| Vite, Vitest, TypeScript, oxlint | see `frontend/package.json` | MIT / Apache-2.0 | UI build and tests |
+
+## Code reused from ScoreSight
+
+ScoreSight (https://github.com/royshil/scoresight) is MIT-licensed. Any file or function taken or adapted from it keeps this header and is listed here:
+
+```text
+Adapted from ScoreSight (https://github.com/royshil/scoresight), MIT License,
+Copyright (c) 2024 OCC AI: Open tools for Content Creators and Streamers. See THIRD_PARTY.md.
+```
+
+| Our file | ScoreSight source | What |
+|---|---|---|
+| `spikes/ppocr/ppocr_spike.py` | `src/ppocr_engine.py` (rev `8bef5a9`) | preprocessing (`resize_normalize`), greedy CTC with a character whitelist |
+
+## Before distributing outside the company
+
+- NDI®: read the licensing section of the NDI SDK (branding, trademark, URLs to display). "NDI® is a registered trademark of Vizrt NDI AB."
+- Model licences (Apache-2.0): include the licence and notice.
