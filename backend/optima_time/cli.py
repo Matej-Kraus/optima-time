@@ -28,8 +28,28 @@ from optima_time import __version__
 LOCAL = {"127.0.0.1", "localhost", "::1"}
 
 
-def setup_logging(log_dir: Path) -> None:
-    """Console + rotating application log (SPEC 14.3)."""
+LOG_KEEP_DAYS = 60
+
+
+def prune_logs(log_dir: Path, keep_days: int = LOG_KEEP_DAYS) -> int:
+    """Delete daily event logs older than keep_days (a season of matches would pile up)."""
+    import time
+
+    limit = time.time() - keep_days * 86400
+    removed = 0
+    for path in log_dir.glob("events-*.jsonl"):
+        try:
+            if path.stat().st_mtime < limit:
+                path.unlink()
+                removed += 1
+        except OSError:
+            pass
+    return removed
+
+
+def setup_logging(log_dir: Path, port: int = 8787) -> None:
+    """Console + rotating application log (SPEC 14.3). Each instance (port) has its own file,
+    so two instances never rotate the same file (that fails on Windows)."""
     fmt = logging.Formatter("%(asctime)s %(levelname)s %(threadName)s %(name)s: %(message)s")
     root = logging.getLogger()
     root.setLevel(logging.INFO)
@@ -39,7 +59,10 @@ def setup_logging(log_dir: Path) -> None:
     try:
         log_dir.mkdir(parents=True, exist_ok=True)
         file = logging.handlers.RotatingFileHandler(
-            log_dir / "app.log", maxBytes=5 * 2**20, backupCount=5, encoding="utf-8"
+            log_dir / ("app.log" if port == 8787 else f"app-{port}.log"),
+            maxBytes=5 * 2**20,
+            backupCount=5,
+            encoding="utf-8",
         )
         file.setFormatter(fmt)
         root.addHandler(file)
@@ -60,7 +83,8 @@ def run(args: argparse.Namespace) -> int:
         print("Přístup ze sítě (--host) jde zapnout jen s PINem (--pin).", file=sys.stderr)
         return 2
     log_dir = args.log_dir or app_dir() / "logs"
-    setup_logging(log_dir)
+    setup_logging(log_dir, args.port)
+    prune_logs(log_dir)
     path = profiles.resolve(args.profile)
     profile = load_profile(path) if path.exists() else Profile(name=path.stem)
     if args.source:

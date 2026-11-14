@@ -273,7 +273,7 @@ wheels = [
 
 [[package]]
 name = "optima-time"
-version = "0.0.1"
+version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "cv2-enumerate-cameras" },

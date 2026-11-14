@@ -28,9 +28,11 @@ Every response carries Cache-Control: no-store where values are involved.
 
 from __future__ import annotations
 
+import hashlib
 import hmac
 import json
 import random
+import secrets
 import sys
 import time
 from dataclasses import asdict
@@ -43,6 +45,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 
+from optima_time import __version__
 from optima_time.config import profiles
 from optima_time.config.models import AnchorConfig, Profile
 from optima_time.config.store import save_profile
@@ -108,6 +111,8 @@ placeholder="PIN" autofocus><button>Přihlásit</button></form></body></html>"""
 
 def create_app(runner: Runner, static_dir: Path | None = None, pin: str | None = None) -> FastAPI:
     app = FastAPI(title="Optima Time", docs_url="/api/docs", openapi_url="/api/openapi.json")
+    # the cookie carries a token derived from the PIN with a per-process secret, not the PIN
+    token = hmac.new(secrets.token_bytes(32), (pin or "").encode(), hashlib.sha256).hexdigest()
 
     # --- access from the network (SPEC 13.4): only with the PIN; localhost always
 
@@ -116,7 +121,7 @@ def create_app(runner: Runner, static_dir: Path | None = None, pin: str | None =
         client = request.client.host if request.client else ""
         if pin and client not in LOCAL_HOSTS and request.url.path != "/login":
             given = request.cookies.get(PIN_COOKIE, "")
-            if not hmac.compare_digest(given, pin):
+            if not hmac.compare_digest(given, token):
                 if request.url.path.startswith(("/api", "/data")):
                     return Response("PIN required", status_code=401)
                 return HTMLResponse(LOGIN_PAGE, status_code=401)
@@ -129,7 +134,7 @@ def create_app(runner: Runner, static_dir: Path | None = None, pin: str | None =
             time.sleep(0.5)  # slow down guessing
             return HTMLResponse(LOGIN_PAGE, status_code=401)
         response = RedirectResponse("/", status_code=303)
-        response.set_cookie(PIN_COOKIE, pin, httponly=True, samesite="strict")
+        response.set_cookie(PIN_COOKIE, token, httponly=True, samesite="strict")
         return response
 
     # --- data for vMix
@@ -180,6 +185,7 @@ def create_app(runner: Runner, static_dir: Path | None = None, pin: str | None =
             }
         rect = snap.rectified
         body = {
+            "version": __version__,
             "source": runner.source_status(),
             "processing_fps": round(snap.processing_fps, 1),
             "frame": {"seq": result.seq, "pts": result.pts, "timings_ms": result.timings_ms}

@@ -83,8 +83,8 @@ def build_zip(runner: Runner, log_dir: Path | None) -> bytes:
                     if ok:
                         z.writestr(f"crops/{fid}.png", data.tobytes())
         if log_dir is not None and log_dir.is_dir():
-            for pattern in ("events-*.jsonl", "app.log"):
-                files = sorted(log_dir.glob(pattern))
+            for pattern in ("events-*.jsonl", "app*.log"):
+                files = sorted(log_dir.glob(pattern), key=lambda f: f.stat().st_mtime)
                 if files:
                     z.writestr(f"logs/{files[-1].name}", _tail(files[-1]))
     return buf.getvalue()

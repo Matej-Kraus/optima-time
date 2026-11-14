@@ -110,6 +110,7 @@ export interface OutputStatus {
 export type OutputMode = "live" | "paused" | "test";
 
 export interface LiveState {
+  version?: string;
   source: {
     state: string;
     width?: number;

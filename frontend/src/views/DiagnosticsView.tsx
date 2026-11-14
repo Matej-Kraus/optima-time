@@ -10,6 +10,7 @@ export function DiagnosticsView({ live }: { live: LiveState | null }) {
     <div className="diag-view">
       <section className="panel">
         <h2>{cs.processTitle}</h2>
+        {live?.version && <p className="muted">Verze {live.version}</p>}
         {p && <p>{cs.processLine(p.cpu_percent, p.rss_mb, p.threads)}</p>}
         {t && (
           <p className="muted">
