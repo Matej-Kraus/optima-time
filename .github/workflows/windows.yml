@@ -56,10 +56,24 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
-      - name: Build package (tests, PyInstaller, self-test, zip)
+      - name: Inno Setup (installer compiler)
+        run: choco install innosetup -y --no-progress
+      - name: Build package (tests, PyInstaller, self-test, zip, installer)
         shell: pwsh
         run: ./scripts/build_windows.ps1
+      - name: Installer installs and the installed app passes its self-test
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem dist\OptimaTime-Setup-*.exe | Select-Object -First 1
+          Start-Process -FilePath $setup.FullName -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/TASKS=desktopicon" -Wait
+          $exe = "$env:LOCALAPPDATA\Programs\OptimaTime\optima-time.exe"
+          if (!(Test-Path $exe)) { throw "not installed: $exe" }
+          & $exe --self-test
+          if ($LASTEXITCODE -ne 0) { throw "self-test of the installed app failed" }
+          if (!(Test-Path "$env:USERPROFILE\Desktop\Optima Time.lnk") -and !(Test-Path "$env:PUBLIC\Desktop\Optima Time.lnk")) { Write-Warning "desktop shortcut not found" }
       - uses: actions/upload-artifact@v4
         with:
           name: OptimaTime-win64
-          path: dist/OptimaTime-*-win64.zip
+          path: |
+            dist/OptimaTime-*-win64.zip
+            dist/OptimaTime-Setup-*.exe

@@ -16,7 +16,8 @@ if not (MODELS / "tiny" / "inference.onnx").exists():
 if not (UI / "index.html").exists():
     raise SystemExit("UI not built: cd frontend; npm ci; npm run build")
 
-datas = [(str(UI), "frontend/dist")]
+ICON = ROOT / "packaging" / "icon.ico"
+datas = [(str(UI), "frontend/dist"), (str(ROOT / "packaging" / "icon.png"), ".")]
 for model in ("tiny", "small"):
     for name in ("inference.onnx", "characters.txt", "config.json"):
         f = MODELS / model / name
@@ -45,8 +46,10 @@ pyz = PYZ(a.pure)  # noqa: F821
 
 gui = EXE(  # noqa: F821
     pyz, a.scripts, [], exclude_binaries=True, name="OptimaTime", console=False,
+    icon=str(ICON),
 )
 cli = EXE(  # noqa: F821
     pyz, a.scripts, [], exclude_binaries=True, name="optima-time", console=True,
+    icon=str(ICON),
 )
 COLLECT(gui, cli, a.binaries, a.datas, name="OptimaTime")  # noqa: F821

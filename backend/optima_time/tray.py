@@ -10,12 +10,17 @@ import logging
 import sys
 import webbrowser
 from collections.abc import Callable
+from pathlib import Path
 
 log = logging.getLogger(__name__)
 
 
 def _icon_image():
     from PIL import Image, ImageDraw
+
+    bundle = getattr(sys, "_MEIPASS", None)
+    if bundle and (Path(bundle) / "icon.png").exists():
+        return Image.open(Path(bundle) / "icon.png")
 
     img = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)

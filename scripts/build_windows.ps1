@@ -34,4 +34,14 @@ $version = (uv run python -c "import optima_time; print(optima_time.__version__)
 $zip = "dist\OptimaTime-$version-win64.zip"
 if (Test-Path $zip) { Remove-Item $zip }
 Compress-Archive -Path dist\OptimaTime -DestinationPath $zip
-Write-Host "== Done: $zip"
+Write-Host "== Zip: $zip"
+
+$iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+if (Test-Path $iscc) {
+    Write-Host "== Installer"
+    & $iscc /Q "/DAppVersion=$version" packaging\optima-time.iss
+    if ($LASTEXITCODE -ne 0) { throw "installer build failed" }
+    Write-Host "== Installer: dist\OptimaTime-Setup-$version.exe"
+} else {
+    Write-Host "== Inno Setup not found ($iscc): no installer, the zip is enough (choco install innosetup)"
+}
