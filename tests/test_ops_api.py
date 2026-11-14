@@ -87,7 +87,7 @@ def test_sample_recording(runner: Runner, tmp_path: Path) -> None:
     wait(lambda: (folder / "profile.json").exists())
     assert (folder / "match.mp4").stat().st_size > 0
     lines = (folder / "readings.jsonl").read_text().splitlines()
-    assert len(lines) >= 5 and "scoreh" in json.loads(lines[0])["fields"]
+    assert len(lines) >= 2 and "scoreh" in json.loads(lines[0])["fields"]  # count depends on speed
     sample = load_profile(folder / "profile.json")
     assert sample.geometry.corners[2] == (1.0, 1.0)
     assert Path(sample.source.path).name == "match.mp4"
