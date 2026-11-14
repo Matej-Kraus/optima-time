@@ -142,6 +142,7 @@ Na základě B1 a B2 zvolím výchozí výstup (soubor, nebo HTTP) a zapíšu to
 3. Ve vMixu přidej XML Data Source na ten soubor (XPath `/root`, interval 100 ms) a namapuj sloupce `Time`, `scoreh`, `scorea`, `period`, `penaltyh1` na kopii titulku.
 4. Zkus tlačítka: „Zapsat testovací data“ (titulek ukáže náhodné hodnoty), „Vyprázdnit (test)“, „Zpět na živé hodnoty“, „Pauza výstupu“ (titulek zamrzne), ruční „Držet“ u skóre.
 5. Nech běžet 30 minut. Záznam se přehrává ve smyčce.
+   **Hlavně sleduj, jestli vMix někdy hlásí, že k souboru nemá přístup** (D29: Windows na zlomek milisekundy odmítne otevření souboru, který se právě nahrazuje). Když ano, zapiš, jak často, a zkus krok 7 (HTTP).
 6. Sleduj:
    - Hlásí vMix chybu?
    - Problikne prázdná hodnota u `Time` nebo skóre?
