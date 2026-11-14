@@ -32,6 +32,11 @@ for package in ("cyndilib", "onnxruntime", "cv2_enumerate_cameras"):
     hiddenimports += h
 if sys.platform == "win32":
     hiddenimports += ["pystray._win32"]
+    # the app window: pywebview on Edge WebView2 via pythonnet (hooks bundle the WebView2 DLLs)
+    d, b, h = collect_all("webview")
+    datas += d
+    binaries += b
+    hiddenimports += h + ["clr"]
 
 a = Analysis(  # noqa: F821
     [str(ROOT / "packaging" / "launcher.py")],

@@ -68,8 +68,10 @@ jobs:
           Start-Process -FilePath $setup.FullName -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/TASKS=desktopicon" -Wait
           $exe = "$env:LOCALAPPDATA\Programs\OptimaTime\optima-time.exe"
           if (!(Test-Path $exe)) { throw "not installed: $exe" }
-          & $exe --self-test
+          $out = & $exe --self-test | Out-String
+          Write-Output $out
           if ($LASTEXITCODE -ne 0) { throw "self-test of the installed app failed" }
+          if ($out -notmatch "OK\s+Okno programu") { throw "app window (pywebview + WebView2) not usable in the package" }
           if (!(Test-Path "$env:USERPROFILE\Desktop\Optima Time.lnk") -and !(Test-Path "$env:PUBLIC\Desktop\Optima Time.lnk")) { Write-Warning "desktop shortcut not found" }
       - uses: actions/upload-artifact@v4
         with:

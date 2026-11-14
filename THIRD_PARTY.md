@@ -15,6 +15,9 @@
 | PP-OCRv6_tiny_rec (ONNX) | HF rev `2612ab3…` | Apache-2.0 | text recognition |
 | PP-OCRv6_small_rec (ONNX) | HF rev `b8f84f0…` | Apache-2.0 | text recognition |
 | pystray (Windows only) | 0.19.5 | LGPL-3.0 | tray icon of the packaged app; used unmodified as a separate module |
+| pywebview (Windows only) | 6.2.1 | BSD-3-Clause | the app's own window (Edge WebView2) |
+| pythonnet, clr-loader (Windows only, via pywebview) | 3.2.1, 0.3.1 | MIT | .NET bridge for the WebView2 window |
+| bottle, proxy-tools (via pywebview) | 0.13.4, 0.1.0 | MIT | pywebview internals |
 | Pillow (Windows runtime: tray icon; dev: synth) | 13.0.0 | MIT-CMU | icon image, font rendering in `tools/synth` |
 | PyInstaller (build only) | 6.22.3 | GPL-2.0-or-later with the bootloader exception | packaging; the exception allows distributing the bundled app under any terms |
 | PyYAML (build/dev only) | 6.0.3 | MIT | reading `inference.yml` in `scripts/fetch_models.py` |

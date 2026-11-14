@@ -82,6 +82,12 @@ def _ndi() -> str:
     )
 
 
+def _window() -> str:
+    from optima_time.window import check
+
+    return check()
+
+
 def _devices() -> str:
     from optima_time.sources.device import list_devices
 
@@ -131,6 +137,7 @@ CHECKS: list[tuple[str, Callable[[], str], bool]] = [
     ("Zápis XML", _xml_write, True),
     ("Složky aplikace", _folders, True),
     ("Webové UI", _frontend, True),
+    ("Okno programu", _window, False),
     ("NDI", _ndi, False),
     ("Capture zařízení", _devices, False),
 ]

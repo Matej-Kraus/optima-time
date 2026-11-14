@@ -1,4 +1,4 @@
-"""Notification-area icon for the packaged Windows app (SPEC 14.2): "Otevřít UI" and "Ukončit".
+"""Notification-area icon of the packaged Windows app (SPEC 14.2): open the UI, quit.
 
 pystray (LGPLv3, see THIRD_PARTY.md) runs detached on Windows. Elsewhere this is a no-op: the
 console stays and Ctrl+C stops the app.
@@ -29,8 +29,11 @@ def _icon_image():
     return img
 
 
-def start_tray(url: str, on_quit: Callable[[], None]) -> Callable[[], None] | None:
-    """Show the icon; returns a function that removes it, or None where unsupported."""
+def start_tray(
+    url: str, on_quit: Callable[[], None], on_open: Callable[[], None] | None = None
+) -> Callable[[], None] | None:
+    """Show the icon; returns a function that removes it, or None where unsupported.
+    `on_open` brings up the UI (the app window); without it the browser opens."""
     if sys.platform != "win32":
         return None
     try:
@@ -43,12 +46,18 @@ def start_tray(url: str, on_quit: Callable[[], None]) -> Callable[[], None] | No
         icon.stop()
         on_quit()
 
+    def open_ui(_icon, _item) -> None:
+        if on_open is not None:
+            on_open()
+        else:
+            webbrowser.open(url)
+
     icon = pystray.Icon(
         "optima-time",
         _icon_image(),
         "Optima Time",
         menu=pystray.Menu(
-            pystray.MenuItem("Otevřít UI", lambda _i, _m: webbrowser.open(url), default=True),
+            pystray.MenuItem("Otevřít Optima Time", open_ui, default=True),
             pystray.MenuItem("Ukončit", quit_app),
         ),
     )

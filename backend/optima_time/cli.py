@@ -20,6 +20,7 @@ import logging
 import logging.handlers
 import sys
 import threading
+import time
 import webbrowser
 from pathlib import Path
 
@@ -100,23 +101,87 @@ def run(args: argparse.Namespace) -> int:
     runner.start()
     url = f"http://127.0.0.1:{args.port}/"
     print(f"Optima Time {__version__}: {url}  (profil {path})")
-    if not args.no_browser:
-        threading.Timer(1.0, webbrowser.open, args=(url,)).start()
     config = uvicorn.Config(
         create_app(runner, pin=args.pin), host=args.host, port=args.port, log_level="warning"
     )
     server = uvicorn.Server(config)
+    try:
+        if args.window:
+            return _run_windowed(args, server, url)
+        if not args.no_browser:
+            threading.Timer(1.0, webbrowser.open, args=(url,)).start()
+        remove_tray = None
+        if args.tray:
+            from optima_time.tray import start_tray
+
+            remove_tray = start_tray(url, lambda: setattr(server, "should_exit", True))
+        try:
+            server.run()  # Ctrl+C or "Ukončit" in the tray menu ends it
+        finally:
+            if remove_tray:
+                remove_tray()
+    finally:
+        runner.stop()
+    return 0
+
+
+def _run_windowed(args: argparse.Namespace, server, url: str) -> int:
+    """The UI in the app's own window; the server runs in a thread until the window closes
+    (or "Ukončit" in the tray). Without a window the browser opens and the app runs on."""
+    from optima_time.window import AppWindow, run_with_window
+
+    thread = threading.Thread(target=server.run, name="http", daemon=True)
+    holder: dict[str, AppWindow] = {}
+
+    def start_server() -> None:
+        thread.start()
+        deadline = time.monotonic() + 15
+        while not server.started and thread.is_alive() and time.monotonic() < deadline:
+            time.sleep(0.05)
+        if not server.started:
+            raise RuntimeError(f"web server didn't start on {url} (port in use?)")
+
+    def stop_server() -> None:
+        server.should_exit = True
+
+    def remember_window(window: AppWindow) -> None:
+        holder["w"] = window
+
+    def quit_app() -> None:
+        stop_server()
+        if "w" in holder:
+            holder["w"].close()
+
+    def open_ui() -> None:
+        if "w" in holder and thread.is_alive():
+            holder["w"].show()
+        else:
+            webbrowser.open(url)
+
     remove_tray = None
     if args.tray:
         from optima_time.tray import start_tray
 
-        remove_tray = start_tray(url, lambda: setattr(server, "should_exit", True))
+        remove_tray = start_tray(url, quit_app, open_ui)
     try:
-        server.run()  # Ctrl+C or "Ukončit" in the tray menu ends it
+        try:
+            shown = run_with_window(url, start_server, stop_server, remember_window)
+        except RuntimeError as error:
+            print(error, file=sys.stderr)
+            logging.error("%s", error)
+            return 1
+        if not shown:
+            holder.clear()
+            if not args.no_browser:
+                webbrowser.open(url)
+        while thread.is_alive():  # until the window closed, "Ukončit" or Ctrl+C
+            try:
+                thread.join(0.5)
+            except KeyboardInterrupt:
+                stop_server()
     finally:
         if remove_tray:
             remove_tray()
-        runner.stop()
     return 0
 
 
@@ -166,10 +231,11 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--no-browser", action="store_true")
     p.add_argument("--log-dir", type=Path, help="logs (default: app folder/logs)")
     p.add_argument("--tray", action="store_true", help="icon in the notification area (Windows)")
+    p.add_argument("--window", action="store_true", help="the UI in the app's own window")
     argv = sys.argv[1:] if argv is None else argv
     if not argv and getattr(sys, "frozen", False):
-        # the packaged app started by double-click: last profile, tray icon, browser
-        argv = ["run", "--profile", last_profile(), "--tray"]
+        # the packaged app started by double-click: last profile, tray icon, own window
+        argv = ["run", "--profile", last_profile(), "--tray", "--window"]
     args = parser.parse_args(argv)
 
     if args.version:

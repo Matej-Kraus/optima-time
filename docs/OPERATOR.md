@@ -18,7 +18,7 @@ Na horní liště je stav s čísly: **Zdroj** (běží / vypadl), **Čtení** (
 
 ## A. Známá hala (1 minuta)
 
-1. Spusť **Optima Time** (ikona na ploše). Otevře se prohlížeč s aplikací a v oznamovací oblasti (vpravo dole) se objeví ikona.
+1. Spusť **Optima Time** (ikona na ploše). Otevře se okno aplikace a v oznamovací oblasti (vpravo dole) se objeví ikona. Zavřením okna se aplikace ukončí a grafika přestane dostávat hodnoty, proto se okno nejdřív zeptá. Na chvíli ho schovej raději minimalizací, zpátky ho vrátí ikona vpravo dole (**Otevřít Optima Time**).
 2. Pokud je otevřený jiný profil: **Nastavení → 5. Profil a pokročilé → Načíst…** a vyber halu.
 3. Na záložce **Živě** zkontroluj, že semafor je celý zelený a tabule **Na vysílání** ukazuje to samé co tabule v hale.
 

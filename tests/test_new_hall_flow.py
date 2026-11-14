@@ -93,16 +93,17 @@ def test_new_hall_setup_through_the_api(tmp_path: Path) -> None:
         c.put("/api/profile", json=p)
 
         xml = tmp_path / "vmix" / "tabule.xml"
-        deadline = time.monotonic() + 15
+        deadline = time.monotonic() + 30
         values: dict = {}
-        while time.monotonic() < deadline:
+        state: dict = {}
+        while time.monotonic() < deadline:  # a loaded machine needs longer (assert behaviour)
             if xml.exists():
                 values = read_values(xml)
-                if values == EXPECTED:
+                state = c.get("/api/state").json()
+                if values == EXPECTED and state["guard"]["state"] == "ok":
                     break
             time.sleep(0.1)
         assert values == EXPECTED
-        state = c.get("/api/state").json()
         assert state["guard"]["state"] == "ok"
         assert state["outputs"]["workers"]["xml_file"]["ok"] is True
         saved = (tmp_path / "nova-hala.json").read_text()

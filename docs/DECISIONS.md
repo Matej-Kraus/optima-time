@@ -4,6 +4,9 @@ Formát: datum, co, proč, jaké byly alternativy. Novější nahoře. Položky 
 
 ## 2026-11-14 – Doplnění po Milníku 5
 
+### D33. Vlastní okno programu místo záložky v prohlížeči
+Zabalená aplikace otevře UI ve vlastním okně (pywebview na Edge WebView2, který je ve Windows 10/11 předinstalovaný). Okno se nedá splést s jinými záložkami. Zavření okna se nejdřív zeptá, protože ukončí i výstup do vMixu. Ikona v liště okno znovu ukáže nebo aplikaci ukončí. Když WebView2 chybí nebo okno selže, otevře se jako dřív prohlížeč a aplikace běží dál. Prohlížeč a přístup z tabletu (`--host` s PINem) fungují dál. Zpracování ani UI se nemění, okno je jen jiný „rám“. Alternativy: Electron nebo Tauri (velké, druhý build systém), jen prohlížeč v režimu `--app` (závisí na nainstalovaném Edge/Chrome a hůř se ovládá zavření).
+
 ### D32. Automatický návrh kotev, ruční úprava
 Runner drží 12 s historie narovnaného obrazu (60 malých šedých snímků). Kotvy se hledají jako místa, která v aspoň 60 % snímků vypadají jako jejich medián (jas smí kolísat o 15 %), mají výraznou strukturu (gradient) a neleží na polích. Písmena se spojí do slov, vyberou se až 3 nejsilnější, co nejvíc rozmístěné. Kotva se ořízne od pole, které těsně sousedí. Na syntetice: běžný zápas 55/57 oken všechny 3 nápisy, těžký 58/58. Ve 2 oknech, kde animace gólu pokryla většinu okna, vznikla kotva na textu „GÓL!“. Proto je výsledek jen návrh, operátor ho zkontroluje a upraví (posun, změna velikosti, šipky; vzor se sejme znovu). Návrh se spustí sám jen jednou, když profil má pole a žádné kotvy.
 

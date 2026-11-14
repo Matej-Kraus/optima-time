@@ -219,9 +219,10 @@ Bez `--emulate-lock`: zámky dělá Windows sám. Výsledek musí být `"result"
 3. V příkazovém řádku spusť `C:\OptimaTime\optima-time.exe --self-test`. Všechno musí být OK. NDI a zařízení můžou hlásit POZOR, pokud je zrovna nic neposílá.
 4. Dvojklik na `OptimaTime.exe`:
    - neotevře se konzole
-   - otevře se prohlížeč s aplikací
-   - v oznamovací oblasti je ikona s menu **Otevřít UI** a **Ukončit**
-5. **Ukončit** v menu ikony aplikaci zavře. Ve Správci úloh nezůstane žádný proces `OptimaTime`.
+   - otevře se **vlastní okno Optima Time** (ne záložka prohlížeče), přes celou obrazovku
+   - v oznamovací oblasti je ikona s menu **Otevřít Optima Time** a **Ukončit**
+   - self-test u **Okno programu** ukáže verzi WebView2 (jinak se UI otevře v prohlížeči)
+5. Zavření okna křížkem se zeptá „Ukončit Optima Time?“. **Zrušit** nechá okno otevřené, **Ukončit** aplikaci zavře. Stejně **Ukončit** v menu ikony (bez ptaní). Ve Správci úloh nezůstane žádný proces `OptimaTime`. Okno minimalizuj a **Otevřít Optima Time** v menu ikony ho vrátí.
 6. Znovu dvojklik: otevře se poslední profil.
 7. Během běhu se PC neuspí (nech ho v klidu déle, než je nastavené uspání).
 8. Pošli výpis self-testu a poznámky.
