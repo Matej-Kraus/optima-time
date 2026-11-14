@@ -96,6 +96,17 @@ Kotva je **nápis, který se na tabuli nikdy nemění**, např. `PERIÓDA`, `DOM
    5. Pole titulku napojené na Data Source se nesmí zároveň měnit jinak (ručně, jiným zdrojem).
 4. **Zkouška:** klikni **Zapsat testovací data**. Titulek ve vMixu ukáže náhodné hodnoty. Pak **Zpět na živé hodnoty**.
 
+### Pokročilé nastavení (jen když je potřeba)
+
+Pod **Profil haly** je rozbalovací **Pokročilé nastavení**:
+
+- **Otočení obrazu:** kamera je natočená o 90°.
+- **Slévání snímků:** tabule ve videu bliká (číslice občas zmizí). „Maximum“ s 2–3 snímky. Přidá zpoždění.
+- **Práh shody kotev:** kotvy hlásí „lost“, i když tabule ukazuje skóre. Snížit třeba na 0,7.
+- Ostatní nech na výchozích hodnotách.
+
+U pole je v **Pokročilé**: směr počítání času, zarovnání mezerami (aby text v grafice neposkakoval), prahy čtení a názvy period (např. `1=1. tretina; 4=predĺženie`).
+
 ### 9. Ostrý provoz
 
 - Zaškrtni **Živý režim**.

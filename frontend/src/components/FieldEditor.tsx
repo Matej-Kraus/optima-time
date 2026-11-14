@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { FieldConfig, FieldType } from "../api";
 import { cs } from "../i18n/cs";
+import { formatNames, parseNames } from "../periodNames";
 
 interface Props {
   field: FieldConfig;
@@ -46,7 +47,25 @@ export function FieldEditor({ field, idError, onChange, onType, onDelete }: Prop
             {cs.tenths}
           </label>
           <Select label={cs.style} value={String(field.style)} options={cs.clockStyles} onChange={(v) => onChange({ style: v })} />
+          <Select
+            label={cs.direction}
+            value={String(field.direction ?? "auto")}
+            options={cs.directions}
+            onChange={(v) => onChange({ direction: v })}
+          />
         </>
+      )}
+      {field.type === "period" && (
+        <label>
+          {cs.periodNames}
+          <input
+            defaultValue={formatNames(field.names)}
+            onBlur={(e) => {
+              const names = parseNames(e.target.value);
+              if (names) onChange({ names });
+            }}
+          />
+        </label>
       )}
       {field.type === "number" && (
         <Select label={cs.style} value={String(field.style)} options={cs.numberStyles} onChange={(v) => onChange({ style: v })} />
@@ -70,6 +89,8 @@ export function FieldEditor({ field, idError, onChange, onType, onDelete }: Prop
         {field.type === "number" && (
           <NumberInput label={cs.maxDigits} value={field.max_digits} step={1} onChange={(v) => onChange({ max_digits: v })} />
         )}
+        <Select label={cs.align} value={String(field.align ?? "none")} options={cs.aligns} onChange={(v) => onChange({ align: v })} />
+        <NumberInput label={cs.alignWidth} value={field.align_width} step={1} onChange={(v) => onChange({ align_width: v })} />
         {field.type === "period" && (
           <NumberInput label={cs.maxPeriod} value={field.max_value} step={1} onChange={(v) => onChange({ max_value: v })} />
         )}

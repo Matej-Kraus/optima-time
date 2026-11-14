@@ -2,6 +2,14 @@
 
 Formát: datum, co, proč, jaké byly alternativy. Novější nahoře. Položky označené **předpoklad** platí, dokud je Matěj nepotvrdí nebo nevyvrátí.
 
+## 2026-11-14 – Doplnění po Milníku 5
+
+### D27. Bez inverze barev
+Zadání (9.2) zmiňuje úrovně, inverzi a automatickou inverzi po polích, které jsou potřeba pro klasické prahování v referenční aplikaci. PP-OCR čte syrový barevný výřez a zvládá světlé znaky na tmavém i tmavé na světlém. Brána kontrastu (rozpětí percentilů) i podpis pro detekci změny (normalizace) jsou na polaritu necitlivé. Inverze by tedy nic nepřinesla, a proto není. Kdyby přišel glyph engine (Fáze 2), přidá se s ním.
+
+### D28. Časové slévání snímků jako volba, výchozí vypnuto
+`preprocess.blend_frames` (1–5) a `blend_mode` (max proti blikání, mean proti šumu) nad narovnaným obrazem. Přidává zpoždění až (N − 1) snímků, proto je výchozí stav vypnuto (SPEC 9.2). Zapnout jen při viditelném blikání na reálné tabuli.
+
 ## 2026-11-14 – Milník 3
 
 ### D22. Detekce změny: normalizovaný podpis a nejhorší pruh

@@ -48,3 +48,22 @@ def test_board_render_shape() -> None:
     x, y, w, h = BOXES["Time"]
     p = led.pitch
     assert img[y * p : (y + h) * p, x * p : (x + w) * p, 1].max() > 200  # green clock lit
+
+
+def test_all_board_fonts_render_every_character() -> None:
+    texts = {
+        "Time": "12:34",
+        "period": "4",
+        "scoreh": "10",
+        "scorea": "98",
+        "penaltyh1": "1:45",
+        "penaltyh2": "0:07",
+        "penaltya1": "56.9",
+        "penaltya2": "",
+    }
+    for font in ("sans", "seg7", "dot"):
+        led = LedStyle(font=font)
+        img = led_board(texts, led)
+        x, y, w, h = BOXES["scorea"]
+        p = led.pitch
+        assert img[y * p : (y + h) * p, x * p : (x + w) * p].max() > 200, font

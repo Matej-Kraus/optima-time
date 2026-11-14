@@ -74,6 +74,8 @@ export interface Profile {
   geometry: { corners: Point[]; rotate: number; max_width: number };
   fields: FieldConfig[];
   guard: { anchors: Anchor[]; threshold: number; recover_frames: number; search_margin: number };
+  preprocess: { blend_frames: number; blend_mode: "max" | "mean" };
+  detection: { enabled: boolean; threshold: number; max_age_ms: number };
   outputs: { xml_file: { enabled: boolean; path: string; newline: string; clear_on_exit: boolean } };
 }
 

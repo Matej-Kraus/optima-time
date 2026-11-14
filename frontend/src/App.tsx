@@ -11,6 +11,7 @@ import {
   type Point,
   type Profile,
 } from "./api";
+import { AdvancedPanel } from "./components/AdvancedPanel";
 import { EventLog } from "./components/EventLog";
 import { FieldEditor } from "./components/FieldEditor";
 import { FieldsTable } from "./components/FieldsTable";
@@ -202,6 +203,7 @@ export default function App() {
         <section>
           <h2>{cs.profilesPanel}</h2>
           <ProfilesPanel locked={locked} onSwitched={reloadProfile} />
+          <AdvancedPanel key={JSON.stringify([profile.guard.threshold, profile.detection, profile.preprocess])} profile={profile} locked={locked} onProfile={save} />
         </section>
       )}
 

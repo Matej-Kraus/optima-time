@@ -11,7 +11,7 @@ import cv2
 import numpy as np
 import numpy.typing as npt
 
-from optima_time.config.models import Deinterlace
+from optima_time.config.models import BlendMode, Deinterlace
 
 Image = npt.NDArray[np.uint8]
 
@@ -89,3 +89,29 @@ def deinterlace(frame: Image, mode: Deinterlace) -> Image:
     # BOB: keep the even field, stretch it back to full height
     h, w = frame.shape[:2]
     return cv2.resize(frame[::2], (w, h), interpolation=cv2.INTER_LINEAR)  # type: ignore[return-value]
+
+
+class FrameBlender:
+    """Combines the last N rectified frames pixel by pixel (max or mean), SPEC 9.2."""
+
+    def __init__(self, frames: int, mode: BlendMode) -> None:
+        self.frames, self.mode = frames, mode
+        self._recent: list[Image] = []
+
+    def __call__(self, image: Image) -> Image:
+        if self.frames <= 1:
+            return image
+        if self._recent and self._recent[-1].shape != image.shape:
+            self._recent.clear()  # the geometry changed
+        self._recent = [*self._recent[-(self.frames - 1) :], image]
+        if len(self._recent) == 1:
+            return image
+        if self.mode is BlendMode.MAX:
+            out = self._recent[0]
+            for img in self._recent[1:]:
+                out = cv2.max(out, img)
+            return np.asarray(out, np.uint8)
+        acc = np.zeros(image.shape, np.float32)
+        for img in self._recent:
+            acc += img
+        return np.asarray(acc / len(self._recent) + 0.5, np.uint8)

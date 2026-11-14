@@ -176,13 +176,19 @@ def main() -> int:
     parser.add_argument("--hard", action="store_true", help="smaller, darker, blurrier board")
     parser.add_argument("--interlaced", action="store_true", help="woven fields like 1080i")
     parser.add_argument("--no-tenths", action="store_true")
+    parser.add_argument(
+        "--font",
+        choices=["sans", "seg7", "dot"],
+        default="sans",
+        help="how values are drawn: video wall sans, 7-segment, 5x7 dot matrix",
+    )
     parser.add_argument("--direction", choices=["down", "up"], default="down")
     args = parser.parse_args()
 
     tl = simulate(args.seed, not args.no_tenths, args.direction, args.short)
     cam = HARD if args.hard else CameraStyle()
     print(f"rendering {tl.tenths / 10:.0f} s at {args.fps} fps -> {args.out}")
-    render(tl, args.out, args.fps, cam, LedStyle(), args.interlaced, args.seed)
+    render(tl, args.out, args.fps, cam, LedStyle(font=args.font), args.interlaced, args.seed)
     save_profile(
         make_profile(cam, args.out / "match.mp4", args.interlaced), args.out / "profile.json"
     )

@@ -559,3 +559,29 @@ a.button {
 .editor details label {
   margin-top: 6px;
 }
+
+.advanced-panel {
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.advanced-panel .grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px 16px;
+}
+
+.advanced-panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.advanced-panel label.check {
+  flex-direction: row;
+  align-items: center;
+}
+
+.advanced-panel small {
+  color: var(--muted);
+}

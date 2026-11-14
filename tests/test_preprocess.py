@@ -53,3 +53,29 @@ def test_deinterlace_blend_and_bob_remove_combing() -> None:
         assert out.shape == combed().shape
         rows = out[:-1, 0, 0].astype(int)
         assert np.abs(np.diff(rows)).max() < 120, mode
+
+
+def test_frame_blender_max_keeps_flickering_leds_lit() -> None:
+    from optima_time.config.models import BlendMode
+    from optima_time.preprocess import FrameBlender
+
+    lit = np.full((4, 4, 3), 200, np.uint8)
+    dark = np.full((4, 4, 3), 20, np.uint8)
+    blend = FrameBlender(3, BlendMode.MAX)
+    outs = [blend(f) for f in (lit, dark, dark, dark, lit)]
+    assert outs[1].min() == 200 and outs[2].min() == 200  # the lit frame is still in the window
+    assert outs[3].max() == 20  # three dark frames in a row
+    assert outs[4].min() == 200
+
+
+def test_frame_blender_mean_and_off() -> None:
+    from optima_time.config.models import BlendMode
+    from optima_time.preprocess import FrameBlender
+
+    a, b = np.full((2, 2, 3), 100, np.uint8), np.full((2, 2, 3), 200, np.uint8)
+    blend = FrameBlender(2, BlendMode.MEAN)
+    blend(a)
+    assert int(blend(b)[0, 0, 0]) == 150
+    off = FrameBlender(1, BlendMode.MAX)
+    assert off(a) is a
+    blend(np.zeros((3, 3, 3), np.uint8))  # a new size resets the window without errors

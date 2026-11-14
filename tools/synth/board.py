@@ -83,6 +83,87 @@ class LedStyle:
     pitch: int = 6  # camera-independent px per LED in the board image
     dot: float = 0.75  # dot diameter / pitch
     unlit: float = 0.06  # brightness of a dark LED
+    font: str = "sans"  # values drawn as: sans (video wall) | seg7 | dot (5x7 dot matrix)
+
+
+# 7-segment: which of a, b, c, d, e, f, g light up for each digit
+SEGMENTS = {
+    "0": "abcdef",
+    "1": "bc",
+    "2": "abged",
+    "3": "abgcd",
+    "4": "fgbc",
+    "5": "afgcd",
+    "6": "afgedc",
+    "7": "abc",
+    "8": "abcdefg",
+    "9": "abcdfg",
+}
+
+# 5x7 dot-matrix glyphs, rows top to bottom
+DOT5X7 = {
+    "0": ["01110", "10001", "10011", "10101", "11001", "10001", "01110"],
+    "1": ["00100", "01100", "00100", "00100", "00100", "00100", "01110"],
+    "2": ["01110", "10001", "00001", "00010", "00100", "01000", "11111"],
+    "3": ["11111", "00010", "00100", "00010", "00001", "10001", "01110"],
+    "4": ["00010", "00110", "01010", "10010", "11111", "00010", "00010"],
+    "5": ["11111", "10000", "11110", "00001", "00001", "10001", "01110"],
+    "6": ["00110", "01000", "10000", "11110", "10001", "10001", "01110"],
+    "7": ["11111", "00001", "00010", "00100", "01000", "01000", "01000"],
+    "8": ["01110", "10001", "10001", "01110", "10001", "10001", "01110"],
+    "9": ["01110", "10001", "10001", "01111", "00001", "00010", "01100"],
+    ":": ["0", "0", "1", "0", "1", "0", "0"],
+    ".": ["0", "0", "0", "0", "0", "0", "1"],
+}
+
+
+def _draw_seg7(draw: ImageDraw.ImageDraw, text: str, box: tuple[int, int, int, int]) -> None:
+    """Digits as 7-segment shapes on the LED grid, centered in the box."""
+    x, y, w, h = box
+    ch = h - 2
+    cw = max(3, round(ch * 0.55))
+    t = max(1, round(ch / 7))
+    gap = max(1, round(cw * 0.3))
+    widths = [cw if c.isdigit() else t + 1 for c in text]
+    total = sum(widths) + gap * (len(text) - 1)
+    cx, top = x + (w - total) // 2, y + 1
+    for c, cwidth in zip(text, widths, strict=True):
+        if c.isdigit():
+            mid = top + ch // 2
+            seg = {
+                "a": (cx, top, cx + cw - 1, top + t - 1),
+                "g": (cx, mid - t // 2, cx + cw - 1, mid - t // 2 + t - 1),
+                "d": (cx, top + ch - t, cx + cw - 1, top + ch - 1),
+                "f": (cx, top, cx + t - 1, mid),
+                "e": (cx, mid, cx + t - 1, top + ch - 1),
+                "b": (cx + cw - t, top, cx + cw - 1, mid),
+                "c": (cx + cw - t, mid, cx + cw - 1, top + ch - 1),
+            }
+            for name in SEGMENTS[c]:
+                draw.rectangle(seg[name], fill=255)
+        elif c == ":":
+            draw.rectangle((cx, top + ch // 3, cx + t - 1, top + ch // 3 + t - 1), fill=255)
+            draw.rectangle((cx, top + 2 * ch // 3, cx + t - 1, top + 2 * ch // 3 + t - 1), fill=255)
+        elif c == ".":
+            draw.rectangle((cx, top + ch - t, cx + t - 1, top + ch - 1), fill=255)
+        cx += cwidth + gap
+
+
+def _draw_dot(draw: ImageDraw.ImageDraw, text: str, box: tuple[int, int, int, int]) -> None:
+    """Digits from a 5x7 font; each font pixel is a k x k block of LEDs."""
+    x, y, w, h = box
+    k = max(1, h // 8)
+    widths = [len(DOT5X7[c][0]) * k for c in text]
+    gap = k
+    total = sum(widths) + gap * (len(text) - 1)
+    cx, top = x + (w - total) // 2, y + (h - 7 * k) // 2
+    for c, cwidth in zip(text, widths, strict=True):
+        for row, bits in enumerate(DOT5X7[c]):
+            for col, bit in enumerate(bits):
+                if bit == "1":
+                    x0, y0 = cx + col * k, top + row * k
+                    draw.rectangle((x0, y0, x0 + k - 1, y0 + k - 1), fill=255)
+        cx += cwidth + gap
 
 
 def led_board(texts: dict[str, str], style: LedStyle) -> np.ndarray:
@@ -93,7 +174,13 @@ def led_board(texts: dict[str, str], style: LedStyle) -> np.ndarray:
         if not text:
             continue
         mask = Image.new("L", (COLS, ROWS), 0)
-        _draw_centered(ImageDraw.Draw(mask), text, box)
+        draw = ImageDraw.Draw(mask)
+        if name in LABELS or style.font == "sans":
+            _draw_centered(draw, text, box)
+        elif style.font == "seg7":
+            _draw_seg7(draw, text, box)
+        else:
+            _draw_dot(draw, text, box)
         alpha = np.asarray(mask, np.float32) / 255.0
         color = np.array(COLORS.get(name, WHITE), np.float32)
         layers = np.maximum(layers, alpha[..., None] * color)

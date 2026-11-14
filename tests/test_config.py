@@ -67,3 +67,23 @@ def test_future_schema_version_is_rejected_safely(tmp_path: Path) -> None:
     path = tmp_path / "p.json"
     path.write_text(json.dumps({"schema_version": 99}), encoding="utf-8")
     assert load_profile(path) == Profile(name="p")
+
+
+def test_profile_accepts_what_the_ui_sends() -> None:
+    data = json.loads(sample_profile().model_dump_json())
+    data["geometry"]["rotate"] = 90
+    data["preprocess"] = {"blend_frames": 3, "blend_mode": "mean"}
+    data["detection"] = {"enabled": False, "threshold": 0.2, "max_age_ms": 500}
+    data["outputs"]["xml_file"] |= {"newline": "lf", "clear_on_exit": True}
+    data["fields"][0] |= {"direction": "down", "align": "right", "align_width": 5}
+    data["fields"][2]["names"] = {"1": "1. tretina", "4": "predĺženie"}  # JSON keys are strings
+    p = Profile.model_validate(data)
+    assert p.geometry.rotate == 90 and p.preprocess.blend_frames == 3
+    period = p.fields[2]
+    assert isinstance(period, PeriodField) and period.names == {1: "1. tretina", 4: "predĺženie"}
+    value = period.parse("4", None)
+    assert value is not None and period.render(value) == "predĺženie"
+    clock = p.fields[0]
+    assert isinstance(clock, ClockField)
+    v = clock.parse("5:13", None)
+    assert v is not None and clock.render(v) == " 5:13"

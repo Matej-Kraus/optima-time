@@ -81,6 +81,19 @@ class OutputsConfig(Model):
     xml_file: XmlFileOutput = XmlFileOutput()
 
 
+class BlendMode(StrEnum):
+    MAX = "max"  # keeps LEDs lit when the camera catches them dark (PWM flicker)
+    MEAN = "mean"  # smooths noise and moiré
+
+
+class PreprocessConfig(Model):
+    """Optional blending of the last N frames against LED flicker and moiré (SPEC 9.2).
+    Off by default: it delays changes by up to N-1 frames."""
+
+    blend_frames: int = Field(default=1, ge=1, le=5)  # 1 = off
+    blend_mode: BlendMode = BlendMode.MAX
+
+
 class DetectionConfig(Model):
     """Read a field only when its crop changed (SPEC 10.5)."""
 
@@ -95,6 +108,7 @@ class Profile(Model):
     source: SourceConfig = SourceConfig()
     geometry: GeometryConfig = GeometryConfig()
     fields: list[FieldConfig] = Field(default_factory=list)
+    preprocess: PreprocessConfig = PreprocessConfig()
     guard: GuardConfig = GuardConfig()
     detection: DetectionConfig = DetectionConfig()
     outputs: OutputsConfig = OutputsConfig()
