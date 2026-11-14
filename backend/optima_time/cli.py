@@ -95,7 +95,8 @@ def run(args: argparse.Namespace) -> int:
     if not path.exists() or args.source:
         save_profile(profile, path)
     remember_profile(path)
-    runner = Runner(profile, path, threads=args.threads, log_dir=log_dir)
+    log_name = "events" if args.port == 8787 else f"events-{args.port}"  # one log per instance
+    runner = Runner(profile, path, threads=args.threads, log_dir=log_dir, log_name=log_name)
     runner.start()
     url = f"http://127.0.0.1:{args.port}/"
     print(f"Optima Time {__version__}: {url}  (profil {path})")

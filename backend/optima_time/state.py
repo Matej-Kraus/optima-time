@@ -49,10 +49,12 @@ class BoardState:
         hub: OutputHub | None = None,
         log_dir: Path | None = None,
         initial: dict[str, str] | None = None,
+        log_name: str = "events",
     ) -> None:
         self._lock = threading.RLock()
         self.hub = hub or OutputHub()
         self.log_dir = log_dir
+        self.log_name = log_name  # events-<date>.jsonl; another instance uses events-<port>-…
         self.events: deque[LoggedEvent] = deque(maxlen=300)
         self.logic: dict[str, FieldLogic] = {}
         self.guard_state = GuardState.OFF
@@ -218,7 +220,7 @@ class BoardState:
             return
         try:
             self.log_dir.mkdir(parents=True, exist_ok=True)
-            path = self.log_dir / f"events-{time.strftime('%Y-%m-%d')}.jsonl"
+            path = self.log_dir / f"{self.log_name}-{time.strftime('%Y-%m-%d')}.jsonl"
             with path.open("a", encoding="utf-8") as f:
                 f.write(json.dumps(asdict(e), ensure_ascii=False) + "\n")
         except OSError as error:  # the log must never stop the values

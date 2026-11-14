@@ -79,6 +79,7 @@ class Runner:
         profile_path: Path | None,
         threads: int = 2,
         log_dir: Path | None = None,
+        log_name: str = "events",
     ) -> None:
         self.profile_path = profile_path
         self._profile = profile
@@ -89,7 +90,7 @@ class Runner:
         for w in self.hub.workers:
             if isinstance(w, XmlFileWorker):
                 initial = w.read_existing()
-        self.state = BoardState(profile, self.hub, log_dir, initial)
+        self.state = BoardState(profile, self.hub, log_dir, initial, log_name)
         self._source: VideoSource | None = None
         self._frame: Frame | None = None
         self._result: FrameResult | None = None
