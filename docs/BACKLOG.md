@@ -30,3 +30,7 @@ Nápady mimo aktuální milník. Priority určuje Matěj.
 - Kotvy: při zakrytí kotvy se zastaví čtení všech polí. Šlo by vyžadovat shodu většiny kotev místo všech (rozhodnout podle reálných dat).
 - NDI s nižší šířkou pásma kvůli paměti (~290 MB bere NDI SDK), jen pokud to nepoškodí čitelnost.
 - Popisy pravidel v logu událostí posílat strukturovaně (kód + čísla) místo anglické věty, překlad v UI.
+
+## Nápady po Milníku 5
+
+- **Ruční jas, kontrast a gama obrazu v profilu haly** (dotaz kolegy, 2026-11-14). Posuvníky v Nastavení (krok 1 nebo 5. Pokročilé) s živým náhledem narovnané tabule a výřezů, uložené v profilu, použité před čtením i před sejmutím kotev. Pozor: změna po sejmutí kotev zhorší jejich shodu (vzory sejmout znovu, nebo úpravu kotvám nedávat). Nezachrání přepálené číslice, to musí vyřešit expozice kamery. Teď se obraz upravuje automaticky (nejjasnější barevný kanál, normalizace výřezu v modelu, detekce změn odolná vůči jasu), proto rozhodnout až podle reálného záznamu z haly (issue #5): implementovat jen, když tmavý nebo bledý obraz prokazatelně způsobuje chyby čtení.
