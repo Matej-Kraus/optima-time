@@ -1,4 +1,4 @@
-// Types mirror backend/optima_time/config/models.py and fields/models.py (subset the UI edits).
+// Types mirror backend/optima_time (config/models.py, fields/models.py, api/app.py).
 
 export type Point = [number, number];
 
@@ -20,23 +20,50 @@ export interface FieldConfig {
   [key: string]: unknown; // type-specific options are kept as the backend sends them
 }
 
+export interface Anchor {
+  roi: Roi;
+  template: string;
+}
+
 export interface Profile {
   schema_version: number;
   name: string;
   source: { type: string; path: string; [key: string]: unknown };
   geometry: { corners: Point[]; rotate: number; max_width: number };
   fields: FieldConfig[];
+  guard: { anchors: Anchor[]; threshold: number; recover_frames: number; search_margin: number };
+  outputs: { xml_file: { enabled: boolean; path: string; newline: string; clear_on_exit: boolean } };
 }
 
 export type ReadStatus = "valid" | "invalid" | "low_confidence" | "blank";
+export type FieldStatus = "new" | "same" | "pending" | "rejected" | "blank" | "stale" | "held";
 
 export interface FieldState {
-  status: ReadStatus;
-  text: string | null;
+  text: string; // published
+  status: FieldStatus;
+  held: boolean;
+  pending: string | null;
+  read_status: ReadStatus | null;
+  read_text: string | null;
   raw: string | null;
   confidence: number | null;
-  contrast: number;
+  contrast: number | null;
 }
+
+export interface OutputStatus {
+  ok: boolean | null;
+  message: string;
+  writes: number;
+  failures: number;
+  slow_writes: number;
+  last_ok_wall: number | null;
+  last_write_ms: number | null;
+  max_write_ms: number;
+  last_latency_ms: number | null;
+  target: string;
+}
+
+export type OutputMode = "live" | "paused" | "test";
 
 export interface LiveState {
   source: {
@@ -50,8 +77,19 @@ export interface LiveState {
   };
   processing_fps: number;
   frame: { seq: number; pts: number | null; timings_ms: Record<string, number> } | null;
+  guard: { state: "off" | "ok" | "lost" | "recovering"; scores: number[] } | null;
+  outputs: { mode: OutputMode; workers: Record<string, OutputStatus> };
   rectified_size: [number, number] | null;
   fields: Record<string, FieldState>;
+}
+
+export interface LoggedEvent {
+  wall: string;
+  mono_ns: number;
+  kind: string;
+  field: string;
+  text: string;
+  detail: string;
 }
 
 export class ApiError extends Error {
@@ -70,6 +108,13 @@ async function json<T>(response: Response): Promise<T> {
   return (await response.json()) as T;
 }
 
+const post = (url: string, body?: unknown) =>
+  fetch(url, {
+    method: "POST",
+    headers: body === undefined ? undefined : { "Content-Type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+
 export const api = {
   getProfile: () => fetch("/api/profile").then((r) => json<Profile>(r)),
   putProfile: (profile: Profile) =>
@@ -79,8 +124,15 @@ export const api = {
       body: JSON.stringify(profile),
     }).then((r) => json<Profile>(r)),
   getState: () => fetch("/api/state").then((r) => json<LiveState>(r)),
-  frameUrl: (view: "source" | "rectified", tick: number) =>
-    `/api/frame.jpg?view=${view}&max_width=960&t=${tick}`,
+  getEvents: (limit = 50) => fetch(`/api/events?limit=${limit}`).then((r) => json<LoggedEvent[]>(r)),
+  getXml: () => fetch("/data/values.xml").then((r) => r.text()),
+  hold: (id: string, text: string) => post(`/api/fields/${encodeURIComponent(id)}/hold`, { text }).then(json),
+  release: (id: string) => post(`/api/fields/${encodeURIComponent(id)}/release`).then(json),
+  clearValues: () => post("/api/values/clear").then(json),
+  output: (action: "pause" | "live" | "test" | "test-clear") => post(`/api/output/${action}`).then(json),
+  addAnchor: (roi: Roi) => post("/api/anchors", { roi }).then((r) => json<Profile>(r)),
+  deleteAnchor: (i: number) => fetch(`/api/anchors/${i}`, { method: "DELETE" }).then((r) => json<Profile>(r)),
+  frameUrl: (view: "source" | "rectified", tick: number) => `/api/frame.jpg?view=${view}&max_width=960&t=${tick}`,
   cropUrl: (id: string, tick: number) => `/api/crop/${encodeURIComponent(id)}.png?t=${tick}`,
 };
 
@@ -106,4 +158,9 @@ export function nextFieldId(fields: FieldConfig[], base = "field"): string {
   let i = 1;
   while (ids.has(`${base}${i}`)) i++;
   return `${base}${i}`;
+}
+
+export function errorText(e: unknown): string {
+  if (e instanceof ApiError) return typeof e.detail === "string" ? e.detail : JSON.stringify(e.detail);
+  return String(e);
 }

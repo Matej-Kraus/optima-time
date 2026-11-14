@@ -38,6 +38,7 @@ from optima_time.fields.models import (
     PeriodField,
     Roi,
 )
+from tools.synth.anchors import add_anchors
 from tools.synth.board import (
     BOXES,
     COLS,
@@ -185,6 +186,7 @@ def main() -> int:
     save_profile(
         make_profile(cam, args.out / "match.mp4", args.interlaced), args.out / "profile.json"
     )
+    add_anchors(args.out)  # captions as layout-guard anchors, from the first frame
     meta = vars(args) | {"out": str(args.out), "fields": FIELDS, "seconds": tl.tenths / 10}
     (args.out / "meta.json").write_text(json.dumps(meta, indent=1), encoding="utf-8")
     print("done")

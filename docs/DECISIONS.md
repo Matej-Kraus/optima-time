@@ -2,6 +2,23 @@
 
 Formát: datum, co, proč, jaké byly alternativy. Novější nahoře. Položky označené **předpoklad** platí, dokud je Matěj nepotvrdí nebo nevyvrátí.
 
+## 2026-11-14 – Milník 2
+
+### D17. Kotvy: práh korelace 0,8
+Dobré snímky dávaly skóre ≥ 0,96 (expozice 0,5–1,4×, posun ±8 px), náhodné animace ≤ 0,63. Původní návrh 0,6 propustil animaci se skóre 0,62. Nastavitelné v profilu, ověřit na reálné tabuli (moiré).
+
+### D18. Po startu se navazuje na hodnoty v XML souboru
+`BoardState` při startu převezme hodnoty, které v souboru zůstaly, a celý stav zapíše až s nimi. Jinak by se po restartu do grafiky na chvíli dostaly prázdné hodnoty. Logika polí je přesto bere jako „zatím nepotvrzené“, takže první čtení projde pomalejším potvrzením.
+
+### D19. Hodiny po mezeře ve čtení smí „dohnat“ uplynulý čas
+Když se pole nějakou dobu nečetlo (kotvy, zakrytí, nečitelné snímky), běžící hodiny se mezitím mohly posunout nejvýš o uplynulý čas, a to ve směru počítání. Takový posun je očekávaná změna, ale potvrzují ho 2 čtení. Bez toho se po každé animaci gólu čekalo 400 ms a ztrácely se změny. Pravidlo platí jen při známém směru počítání.
+
+### D20. Logika hodnot dostává čas zvenku
+`BoardState.update(..., now_ns)`: živě je to čas příchodu snímku, v `tools/eval` čas ve videu. Vyhodnocení totiž běží rychleji než reálný čas, takže s hodinami počítače by pravidla „400 ms“ a „2 s“ měřila nesmysl.
+
+### D21. Metrika „špatně publikováno“
+Špatně je hodnota, která na tabuli neplatila během poslední 1 s, není skutečnou hodnotou za zakrytím a není to „zatím nic“ při startu. Zpoždění se měří zvlášť (zachycené změny, zpoždění p95).
+
 ## 2026-11-14 – Milník 1
 
 ### D11. Oprava oddělovače: nejednoznačné čtení bez poslední hodnoty se zahodí

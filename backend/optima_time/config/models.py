@@ -7,7 +7,7 @@ from typing import Literal
 
 from pydantic import Field, model_validator
 
-from optima_time.fields.models import FieldConfig, Model, check_unique_ids
+from optima_time.fields.models import FieldConfig, Model, Roi, check_unique_ids
 
 SCHEMA_VERSION = 1
 
@@ -43,12 +43,42 @@ class GeometryConfig(Model):
         return self
 
 
+class AnchorConfig(Model):
+    roi: Roi  # relative to the rectified board
+    template: str = ""  # base64 PNG captured from a frame (guard.capture_template)
+
+
+class GuardConfig(Model):
+    anchors: list[AnchorConfig] = Field(default_factory=list, max_length=3)
+    threshold: float = Field(default=0.8, ge=0, le=1)  # normalized correlation (DECISIONS D17)
+    recover_frames: int = Field(default=5, ge=1, le=250)
+    search_margin: float = Field(default=0.3, ge=0, le=2)  # x anchor height, for vibration
+
+
+class NewLine(StrEnum):
+    CRLF = "crlf"
+    LF = "lf"
+
+
+class XmlFileOutput(Model):
+    enabled: bool = True
+    path: str = ""
+    newline: NewLine = NewLine.CRLF
+    clear_on_exit: bool = False  # else the last values stay in the file
+
+
+class OutputsConfig(Model):
+    xml_file: XmlFileOutput = XmlFileOutput()
+
+
 class Profile(Model):
     schema_version: Literal[1] = SCHEMA_VERSION
     name: str = "profil"
     source: SourceConfig = SourceConfig()
     geometry: GeometryConfig = GeometryConfig()
     fields: list[FieldConfig] = Field(default_factory=list)
+    guard: GuardConfig = GuardConfig()
+    outputs: OutputsConfig = OutputsConfig()
 
     @model_validator(mode="after")
     def _unique(self) -> Profile:

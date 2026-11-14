@@ -3,8 +3,9 @@
 Ground truth (truth.jsonl): one line per change of a field's board text or visibility:
   {"frame": 120, "t": 4.8, "field": "Time", "value": "01:10", "visible": true}
 
-Naive publishing (the Milestone 1 baseline, no confirmation yet): a field publishes its latest
-VALID reading and holds it; a "clear" field publishes "" after blank_delay_ms of blank reads.
+Publishing: normally the values the app itself published (BoardState: confirmation,
+plausibility, layout guard). The naive baseline (--naive, Milestone 1) publishes the latest VALID
+reading and holds it; a "clear" field publishes "" after blank_delay_ms of blank reads.
 
 A published value is wrong when it is neither the current truth nor, within STALE_WINDOW_S of a
 change, the previous truth value (publishing late is not wrong, publishing nonsense is). While a
@@ -56,15 +57,19 @@ def load_truth(path: Path) -> dict[str, TruthTrack]:
     return tracks
 
 
+NAIVE = object()  # Observation.published when the naive publishing should be simulated
+
+
 @dataclass
 class Observation:
     """What the pipeline produced for one field in one frame."""
 
     frame: int
-    status: ReadStatus
+    status: ReadStatus | None  # None: not read (the layout guard said the board shows else)
     text: str  # raw OCR text ("" when skipped)
     confidence: float
     key: object | None  # comparable value key when VALID
+    published: object = NAIVE  # key of the value the app published after this frame
 
 
 def key_of(f: AnyField, text: str) -> object | None:
@@ -84,6 +89,7 @@ class FieldMetrics:
     lit_invalid: int = 0
     lit_low_conf: int = 0
     lit_blank: int = 0
+    lit_skipped: int = 0  # visible, but the layout guard skipped the frame (false alarm)
     unlit: int = 0  # visible crops with the field dark
     unlit_read_as_value: int = 0
     changes: int = 0
@@ -106,6 +112,7 @@ class FieldMetrics:
             "invalid": self.lit_invalid,
             "low_conf": self.lit_low_conf,
             "blank": self.lit_blank,
+            "skipped_by_guard": self.lit_skipped,
             "unlit_crops": self.unlit,
             "unlit_read_as_value": self.unlit_read_as_value,
             "changes": self.changes,
@@ -131,15 +138,18 @@ def evaluate_field(
     blank_frames = max(1, round(f.blank_delay_ms / 1000 * fps))
     stale_frames = round(STALE_WINDOW_S * fps)
     last_visible: tuple[object | None, int] | None = None  # (key, since frame)
-    prev_visible_key: object | None = None
+    recent: list[tuple[object | None, int]] = []  # earlier visible values and when they ended
     published_trace: list[object | None] = []
+    published_any = False
     wrong_now = False
 
     for o in obs:
         text, visible = truth.at(o.frame)
         tkey = key_of(f, text)
         # 1) engine accuracy on visible crops
-        if visible:
+        if visible and o.status is None:
+            m.lit_skipped += 1
+        elif visible:
             if text:
                 m.lit += 1
                 if o.status is ReadStatus.VALID and o.key == tkey:
@@ -159,7 +169,7 @@ def evaluate_field(
                             {
                                 "frame": o.frame,
                                 "truth": text,
-                                "status": o.status.value,
+                                "status": o.status.value if o.status else "skipped",
                                 "read": o.text,
                                 "conf": round(o.confidence, 3),
                             }
@@ -169,27 +179,30 @@ def evaluate_field(
                 if o.status is ReadStatus.VALID:
                     m.unlit_read_as_value += 1
             if last_visible is None or last_visible[0] != tkey:
-                prev_visible_key = last_visible[0] if last_visible else None
+                if last_visible is not None:
+                    recent.append((last_visible[0], o.frame))
                 last_visible = (tkey, o.frame)
-        # 2) naive publishing
-        if o.status is ReadStatus.VALID:
+            recent = [(k, end) for k, end in recent if o.frame - end <= stale_frames]
+        # 2) publishing: the app's (o.published) or the naive baseline
+        if o.published is not NAIVE:
+            published = o.published
+        elif o.status is ReadStatus.VALID:
             published, blank_since = o.key, None
         elif o.status is ReadStatus.BLANK:
             blank_since = o.frame if blank_since is None else blank_since
             if f.blank is BlankPolicy.CLEAR and o.frame - blank_since + 1 >= blank_frames:
                 published = None
-        else:
+        elif o.status is not None:
             blank_since = None
         published_trace.append(published)
-        # expected: last visible truth, or the one before it shortly after a change
-        cur, since = last_visible if last_visible else (None, o.frame)
-        ok = (
-            published == cur
-            or published == tkey  # the real board value, even if hidden from the camera
-            or (published == prev_visible_key and o.frame - since <= stale_frames)
-        )
-        if not last_visible:
-            ok = True  # nothing seen yet
+        # right: the last visible truth, the real board value (even hidden from the camera),
+        # or a value the board showed within the last STALE_WINDOW_S (late, not wrong)
+        cur = last_visible[0] if last_visible else None
+        ok = published in (cur, tkey) or any(published == k for k, _ in recent)
+        if published is not None:
+            published_any = True
+        if not last_visible or (published is None and not published_any):
+            ok = True  # nothing seen yet, or the app hasn't published its first value yet
         if not ok:
             m.wrong_published_frames += 1
             if not wrong_now:

@@ -106,3 +106,37 @@ Na základě B1 a B2 zvolím výchozí výstup (soubor, nebo HTTP) a zapíšu to
 - `fps_actual` by měla odpovídat 25 nebo 50.
 - `combing`: kolem 0,5 je čistý progresivní obraz, nad 1 je obraz roztřepený prokladem.
 - `process_cpu_percent_of_one_core`: kolik stojí samotný příjem.
+
+---
+
+## M2-A: záznam → XML → titulek ve vMixu (asi 40 minut)
+
+**Proč:** ověřit celý řetězec na skutečném vMixu: zápis souboru, čtení Data Source, mapování sloupců a 30 minut bez chyby a bez probliknutí (SPEC 15.6).
+
+1. Připrav na Windows syntetický zápas a spusť aplikaci (nebo použij reálný záznam, pokud už je):
+   ```powershell
+   uv run python scripts/fetch_models.py
+   cd frontend; npm ci; npm run build; cd ..
+   uv run python -m tools.synth --out samples/synth/default
+   uv run optima-time run --profile samples/synth/default/profile.json
+   ```
+2. V UI v panelu „Výstup pro vMix“ nastav cestu, třeba `C:\vmix-data\optima.xml`. Nepoužívej produkční soubor.
+3. Ve vMixu přidej XML Data Source na ten soubor (XPath `/root`, interval 100 ms) a namapuj sloupce `Time`, `scoreh`, `scorea`, `period`, `penaltyh1` na kopii titulku.
+4. Zkus tlačítka: „Zapsat testovací data“ (titulek ukáže náhodné hodnoty), „Vyprázdnit (test)“, „Zpět na živé hodnoty“, „Pauza výstupu“ (titulek zamrzne), ruční „Držet“ u skóre.
+5. Nech běžet 30 minut. Záznam se přehrává ve smyčce.
+6. Sleduj:
+   - Hlásí vMix chybu?
+   - Problikne prázdná hodnota u `Time` nebo skóre?
+   - Ukazuje semafor v UI žlutou nebo červenou u „Zápis XML“?
+7. Totéž zkus s HTTP adresou `http://127.0.0.1:8787/data/values.xml` místo souboru.
+8. Pošli: poznámky, snímky obrazovky a soubory `events-*.jsonl` z `%APPDATA%\OptimaTime\logs`.
+
+## M2-B: simulátor čtenáře proti skutečným zámkům Windows (asi 10 minut)
+
+**Proč:** na Macu se kolize zámků jen emulují. Na Windows je udělá skutečný systém.
+
+```powershell
+uv run python -m tools.xml_reader_sim --with-writer --minutes 5 --hold 30
+```
+
+Bez `--emulate-lock`: zámky dělá Windows sám. Výsledek musí být `"result": "OK"`. Zajímají mě i hodnoty `max_write_ms` a `slow_writes`. Pošli celý výpis JSON.

@@ -23,7 +23,8 @@ import cv2
 from optima_time.config.store import load_profile
 from optima_time.pipeline import Pipeline
 from optima_time.sources.file import FileSource
-from tools.eval.metrics import Observation, evaluate_field, key_of, load_truth
+from optima_time.state import BoardState
+from tools.eval.metrics import NAIVE, Observation, evaluate_field, key_of, load_truth
 
 
 def main() -> int:
@@ -38,6 +39,12 @@ def main() -> int:
     parser.add_argument("--threads", type=int, default=2)
     parser.add_argument("--seconds", type=float, help="evaluate only the first N seconds")
     parser.add_argument("--dump-errors", type=Path, help="save crops of misread frames here")
+    parser.add_argument(
+        "--naive",
+        action="store_true",
+        help="naive publishing (Milestone 1 baseline) instead of the app's logic",
+    )
+    parser.add_argument("--no-guard", action="store_true", help="ignore the layout anchors")
     args = parser.parse_args()
 
     folder = args.recording if args.recording.is_dir() else args.recording.parent
@@ -49,12 +56,16 @@ def main() -> int:
             f.engine.model = args.model
         if args.min_width:
             f.engine.min_width = args.min_width
+    if args.no_guard:
+        profile.guard.anchors = []
     model = profile.fields[0].engine.model if profile.fields else "?"
     min_width = profile.fields[0].engine.min_width if profile.fields else 0
     truth = load_truth(truth_path)
-    fields = {f.id: f for f in profile.fields}
+    fields = {f.id: f for f in profile.fields if f.enabled}
 
     pipeline = Pipeline(profile, threads=args.threads, keep_crops=bool(args.dump_errors))
+    state = BoardState(profile)
+    guard_lost = 0
     obs: dict[str, list[Observation]] = {f.id: [] for f in profile.fields}
     totals, ocr_ms = [], []
     dumped = 0
@@ -68,22 +79,28 @@ def main() -> int:
                 break
             result = pipeline.process(frame)
             totals.append(result.timings_ms["total"])
-            ocr_ms.append(result.timings_ms["ocr"])
-            for fid, r in result.fields.items():
-                reading = r.reading
+            ocr_ms.append(result.timings_ms.get("ocr", 0.0))
+            guard_lost += not result.guard.ok
+            now_ns = round((frame.pts or index / fps) * 1e9)  # media time: eval runs faster
+            state.update(result, result.guard, True, now_ns)
+            published = state.values()
+            for fid, f in fields.items():
+                r = result.fields.get(fid)
+                reading = r.reading if r else None
                 obs[fid].append(
                     Observation(
                         index,
-                        r.status,
+                        r.status if r else None,
                         reading.text if reading else "",
                         reading.confidence if reading else 0.0,
-                        r.value.key if r.value is not None else None,
+                        r.value.key if r and r.value is not None else None,
+                        NAIVE if args.naive else key_of(f, published.get(fid, "")),
                     )
                 )
-                if args.dump_errors and r.crop is not None and dumped < 300 and fid in truth:
+                if args.dump_errors and r and r.crop is not None and dumped < 300 and fid in truth:
                     text, visible = truth[fid].at(index)
                     got = r.value.key if r.value is not None else None
-                    if visible and got != key_of(fields[fid], text):
+                    if visible and got != key_of(f, text):
                         read = reading.text if reading else "gate"
                         name = f"{index:06d}_{fid}_truth-{text or 'blank'}_read-{read or 'none'}"
                         args.dump_errors.mkdir(parents=True, exist_ok=True)
@@ -127,16 +144,21 @@ def main() -> int:
         f"\ntime per frame: median {timing['frame_ms_median']} ms, "
         f"p95 {timing['frame_ms_p95']} ms "
         f"(OCR median {timing['ocr_ms_median']} ms); every field read on every frame "
-        f"(change detection comes in Milestone 3)"
+        "(change detection comes in Milestone 3)"
     )
     total_wrong = sum(s["wrong_published"] for s, _ in rows)
-    print(f"WRONG PUBLISHED VALUES (naive publishing, no confirmation): {total_wrong}")
+    mode = "naive publishing" if args.naive else "app logic"
+    guard_info = "off" if not profile.guard.anchors else f"{guard_lost} frames lost"
+    print(f"layout guard: {guard_info}")
+    print(f"WRONG PUBLISHED VALUES ({mode}): {total_wrong}")
 
     report = {
         "video": str(video),
         "model": model,
         "min_width": min_width,
         "threads": args.threads,
+        "publishing": mode,
+        "guard_lost_frames": guard_lost if profile.guard.anchors else None,
         "machine": f"{platform.system()} {platform.machine()}",
         "frames": len(totals),
         "timing": timing,
@@ -144,7 +166,8 @@ def main() -> int:
         "fields": [s for s, _ in rows],
         "examples": {s["field"]: ex for s, ex in rows},
     }
-    out = truth_path.parent / f"eval_{model}_{min_width}.json"
+    suffix = "_naive" if args.naive else ""
+    out = truth_path.parent / f"eval_{model}_{min_width}{suffix}.json"
     out.write_text(json.dumps(report, indent=1, ensure_ascii=False), encoding="utf-8")
     print(f"report: {out}")
     return 0

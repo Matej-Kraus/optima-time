@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   api,
-  ApiError,
+  errorText,
   FIELD_ID_PATTERN,
   nextFieldId,
   rectFromPoints,
@@ -11,11 +11,17 @@ import {
   type Point,
   type Profile,
 } from "./api";
+import { EventLog } from "./components/EventLog";
+import { FieldEditor } from "./components/FieldEditor";
+import { FieldsTable } from "./components/FieldsTable";
+import { OutputPanel } from "./components/OutputPanel";
 import { Overlay } from "./components/Overlay";
+import { StatusBar } from "./components/StatusBar";
 import { usePoll, useTick } from "./hooks";
 import { cs } from "./i18n/cs";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
+type DrawMode = "none" | "field" | "anchor";
 
 const DEFAULTS: Record<FieldType, Partial<FieldConfig>> = {
   clock: { tenths: false, style: "as_is" },
@@ -23,14 +29,25 @@ const DEFAULTS: Record<FieldType, Partial<FieldConfig>> = {
   period: {},
 };
 
+const LIVE_KEY = "optima-time.live";
+
+function readLiveFlag(): boolean {
+  try {
+    return localStorage.getItem(LIVE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
 export default function App() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
-  const [drawing, setDrawing] = useState(false);
+  const [drawMode, setDrawMode] = useState<DrawMode>("none");
   const [draft, setDraft] = useState<[Point, Point] | null>(null);
   const [dragCorner, setDragCorner] = useState<number | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [liveMode, setLiveMode] = useState(readLiveFlag);
   const tick = useTick(400);
   const getState = useCallback(() => api.getState(), []);
   const live = usePoll<LiveState>(getState, 300);
@@ -40,6 +57,14 @@ export default function App() {
     api.getProfile().then(setProfile);
   }, []);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(LIVE_KEY, liveMode ? "1" : "0");
+    } catch {
+      // a preference only
+    }
+  }, [liveMode]);
+
   const save = useCallback((next: Profile) => {
     setProfile(next);
     clearTimeout(saveTimer.current);
@@ -48,10 +73,10 @@ export default function App() {
       try {
         setProfile(await api.putProfile(next));
         setSaveState("saved");
-        setSaveError(null);
+        setError(null);
       } catch (e) {
         setSaveState("error");
-        setSaveError(e instanceof ApiError ? JSON.stringify(e.detail) : String(e));
+        setError(errorText(e));
       }
     }, 250);
   }, []);
@@ -61,6 +86,7 @@ export default function App() {
   const hasFrame = live?.frame != null;
   const corners = profile.geometry.corners;
   const field = profile.fields.find((f) => f.id === selected) ?? null;
+  const locked = liveMode;
 
   const setCorner = (i: number, p: Point, persist: boolean) => {
     const next = structuredClone(profile);
@@ -86,12 +112,22 @@ export default function App() {
     save(next);
   };
 
-  const finishDraft = () => {
+  const finishDraft = async () => {
     if (!draft) return;
     const roi = rectFromPoints(draft[0], draft[1]);
+    const mode = drawMode;
     setDraft(null);
-    setDrawing(false);
+    setDrawMode("none");
     if (roi.w < 0.01 || roi.h < 0.01) return;
+    if (mode === "anchor") {
+      try {
+        setProfile(await api.addAnchor(roi));
+        setError(null);
+      } catch (e) {
+        setError(errorText(e));
+      }
+      return;
+    }
     const id = nextFieldId(profile.fields);
     const next = structuredClone(profile);
     next.fields.push({ id, label: "", type: "number", roi, enabled: true, ...DEFAULTS.number } as FieldConfig);
@@ -105,105 +141,42 @@ export default function App() {
     return null;
   };
 
+  const toggleDraw = (mode: DrawMode) => setDrawMode((m) => (m === mode ? "none" : mode));
+
   return (
-    <main className="app">
+    <main className={`app ${liveMode ? "live" : ""}`}>
       <header>
         <h1>{cs.appName}</h1>
         <StatusBar live={live} />
+        <label className="live-toggle" title={cs.liveModeHint}>
+          <input
+            type="checkbox"
+            checked={liveMode}
+            onChange={(e) => {
+              setLiveMode(e.target.checked);
+              if (e.target.checked) setDrawMode("none");
+            }}
+          />
+          {cs.liveMode}
+        </label>
         <span className={`save ${saveState}`}>
           {saveState === "saving" ? cs.saving : saveState === "saved" ? cs.saved : saveState === "error" ? cs.saveError : ""}
         </span>
       </header>
-      {saveError && <div className="error-bar">{saveError}</div>}
-
-      <div className="panels">
-        <section>
-          <h2>{cs.sourcePanel}</h2>
-          <p className="hint">{cs.sourceHint}</p>
-          <Overlay
-            src={hasFrame ? api.frameUrl("source", tick) : null}
-            emptyText={cs.noFrame}
-            onPointerMove={(p) => dragCorner !== null && setCorner(dragCorner, p, false)}
-            onPointerUp={(p) => {
-              if (dragCorner !== null) setCorner(dragCorner, p, true);
-              setDragCorner(null);
-            }}
-          >
-            <polygon className="board-outline" points={corners.map((c) => c.join(",")).join(" ")} />
-            {corners.map((c, i) => (
-              <circle
-                key={i}
-                className="handle"
-                cx={c[0]}
-                cy={c[1]}
-                r={0.012}
-                onPointerDown={() => setDragCorner(i)}
-              />
-            ))}
-          </Overlay>
-        </section>
-
-        <section>
-          <h2>{cs.boardPanel}</h2>
-          <p className="hint">{cs.boardHint}</p>
-          <div className="toolbar">
-            <button onClick={() => setDrawing((d) => !d)} className={drawing ? "active" : undefined}>
-              {drawing ? cs.cancelAdd : cs.addField}
-            </button>
-          </div>
-          <Overlay
-            src={hasFrame ? api.frameUrl("rectified", tick) : null}
-            emptyText={cs.noFrame}
-            crosshair={drawing}
-            onPointerDown={(p) => drawing && setDraft([p, p])}
-            onPointerMove={(p) => draft && setDraft([draft[0], p])}
-            onPointerUp={finishDraft}
-          >
-            {profile.fields.map((f) => (
-              <rect
-                key={f.id}
-                className={`field-rect ${f.id === selected ? "selected" : ""} ${live?.fields[f.id]?.status ?? ""}`}
-                x={f.roi.x}
-                y={f.roi.y}
-                width={f.roi.w}
-                height={f.roi.h}
-                onPointerDown={(e) => {
-                  if (!drawing) {
-                    e.stopPropagation();
-                    setSelected(f.id);
-                  }
-                }}
-              />
-            ))}
-            {draft && <rect className="field-rect draft" {...toSvgRect(draft)} />}
-          </Overlay>
-        </section>
-      </div>
+      {error && <div className="error-bar">{error}</div>}
 
       <section>
         <h2>{cs.fieldsPanel}</h2>
         <div className="fields">
-          <table>
-            <tbody>
-              {profile.fields.map((f) => {
-                const s = live?.fields[f.id];
-                return (
-                  <tr key={f.id} className={f.id === selected ? "selected" : ""} onClick={() => setSelected(f.id)}>
-                    <td className="fid">{f.id}</td>
-                    <td className="value">{s?.text ?? "—"}</td>
-                    <td className={`status ${s?.status ?? ""}`}>{s ? cs.status[s.status] : ""}</td>
-                    <td className="meta">
-                      {cs.raw}: {s?.raw ?? "—"} · {cs.confidence}: {s?.confidence ?? "—"} · {cs.contrast}:{" "}
-                      {s?.contrast ?? "—"}
-                    </td>
-                    <td>{hasFrame && <img className="crop" src={api.cropUrl(f.id, tick)} alt="" />}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-
-          {field && (
+          <FieldsTable
+            fields={profile.fields}
+            live={live}
+            selected={selected}
+            onSelect={setSelected}
+            tick={tick}
+            showCrops={hasFrame && !liveMode}
+          />
+          {field && !locked && (
             <FieldEditor
               key={field.id}
               field={field}
@@ -220,6 +193,113 @@ export default function App() {
           )}
         </div>
       </section>
+
+      <div className="panels">
+        <section>
+          <h2>{cs.outputPanel}</h2>
+          <OutputPanel
+            key={profile.outputs.xml_file.path}
+            profile={profile}
+            live={live}
+            locked={locked}
+            onProfile={save}
+          />
+        </section>
+        <section>
+          <h2>{cs.eventsPanel}</h2>
+          <EventLog />
+        </section>
+      </div>
+
+      <div className="panels">
+        <section>
+          <h2>{cs.sourcePanel}</h2>
+          {!locked && <p className="hint">{cs.sourceHint}</p>}
+          <Overlay
+            src={hasFrame ? api.frameUrl("source", tick) : null}
+            emptyText={cs.noFrame}
+            onPointerMove={(p) => dragCorner !== null && setCorner(dragCorner, p, false)}
+            onPointerUp={(p) => {
+              if (dragCorner !== null) setCorner(dragCorner, p, true);
+              setDragCorner(null);
+            }}
+          >
+            <polygon className="board-outline" points={corners.map((c) => c.join(",")).join(" ")} />
+            {!locked &&
+              corners.map((c, i) => (
+                <circle key={i} className="handle" cx={c[0]} cy={c[1]} r={0.012} onPointerDown={() => setDragCorner(i)} />
+              ))}
+          </Overlay>
+        </section>
+
+        <section>
+          <h2>{cs.boardPanel}</h2>
+          {!locked && (
+            <>
+              <p className="hint">{cs.boardHint}</p>
+              <div className="toolbar">
+                <button onClick={() => toggleDraw("field")} className={drawMode === "field" ? "active" : undefined}>
+                  {drawMode === "field" ? cs.cancelDraw : cs.addField}
+                </button>
+                <button onClick={() => toggleDraw("anchor")} className={drawMode === "anchor" ? "active" : undefined}>
+                  {drawMode === "anchor" ? cs.cancelDraw : cs.addAnchor}
+                </button>
+                {profile.guard.anchors.map((_, i) => (
+                  <button
+                    key={i}
+                    className="danger"
+                    onClick={async () => {
+                      try {
+                        setProfile(await api.deleteAnchor(i));
+                      } catch (e) {
+                        setError(errorText(e));
+                      }
+                    }}
+                  >
+                    {cs.deleteAnchor} {i + 1}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+          <Overlay
+            src={hasFrame ? api.frameUrl("rectified", tick) : null}
+            emptyText={cs.noFrame}
+            crosshair={drawMode !== "none"}
+            onPointerDown={(p) => drawMode !== "none" && setDraft([p, p])}
+            onPointerMove={(p) => draft && setDraft([draft[0], p])}
+            onPointerUp={finishDraft}
+          >
+            {profile.guard.anchors.map((a, i) => (
+              <g key={`a${i}`}>
+                <rect className="anchor-rect" x={a.roi.x} y={a.roi.y} width={a.roi.w} height={a.roi.h} />
+              </g>
+            ))}
+            {profile.fields.map((f) => (
+              <rect
+                key={f.id}
+                className={`field-rect ${f.id === selected ? "selected" : ""} ${live?.fields[f.id]?.read_status ?? ""}`}
+                x={f.roi.x}
+                y={f.roi.y}
+                width={f.roi.w}
+                height={f.roi.h}
+                onPointerDown={(e) => {
+                  if (drawMode === "none") {
+                    e.stopPropagation();
+                    setSelected(f.id);
+                  }
+                }}
+              />
+            ))}
+            {draft && <rect className={`field-rect draft ${drawMode}`} {...toSvgRect(draft)} />}
+          </Overlay>
+          {live?.guard && live.guard.state !== "off" && (
+            <p className="hint">
+              {cs.anchor}: {live.guard.state} · {live.guard.scores.join(" · ")}
+            </p>
+          )}
+        </section>
+      </div>
     </main>
   );
 }
@@ -227,107 +307,4 @@ export default function App() {
 function toSvgRect([a, b]: [Point, Point]) {
   const r = rectFromPoints(a, b);
   return { x: r.x, y: r.y, width: r.w, height: r.h };
-}
-
-function StatusBar({ live }: { live: LiveState | null }) {
-  if (!live) return <span className="statusbar">…</span>;
-  const s = live.source;
-  const ok = s.state === "ok";
-  return (
-    <span className="statusbar">
-      <span className={`dot ${ok ? "ok" : "bad"}`} /> {cs.source}: {s.state}
-      {s.width ? ` ${s.width}×${s.height} @ ${s.fps?.toFixed(1)}` : ""}
-      {s.dropped ? ` · ${cs.dropped} ${s.dropped}` : ""} · {cs.processing}: {live.processing_fps} {cs.fps}
-      {live.frame ? ` · ${live.frame.timings_ms.total.toFixed(1)} ms` : ""}
-      {s.error ? ` · ${s.error}` : ""}
-    </span>
-  );
-}
-
-interface EditorProps {
-  field: FieldConfig;
-  idError: (id: string) => string | null;
-  onChange: (patch: Partial<FieldConfig>) => void;
-  onType: (t: FieldType) => void;
-  onDelete: () => void;
-}
-
-function FieldEditor({ field, idError, onChange, onType, onDelete }: EditorProps) {
-  const [id, setId] = useState(field.id);
-  const error = id !== field.id ? idError(id) : null;
-  return (
-    <div className="editor">
-      <label>
-        {cs.id}
-        <input
-          value={id}
-          onChange={(e) => setId(e.target.value)}
-          onBlur={() => !error && id !== field.id && onChange({ id })}
-          className={error ? "invalid" : undefined}
-        />
-        <small>{error ?? cs.idHelp}</small>
-      </label>
-      <label>
-        {cs.label}
-        <input defaultValue={field.label} onBlur={(e) => onChange({ label: e.target.value })} />
-      </label>
-      <label>
-        {cs.type}
-        <select value={field.type} onChange={(e) => onType(e.target.value as FieldType)}>
-          {(Object.keys(cs.types) as FieldType[]).map((t) => (
-            <option key={t} value={t}>
-              {cs.types[t]}
-            </option>
-          ))}
-        </select>
-      </label>
-      {field.type === "clock" && (
-        <>
-          <label className="check">
-            <input type="checkbox" checked={Boolean(field.tenths)} onChange={(e) => onChange({ tenths: e.target.checked })} />
-            {cs.tenths}
-          </label>
-          <label>
-            {cs.style}
-            <select value={String(field.style)} onChange={(e) => onChange({ style: e.target.value })}>
-              {Object.entries(cs.clockStyles).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v}
-                </option>
-              ))}
-            </select>
-          </label>
-        </>
-      )}
-      {field.type === "number" && (
-        <label>
-          {cs.style}
-          <select value={String(field.style)} onChange={(e) => onChange({ style: e.target.value })}>
-            {Object.entries(cs.numberStyles).map(([k, v]) => (
-              <option key={k} value={k}>
-                {v}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
-      <label>
-        {cs.blank}
-        <select value={String(field.blank ?? "hold")} onChange={(e) => onChange({ blank: e.target.value })}>
-          {Object.entries(cs.blankPolicies).map(([k, v]) => (
-            <option key={k} value={k}>
-              {v}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="check">
-        <input type="checkbox" checked={field.enabled} onChange={(e) => onChange({ enabled: e.target.checked })} />
-        {cs.enabled}
-      </label>
-      <button className="danger" onClick={onDelete}>
-        {cs.deleteField}
-      </button>
-    </div>
-  );
 }

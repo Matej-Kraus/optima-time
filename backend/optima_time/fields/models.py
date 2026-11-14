@@ -91,6 +91,12 @@ class ClockField(FieldBase):
     max_minutes: int = Field(default=999, ge=1, le=999)
     style: ClockStyle = ClockStyle.AS_IS
     direction: Direction = Direction.AUTO
+    # confirmation (SPEC 11.4)
+    max_step_ms: int = Field(default=1000, ge=100, le=10_000)  # one tick at most
+    fast_min_confidence: float = Field(default=0.8, ge=0, le=1)  # a tick below it needs 2 reads
+    unexpected_reads: int = Field(default=3, ge=1, le=50)
+    unexpected_ms: int = Field(default=400, ge=0, le=10_000)
+    appear_reads: int = Field(default=2, ge=1, le=50)  # a value after a blank (penalty starts)
 
     def spec(self) -> ClockSpec:
         return ClockSpec(tenths=self.tenths, max_minutes=self.max_minutes, style=self.style)
@@ -111,6 +117,10 @@ class NumberField(FieldBase):
     min_digits: int = Field(default=1, ge=1, le=6)
     max_digits: int = Field(default=2, ge=1, le=6)
     style: NumberStyle = NumberStyle.STRIP_ZEROS
+    # confirmation (SPEC 11.4): +1 after increment_reads equal reads; anything else must hold
+    increment_reads: int = Field(default=2, ge=1, le=50)
+    unexpected_ms: int = Field(default=2000, ge=0, le=60_000)
+    initial_reads: int = Field(default=3, ge=1, le=50)
 
     @model_validator(mode="after")
     def _digits(self) -> NumberField:
@@ -137,6 +147,9 @@ class PeriodField(FieldBase):
     min_value: int = Field(default=1, ge=0, le=9)
     max_value: int = Field(default=4, ge=0, le=9)
     names: dict[int, str] = Field(default_factory=dict)
+    increment_reads: int = Field(default=3, ge=1, le=50)
+    unexpected_ms: int = Field(default=3000, ge=0, le=60_000)
+    initial_reads: int = Field(default=3, ge=1, le=50)
 
     def spec(self) -> PeriodSpec:
         return PeriodSpec(self.min_value, self.max_value, tuple(sorted(self.names.items())))

@@ -4,6 +4,7 @@ from tools.eval.metrics import Observation, TruthTrack, evaluate_field
 
 ROI = Roi(x=0, y=0, w=1, h=1)
 SCORE = NumberField(id="scoreh", roi=ROI)
+SCORE_WIDE = NumberField(id="scoreh", roi=ROI, max_digits=2)
 FPS = 10.0
 
 
@@ -87,4 +88,25 @@ def test_clear_policy_publishes_blank_after_delay() -> None:
 def test_reading_the_real_value_behind_an_occlusion_is_not_wrong() -> None:
     truth = track((0, "1", True), (3, "1", False), (4, "2", False), (6, "2", True))
     readings = [obs(0, 1), obs(1, 1), obs(2, 1), obs(3, 1), obs(4, 2), obs(5, 2), obs(6, 2)]
+    assert evaluate_field(SCORE, truth, readings, FPS).summary()["wrong_published"] == 0
+
+
+def test_late_by_two_quick_changes_is_not_wrong() -> None:
+    # a penalty slot: 0:01 -> 0:21 (next penalty moves up) -> 0:20 within 3 frames
+    truth = track((0, "1", True), (3, "21", True), (4, "20", True))
+    readings = [obs(i, 1) for i in range(6)] + [obs(i, 20) for i in range(6, 9)]
+    s = evaluate_field(SCORE_WIDE, truth, readings, FPS).summary()
+    assert s["wrong_published"] == 0
+
+
+def test_long_stale_value_is_wrong() -> None:
+    truth = track((0, "1", True), (3, "2", True))
+    readings = [obs(i, 1) for i in range(20)]  # 1.7 s after the change at 10 fps
+    assert evaluate_field(SCORE, truth, readings, FPS).summary()["wrong_published"] == 1
+
+
+def test_nothing_published_yet_at_start_is_not_wrong() -> None:
+    truth = track((0, "3", True))
+    readings = [Observation(i, ReadStatus.VALID, "3", 0.9, 3, None) for i in range(3)]
+    readings += [Observation(i, ReadStatus.VALID, "3", 0.9, 3, 3) for i in range(3, 6)]
     assert evaluate_field(SCORE, truth, readings, FPS).summary()["wrong_published"] == 0

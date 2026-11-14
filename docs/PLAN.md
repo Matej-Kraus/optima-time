@@ -2,7 +2,7 @@
 
 Projekt **optima-time**. Python balíček `optima_time`, příkaz `optima-time`, konfigurace v `%APPDATA%\OptimaTime\`. Zadání je v `docs/SPEC.md` (v1.2).
 
-Stav: Milník 0 schválen a proveden 13. 11. 2026 (`docs/M0_REPORT.md`). Milník 1 schválen 13. 11. a proveden 14. 11. 2026 (`docs/M1_REPORT.md`). Ruční testy M0-A/B/C a reálný záznam čekají. **Milník 1 čeká na převzetí.**
+Stav: Milník 0 (13. 11.), 1 a 2 (14. 11. 2026) jsou hotové, viz `docs/M0_REPORT.md`, `M1_REPORT.md`, `M2_REPORT.md`. Reálná data a ruční testy dodá Matěj na konci; milníky 3–5 pokračují bez nich.
 
 ## 1. Shrnutí odpovědí
 
@@ -152,3 +152,32 @@ Pokud reálný záznam do konce Milníku 1 nedorazí, odevzdám milník jen se s
 - Port UI 8787.
 
 S rozhodnutími v sekci 7.1 zadání zatím souhlasím. Případné výhrady vyplynou z ověření v 0.2.
+
+## 6. Milník 2 – logika hodnot a XML (plán 14. 11. 2026)
+
+Matěj dodá reálná data a ruční testy až na konci, proto milníky 2–5 pokračují bez nich. Všechno, co nejde ověřit, jde do `MANUAL_TESTS.md`.
+
+### 6.1 Soubory
+
+```text
+backend/optima_time/
+  fields/plausibility.py  druh změny (stejná / očekávaná / neočekávaná / objevení) a co je pro přijetí potřeba (SPEC 11.4)
+  fields/confirm.py       FieldLogic: kandidát, potvrzení v čase, politika prázdné hodnoty (11.5), ruční hold (11.6)
+  guard.py                kotvy rozložení: šablona, normalizovaná korelace, návrat po N shodách (9.4)
+  state.py                stav tabule: publikované hodnoty, stavy polí, události do JSONL (denní log)
+  outputs/xml.py          sestavení XML (stálé pořadí, prázdné prvky, escapování)
+  outputs/base.py         pracovní vlákno výstupu: jen poslední stav, stav zápisu, pauza / test / vyprázdnit
+  outputs/xml_file.py     atomický zápis, opakování při PermissionError, hlášení zápisu delšího než 250 ms
+  api/                    /data/values.xml|json (bez kešování), hold, pauza, testovací data, kotvy, události
+  config/models.py        profil: kotvy, výstupy, pravidla potvrzení po polích
+tools/xml_reader_sim/     čtenář jako vMix (každých 100 ms otevřít, přečíst, zavřít) + kontrola úplnosti
+tools/synth               profil s kotvami (nápisy PERIÓDA, DOMÁCI, HOSTIA) a šablonami z videa
+tools/eval                publikace přes skutečnou logiku (naivní zůstane jako volba)
+frontend/                 hold/uvolnit, pauza výstupu, vyprázdnit, testovací data, kotvy, stav zápisu, log událostí
+```
+
+### 6.2 Hotovo, když
+
+- 0 špatně publikovaných hodnot na syntetickém běžném i těžkém zápase, aspoň 99 % zachycených změn.
+- Simulátor čtenáře: žádné neúplné ani nekompletní XML. Na Windows se ověří ruční test (kolize zámků).
+- Ruční test „záznam → XML → titulek ve vMixu“ je připravený v `MANUAL_TESTS.md`.

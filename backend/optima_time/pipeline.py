@@ -19,6 +19,7 @@ import numpy.typing as npt
 from optima_time.config.models import Profile
 from optima_time.fields.formats import ClockValue, NumberValue
 from optima_time.geometry import Rectifier, crop
+from optima_time.guard import GuardResult, GuardState, LayoutGuard
 from optima_time.preprocess import contrast
 from optima_time.recognizers.base import Crop, Reading, Recognizer
 from optima_time.sources.base import Frame
@@ -52,6 +53,7 @@ class FrameResult:
     done_ns: int
     fields: dict[str, FieldRead]
     timings_ms: dict[str, float] = field(default_factory=dict)
+    guard: GuardResult = field(default_factory=lambda: GuardResult(GuardState.OFF))
 
     @property
     def latency_ms(self) -> float:
@@ -84,6 +86,7 @@ class Pipeline:
         self._recognizers: dict[str, Recognizer] = {}
         self._rectifier: Rectifier | None = None
         self._last_valid: dict[str, Value] = {}
+        self._guard = LayoutGuard(profile.guard)
         self.keep_crops = keep_crops
         self.last_rectified: npt.NDArray[np.uint8] | None = None
 
@@ -97,6 +100,8 @@ class Pipeline:
         with self._lock:
             if profile.geometry != self._profile.geometry:
                 self._rectifier = None
+            if profile.guard != self._profile.guard:
+                self._guard = LayoutGuard(profile.guard)
             self._profile = profile
             ids = {f.id for f in profile.fields}
             self._last_valid = {k: v for k, v in self._last_valid.items() if k in ids}
@@ -120,9 +125,22 @@ class Pipeline:
         h, w = frame.image.shape[:2]
         rectified = self.rectifier_for((w, h)).warp(frame.image)
         self.last_rectified = rectified
+        with self._lock:
+            guard = self._guard.check(rectified)
         t_warp = time.perf_counter_ns()
 
         results: dict[str, FieldRead] = {}
+        if not guard.ok:  # the board shows something else: read nothing (SPEC 9.4)
+            done = time.perf_counter_ns()
+            return FrameResult(
+                frame.seq,
+                frame.pts,
+                frame.t_ns,
+                time.monotonic_ns(),
+                results,
+                {"warp_guard": (t_warp - t0) / 1e6, "total": (done - t0) / 1e6},
+                guard,
+            )
         batches: dict[str, list[tuple[str, Crop]]] = {}
         fields = {f.id: f for f in profile.fields if f.enabled}
         for f in fields.values():
@@ -161,8 +179,9 @@ class Pipeline:
             arrived_ns=frame.t_ns,
             done_ns=time.monotonic_ns(),
             fields=results,
+            guard=guard,
             timings_ms={
-                "warp": (t_warp - t0) / 1e6,
+                "warp_guard": (t_warp - t0) / 1e6,
                 "crop_gate": (t_crop - t_warp) / 1e6,
                 "ocr": (t_ocr - t_crop) / 1e6,
                 "total": (t_ocr - t0) / 1e6,

@@ -1,6 +1,6 @@
-"""Command line (SPEC 14.2). Milestone 1: `run` with a profile and an optional video file.
+"""Command line (SPEC 14.2). `run` with a profile and an optional video file.
 
-optima-time run --profile PATH [--source VIDEO] [--port 8787] [--no-browser]
+optima-time run --profile PATH [--source VIDEO] [--port 8787] [--no-browser] [--log-dir DIR]
 optima-time --version
 """
 
@@ -21,7 +21,7 @@ def run(args: argparse.Namespace) -> int:
 
     from optima_time.api.app import create_app
     from optima_time.config.models import Profile
-    from optima_time.config.store import load_profile, save_profile
+    from optima_time.config.store import app_dir, load_profile, save_profile
     from optima_time.runner import Runner
 
     path: Path = args.profile
@@ -34,7 +34,8 @@ def run(args: argparse.Namespace) -> int:
         )
     if not path.exists():
         save_profile(profile, path)
-    runner = Runner(profile, path, threads=args.threads)
+    log_dir = args.log_dir or app_dir() / "logs"
+    runner = Runner(profile, path, threads=args.threads, log_dir=log_dir)
     runner.start()
     url = f"http://127.0.0.1:{args.port}/"
     print(f"Optima Time {__version__}: {url}  (profil {path})")
@@ -57,6 +58,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--port", type=int, default=8787)
     p.add_argument("--threads", type=int, default=2, help="ONNX Runtime threads")
     p.add_argument("--no-browser", action="store_true")
+    p.add_argument("--log-dir", type=Path, help="event logs (default: app folder/logs)")
     args = parser.parse_args(sys.argv[1:] if argv is None else argv)
 
     if args.version:
