@@ -805,7 +805,42 @@ button.danger {
   stroke-width: 2;
   stroke-dasharray: 5 3;
   vector-effect: non-scaling-stroke;
-  pointer-events: none;
+  cursor: move;
+}
+
+.anchor-rect.selected {
+  stroke-width: 3;
+  stroke-dasharray: none;
+  fill: rgba(240, 179, 65, 0.16);
+}
+
+.field-rect.selected {
+  cursor: move;
+}
+
+.resize-handle {
+  fill: #fff;
+  stroke: #000;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.resize-handle.nw,
+.resize-handle.se {
+  cursor: nwse-resize;
+}
+
+.resize-handle.ne,
+.resize-handle.sw {
+  cursor: nesw-resize;
+}
+
+.notice {
+  background: #1d3340;
+  border-left: 4px solid var(--accent);
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  font-size: 14px;
 }
 
 .magnifier-host {

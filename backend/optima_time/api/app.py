@@ -20,6 +20,8 @@ POST /api/output/pause | /api/output/live
 POST /api/output/test             random valid values to the outputs
 POST /api/output/test-clear       empty values to the outputs
 POST /api/anchors                 {"roi": {...}}: capture an anchor from the current frame
+POST /api/anchors/auto            suggest anchors (static captions away from the fields)
+PUT  /api/anchors/{index}         {"roi": {...}}: move/resize an anchor, recapture its template
 DELETE /api/anchors/{index}
 /                                 the built frontend (frontend/dist)
 
@@ -51,7 +53,7 @@ from optima_time.config.models import AnchorConfig, Profile
 from optima_time.config.store import save_profile
 from optima_time.diagnostics import build_zip
 from optima_time.fields.models import ClockField, NumberField, PeriodField, Roi
-from optima_time.guard import capture_template
+from optima_time.guard import capture_template, history_frame, suggest_anchors
 from optima_time.outputs.base import OutputMode
 from optima_time.outputs.xml import build_xml
 from optima_time.runner import Runner
@@ -423,6 +425,46 @@ def create_app(runner: Runner, static_dir: Path | None = None, pin: str | None =
         if len(profile.guard.anchors) >= 3:
             raise HTTPException(422, "at most 3 anchors")
         profile.guard.anchors.append(AnchorConfig(roi=roi, template=template))
+        runner.update_profile(profile)
+        return profile.model_dump(mode="json")
+
+    @app.post("/api/anchors/auto")
+    def auto_anchors() -> dict[str, Any]:
+        """Find captions that don't change (away from the fields) and use them as anchors,
+        replacing the current ones. Edit or delete them afterwards as needed."""
+        rectified = runner.snapshot().rectified
+        if rectified is None:
+            raise HTTPException(409, "zatím není obraz")
+        profile = runner.profile.model_copy(deep=True)
+        if not profile.fields:
+            raise HTTPException(422, "nejdřív nakresli pole, kotvy se hledají mimo ně")
+        frames = runner.recent_history() or [history_frame(rectified)]
+        anchors = []
+        for roi in suggest_anchors(frames, [f.roi for f in profile.fields]):
+            try:
+                anchors.append(AnchorConfig(roi=roi, template=capture_template(rectified, roi)))
+            except ValueError:
+                continue
+        if not anchors:
+            raise HTTPException(422, "nenašel jsem žádný nápis, který se nemění; označ kotvu ručně")
+        profile.guard.anchors = anchors
+        runner.update_profile(profile)
+        return profile.model_dump(mode="json")
+
+    @app.put("/api/anchors/{index}")
+    def update_anchor(index: int, roi: Annotated[Roi, Body(embed=True)]) -> dict[str, Any]:
+        """Move or resize an anchor; its template is captured again from the current frame."""
+        rectified = runner.snapshot().rectified
+        if rectified is None:
+            raise HTTPException(409, "zatím není obraz")
+        profile = runner.profile.model_copy(deep=True)
+        if not 0 <= index < len(profile.guard.anchors):
+            raise HTTPException(404, "no such anchor")
+        try:
+            template = capture_template(rectified, roi)
+        except ValueError as error:
+            raise HTTPException(422, str(error)) from error
+        profile.guard.anchors[index] = AnchorConfig(roi=roi, template=template)
         runner.update_profile(profile)
         return profile.model_dump(mode="json")
 

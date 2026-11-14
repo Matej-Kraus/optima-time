@@ -119,3 +119,110 @@ class LayoutGuard:
             self._good_in_row = 0
             self.state = GuardState.LOST
         return GuardResult(self.state, [round(s, 3) for s in scores])
+
+
+# --- automatic anchor suggestions ---------------------------------------------------------
+
+HISTORY_WIDTH = 320  # frames kept for suggestions are shrunk to this width
+
+
+def history_frame(rectified: Image) -> Image:
+    """A small max-channel gray copy of a rectified frame for anchor suggestions."""
+    h, w = rectified.shape[:2]
+    size = (HISTORY_WIDTH, max(8, round(h * HISTORY_WIDTH / w)))
+    return gray_max(np.asarray(cv2.resize(rectified, size, interpolation=cv2.INTER_AREA), np.uint8))
+
+
+def _overlap(a: Roi, b: Roi) -> bool:
+    return not (a.x + a.w <= b.x or b.x + b.w <= a.x or a.y + a.h <= b.y or b.y + b.h <= a.y)
+
+
+def _trim_off_fields(x0: float, y0: float, x1: float, y1: float, fields: list[Roi]) -> Roi | None:
+    """Cut a box off the fields it touches above or below (captions sit right next to values);
+    None if that leaves less than 70 % of its height, or it overlaps a field sideways."""
+    height = y1 - y0
+    for f in fields:
+        if x1 <= f.x or f.x + f.w <= x0 or y1 <= f.y or f.y + f.h <= y0:
+            continue
+        if f.y >= (y0 + y1) / 2:  # the field is below the caption
+            y1 = min(y1, f.y)
+        elif f.y + f.h <= (y0 + y1) / 2:  # above
+            y0 = max(y0, f.y + f.h)
+        else:
+            return None
+    if y1 - y0 < 0.7 * height:
+        return None
+    return Roi(x=x0, y=y0, w=x1 - x0, h=y1 - y0)
+
+
+def suggest_anchors(frames: list[Image], fields: list[Roi], count: int = 3) -> list[Roi]:
+    """Places on the board that don't change over the frames and have clear structure
+    (captions, logos), away from the fields: candidates for layout-guard anchors.
+
+    frames: recent history_frame() images (a few seconds; one frame works, less reliably).
+    Returns up to `count` ROIs (relative), best first, spread over the board."""
+    if not frames:
+        return []
+    stack = np.stack([f.astype(np.float32) for f in frames])
+    # Robust to a goal animation or a person covering part of the window: a pixel is static
+    # when it matches its median in most frames (brightness may breathe a little).
+    mean = np.median(stack, axis=0)
+    h, w = mean.shape
+    if len(frames) > 1:
+        close = np.abs(stack - mean) <= np.maximum(8.0, 0.15 * mean)
+        static = close.mean(axis=0) >= 0.6
+    else:
+        static = np.ones((h, w), bool)
+    gx = cv2.Sobel(mean, cv2.CV_32F, 1, 0, ksize=3)
+    gy = cv2.Sobel(mean, cv2.CV_32F, 0, 1, ksize=3)
+    grad = cv2.blur(np.sqrt(gx * gx + gy * gy), (3, 3))
+    textured = grad > max(20.0, float(np.percentile(grad, 80)))
+
+    free = np.ones((h, w), bool)  # not a field (with room around it)
+    for r in fields:
+        m = 0.05 * r.h  # captions often sit right next to the values
+        x0, y0 = int((r.x - m) * w), int((r.y - m) * h)
+        x1, y1 = int((r.x + r.w + m) * w) + 1, int((r.y + r.h + m) * h) + 1
+        free[max(0, y0) : y1, max(0, x0) : x1] = False
+
+    cand = (static & textured & free).astype(np.uint8)
+    # merge the letters of a word into one blob
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (max(3, w // 40), max(3, h // 40)))
+    blobs = cv2.dilate(cand, kernel)
+    n, labels = cv2.connectedComponents(blobs, connectivity=8)
+    boxes: list[tuple[float, Roi]] = []
+    for i in range(1, n):
+        ys, xs = np.nonzero((labels == i) & (cand > 0))  # the letters, not the merged blob
+        if xs.size == 0:
+            continue
+        x, y = int(xs.min()), int(ys.min())
+        bw, bh = int(xs.max()) - x + 1, int(ys.max()) - y + 1
+        if bw < w * 0.05 or bh < h * 0.03 or bw * bh < w * h * 0.002:
+            continue
+        if bw > w * 0.6 or bh > h * 0.5:
+            continue  # too big to be a caption: probably part of the picture
+        score = float((grad * (labels == i) * cand).sum())
+        pad = 0.15 * bh  # a little room around the caption
+        x0, y0 = max(0.0, x - pad) / w, max(0.0, y - pad) / h
+        x1, y1 = min(float(w), x + bw + pad) / w, min(float(h), y + bh + pad) / h
+        roi = _trim_off_fields(x0, y0, x1, y1, fields)
+        if roi is not None:
+            boxes.append((score, roi))
+    boxes.sort(key=lambda b: -b[0])
+
+    chosen: list[Roi] = []
+    while boxes and len(chosen) < count:
+
+        def value(item: tuple[float, Roi]) -> float:
+            score, r = item
+            if not chosen:
+                return score
+            cx, cy = r.x + r.w / 2, r.y + r.h / 2
+            d = min(abs(cx - (c.x + c.w / 2)) + abs(cy - (c.y + c.h / 2)) for c in chosen)
+            return score * (0.3 + d)  # prefer anchors spread over the board
+
+        best = max(boxes, key=value)
+        boxes.remove(best)
+        if not any(_overlap(best[1], c) for c in chosen):
+            chosen.append(best[1])
+    return chosen

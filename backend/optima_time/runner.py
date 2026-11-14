@@ -19,6 +19,7 @@ import psutil
 
 from optima_time.config.models import NewLine, Profile
 from optima_time.config.store import save_profile
+from optima_time.guard import history_frame
 from optima_time.outputs.base import OutputHub, OutputWorker
 from optima_time.outputs.xml_file import XmlFileWorker
 from optima_time.pipeline import FrameResult, Pipeline
@@ -102,6 +103,9 @@ class Runner:
         self.heartbeat = time.monotonic()  # the pipeline thread's pulse (supervisor.py)
         self.supervisor = Supervisor(self)
         self.recorder = SampleRecorder()
+        # small gray copies of the last ~12 s of rectified frames, for anchor suggestions
+        self.history: deque[npt.NDArray[np.uint8]] = deque(maxlen=60)
+        self._history_at = 0.0
         self.log_dir = log_dir
         self._process = psutil.Process()
         self._cpu_mark = (self._cpu_seconds(), time.monotonic())
@@ -216,6 +220,12 @@ class Runner:
             with self._lock:
                 self._frame, self._result = frame, result
                 self._done_times.append(time.monotonic())
+            if (
+                time.monotonic() - self._history_at >= 0.2
+                and self.pipeline.last_rectified is not None
+            ):
+                self._history_at = time.monotonic()
+                self.history.append(history_frame(self.pipeline.last_rectified))
             if self.recorder.status.active:
                 self.recorder.offer(self.pipeline.last_rectified, result, self.state.values())
 
@@ -224,6 +234,11 @@ class Runner:
             self.state.update(None, None, False)
 
     # --- for the API
+
+    def recent_history(self) -> list[npt.NDArray[np.uint8]]:
+        """The kept frames that match the current geometry (same size as the newest)."""
+        frames = list(self.history)
+        return [f for f in frames if f.shape == frames[-1].shape] if frames else []
 
     def snapshot(self) -> Snapshot:
         with self._lock:

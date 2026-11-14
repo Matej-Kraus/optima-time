@@ -83,8 +83,11 @@ V tomto kroku je **narovnaná tabule**. Musí být rovná a bez okolí, jinak op
 
 **Kotvy (důležité):** kotva je **nápis, který se na tabuli nikdy nemění**, např. `PERIÓDA`, `DOMÁCI`, `HOSTIA`. Podle kotev aplikace pozná, že video stěna ukazuje něco jiného (animace gólu, reklama). Pak nic nečte a drží hodnoty.
 
-1. Klikni **Přidat kotvu** a táhnutím označ nápis. Přidej 2–3 kotvy na různých místech tabule.
-2. Vedle tlačítek se ukáže „Kotva: sedí“ a čísla blízko 1. Světlo **Kotvy** zezelená.
+1. Jakmile jsou nakreslená pole, aplikace **navrhne kotvy sama**. Najde nápisy, které se během posledních ~12 s neměnily (oranžové čárkované rámečky). Znovu je navrhne tlačítko **Najít kotvy automaticky**. Spouštěj ho, když tabule ukazuje běžné skóre, ne animaci.
+2. **Zkontroluj je a uprav:** kliknutím kotvu vybereš, tažením posuneš, za bílé rohy změníš velikost, šipkami doladíš (se Shiftem po 10 px). Vzor kotvy se po úpravě sám sejme znovu. Špatnou kotvu smaž (**Smazat kotvu N**), chybějící přidej (**Přidat kotvu** a táhnutím označ nápis).
+3. Vedle tlačítek se ukáže „Kotva: sedí“ a čísla blízko 1. Světlo **Kotvy** zezelená.
+
+Stejně se upravují i **pole**: kliknutím vybrat, tažením posunout, za rohy zvětšit, šipkami doladit.
 
 ### 4. Výstup pro vMix
 

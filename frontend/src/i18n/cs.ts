@@ -109,6 +109,10 @@ export const cs = {
   cornerKeys: "Vybraný roh posuneš šipkami (se Shiftem po 10 px).",
   addField: "Přidat pole",
   addAnchor: "Přidat kotvu",
+  autoAnchors: "Najít kotvy automaticky",
+  autoAnchorsDone: (n: number) =>
+    `Navrženo ${n} kotev. Zkontroluj je: kliknutím vybereš, tažením posuneš, za rohy změníš velikost.`,
+  editHint: "Kliknutím vyber pole nebo kotvu. Tažením posuneš, za rohy změníš velikost, šipkami doladíš (Shift po 10 px).",
   cancelDraw: "Zrušit kreslení",
   deleteField: "Smazat",
   deleteAnchor: "Smazat kotvu",

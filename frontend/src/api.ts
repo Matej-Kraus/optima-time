@@ -187,6 +187,13 @@ export const api = {
   clearValues: () => post("/api/values/clear").then(json),
   output: (action: "pause" | "live" | "test" | "test-clear") => post(`/api/output/${action}`).then(json),
   addAnchor: (roi: Roi) => post("/api/anchors", { roi }).then((r) => json<Profile>(r)),
+  autoAnchors: () => post("/api/anchors/auto").then((r) => json<Profile>(r)),
+  updateAnchor: (i: number, roi: Roi) =>
+    fetch(`/api/anchors/${i}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ roi }),
+    }).then((r) => json<Profile>(r)),
   deleteAnchor: (i: number) => fetch(`/api/anchors/${i}`, { method: "DELETE" }).then((r) => json<Profile>(r)),
   frameUrl: (view: "source" | "rectified", tick: number) => `/api/frame.jpg?view=${view}&max_width=960&t=${tick}`,
   cropUrl: (id: string, tick: number) => `/api/crop/${encodeURIComponent(id)}.png?t=${tick}`,

@@ -4,6 +4,9 @@ Formát: datum, co, proč, jaké byly alternativy. Novější nahoře. Položky 
 
 ## 2026-11-14 – Doplnění po Milníku 5
 
+### D32. Automatický návrh kotev, ruční úprava
+Runner drží 12 s historie narovnaného obrazu (60 malých šedých snímků). Kotvy se hledají jako místa, která v aspoň 60 % snímků vypadají jako jejich medián (jas smí kolísat o 15 %), mají výraznou strukturu (gradient) a neleží na polích. Písmena se spojí do slov, vyberou se až 3 nejsilnější, co nejvíc rozmístěné. Kotva se ořízne od pole, které těsně sousedí. Na syntetice: běžný zápas 55/57 oken všechny 3 nápisy, těžký 58/58. Ve 2 oknech, kde animace gólu pokryla většinu okna, vznikla kotva na textu „GÓL!“. Proto je výsledek jen návrh, operátor ho zkontroluje a upraví (posun, změna velikosti, šipky; vzor se sejme znovu). Návrh se spustí sám jen jednou, když profil má pole a žádné kotvy.
+
 ### D30. Trest přesunutý ze sousedního slotu se přijme po 2 čteních
 Když skončí trest v prvním slotu, tabule do něj posune druhý trest, takže `penaltyh1` skočí nahoru (např. `0:01` → `0:21`). Skok na hodnotu, kterou právě publikuje sourozenecké pole stejné skupiny (`penaltyh1`/`penaltyh2`, skupina = id bez čísla na konci), je očekávaná změna a potvrdí se 2 shodnými čteními místo 400 ms. Jinak by se jedna hodnota přeskočila. Chybné čtení, které by se trefilo přesně do hodnoty souseda a dvakrát po sobě, je nepravděpodobné.
 

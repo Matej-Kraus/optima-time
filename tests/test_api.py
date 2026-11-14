@@ -133,3 +133,16 @@ def test_test_values_are_valid() -> None:
         values = random_test_values(profile)
         assert set(values) == {"Time", "scoreh", "period"}
         assert all(f.parse(values[f.id], None) is not None for f in profile.fields)
+
+
+def test_auto_anchors_and_editing(runner: Runner, tmp_path: Path) -> None:
+    c = client(runner, tmp_path)
+    wait(lambda: runner.snapshot().rectified is not None)
+    # the test board only has the score digit, which is a field: nothing static is left
+    assert c.post("/api/anchors/auto").status_code == 422
+    roi = {"x": 0.3, "y": 0.1, "w": 0.4, "h": 0.8}
+    assert c.post("/api/anchors", json={"roi": roi}).status_code == 200
+    moved = {"x": 0.28, "y": 0.1, "w": 0.42, "h": 0.8}
+    r = c.put("/api/anchors/0", json={"roi": moved})
+    assert r.status_code == 200 and r.json()["guard"]["anchors"][0]["roi"] == moved
+    assert c.put("/api/anchors/5", json={"roi": moved}).status_code == 404
