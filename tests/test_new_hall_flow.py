@@ -12,9 +12,9 @@ from fastapi.testclient import TestClient
 
 from optima_time.api.app import create_app
 from optima_time.config.models import Profile
-from optima_time.outputs.xml import parse_xml
 from optima_time.recognizers.ppocr import models_dir
 from optima_time.runner import Runner
+from tests.xmlread import read_values
 from tools.synth.board import BOXES, COLS, LABELS, ROWS, Camera, CameraStyle, LedStyle, led_board
 
 pytestmark = pytest.mark.skipif(
@@ -97,7 +97,7 @@ def test_new_hall_setup_through_the_api(tmp_path: Path) -> None:
         values: dict = {}
         while time.monotonic() < deadline:
             if xml.exists():
-                values = parse_xml(xml.read_bytes())
+                values = read_values(xml)
                 if values == EXPECTED:
                     break
             time.sleep(0.1)

@@ -13,6 +13,7 @@ from optima_time.fields.models import ClockField, NumberField, PeriodField, Roi
 from optima_time.outputs.xml import parse_xml
 from optima_time.recognizers.base import Reading
 from optima_time.runner import Runner
+from tests.xmlread import read_values
 
 
 class Fake:
@@ -78,7 +79,7 @@ def test_state_frames_and_profile_roundtrip(runner: Runner, tmp_path: Path) -> N
 def test_xml_file_and_http_data(runner: Runner, tmp_path: Path) -> None:
     c = client(runner, tmp_path)
     xml_path = tmp_path / "out" / "tabule.xml"
-    wait(lambda: xml_path.exists() and parse_xml(xml_path.read_bytes()) == {"scoreh": "7"})
+    wait(lambda: xml_path.exists() and read_values(xml_path) == {"scoreh": "7"})
     r = c.get("/data/values.xml")
     assert parse_xml(r.content) == {"scoreh": "7"}
     assert "no-store" in r.headers["cache-control"]
@@ -91,18 +92,18 @@ def test_hold_pause_test_data(runner: Runner, tmp_path: Path) -> None:
     xml_path = tmp_path / "out" / "tabule.xml"
     wait(lambda: runner.state.values().get("scoreh") == "7")
     assert c.post("/api/fields/scoreh/hold", json={"text": "5"}).json()["held"]
-    wait(lambda: parse_xml(xml_path.read_bytes()) == {"scoreh": "5"})
+    wait(lambda: read_values(xml_path) == {"scoreh": "5"})
     c.post("/api/fields/scoreh/release")
-    wait(lambda: parse_xml(xml_path.read_bytes()) == {"scoreh": "7"})
+    wait(lambda: read_values(xml_path) == {"scoreh": "7"})
 
     assert c.post("/api/output/pause").json()["mode"] == "paused"
     c.post("/api/fields/scoreh/hold", json={"text": "9"})
     time.sleep(0.2)
-    assert parse_xml(xml_path.read_bytes()) == {"scoreh": "7"}  # paused: file unchanged
+    assert read_values(xml_path) == {"scoreh": "7"}  # paused: file unchanged
     c.post("/api/output/test-clear")
-    wait(lambda: parse_xml(xml_path.read_bytes()) == {"scoreh": ""})
+    wait(lambda: read_values(xml_path) == {"scoreh": ""})
     c.post("/api/output/live")
-    wait(lambda: parse_xml(xml_path.read_bytes()) == {"scoreh": "9"})
+    wait(lambda: read_values(xml_path) == {"scoreh": "9"})
     assert c.post("/api/fields/nope/hold", json={"text": "1"}).status_code == 404
     kinds = {e["kind"] for e in c.get("/api/events").json()}
     assert {"changed", "held", "released"} <= kinds

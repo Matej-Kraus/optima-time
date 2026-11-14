@@ -4,6 +4,9 @@ Formát: datum, co, proč, jaké byly alternativy. Novější nahoře. Položky 
 
 ## 2026-11-14 – Doplnění po Milníku 5
 
+### D29. Windows: čtenář může v okamžiku náhrady souboru dostat „přístup odepřen“
+Zjištěno na Windows v CI (14. 11. 2026). Když čtenář otevírá XML ve chvíli, kdy ho `os.replace()` nahrazuje, Windows otevření odmítne (`PermissionError`, starý soubor čeká na smazání). Soubor přitom nikdy není rozepsaný, je jen na zlomek milisekundy nepřístupný. vMix by v tu chvíli nejspíš jen přeskočil jedno čtení (další je za 100 ms), ale může to hlásit jako chybu. Přesně o takové chybě je vlákno na fóru vMixu ze zadání. Simulátor čtenáře na Windows (CI) hlásí, jak často to nastává (`read_errors`). Pokud to vMix v testu M2-A ukazuje jako chybu, výchozí cestou bude HTTP adresa `/data/values.xml`, která soubor nepoužívá. Zápis přímo do cílového souboru (bez náhrady) jako alternativa nepřichází v úvahu: čtenář by pak mohl vidět rozepsané XML.
+
 ### D27. Bez inverze barev
 Zadání (9.2) zmiňuje úrovně, inverzi a automatickou inverzi po polích, které jsou potřeba pro klasické prahování v referenční aplikaci. PP-OCR čte syrový barevný výřez a zvládá světlé znaky na tmavém i tmavé na světlém. Brána kontrastu (rozpětí percentilů) i podpis pro detekci změny (normalizace) jsou na polaritu necitlivé. Inverze by tedy nic nepřinesla, a proto není. Kdyby přišel glyph engine (Fáze 2), přidá se s ním.
 

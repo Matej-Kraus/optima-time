@@ -9,6 +9,7 @@ from optima_time.config.models import OutputsConfig, Profile, SourceConfig, XmlF
 from optima_time.fields.models import NumberField, Roi
 from optima_time.recognizers.base import Reading
 from optima_time.runner import Runner
+from tests.xmlread import read_bytes
 
 pytestmark = pytest.mark.filterwarnings("ignore::pytest.PytestUnhandledThreadExceptionWarning")
 
@@ -88,7 +89,7 @@ def test_dead_output_thread_is_restarted(tmp_path: Path) -> None:
         r.supervisor.check()
         assert w.alive()
         r.state.hold("scoreh", "5")
-        wait(lambda: b"<scoreh>5</scoreh>" in (tmp_path / "t.xml").read_bytes())
+        wait(lambda: b"<scoreh>5</scoreh>" in read_bytes(tmp_path / "t.xml"))
     finally:
         r.stop()
 
