@@ -61,6 +61,19 @@ export function FieldEditor({ field, idError, onChange, onType, onDelete }: Prop
         <input type="checkbox" checked={field.enabled} onChange={(e) => onChange({ enabled: e.target.checked })} />
         {cs.enabled}
       </label>
+      <details>
+        <summary>{cs.advanced}</summary>
+        <NumberInput label={cs.minConfidence} value={field.min_confidence} step={0.05} onChange={(v) => onChange({ min_confidence: v })} />
+        <NumberInput label={cs.minContrast} value={field.min_contrast} step={5} onChange={(v) => onChange({ min_contrast: v })} />
+        <NumberInput label={cs.margin} value={field.margin} step={0.05} onChange={(v) => onChange({ margin: v })} />
+        <NumberInput label={cs.blankDelay} value={field.blank_delay_ms} step={50} onChange={(v) => onChange({ blank_delay_ms: v })} />
+        {field.type === "number" && (
+          <NumberInput label={cs.maxDigits} value={field.max_digits} step={1} onChange={(v) => onChange({ max_digits: v })} />
+        )}
+        {field.type === "period" && (
+          <NumberInput label={cs.maxPeriod} value={field.max_value} step={1} onChange={(v) => onChange({ max_value: v })} />
+        )}
+      </details>
       <button className="danger" onClick={onDelete}>
         {cs.deleteField}
       </button>
@@ -79,6 +92,23 @@ function Select(props: { label: string; value: string; options: Record<string, s
           </option>
         ))}
       </select>
+    </label>
+  );
+}
+
+function NumberInput(props: { label: string; value: unknown; step: number; onChange: (v: number) => void }) {
+  return (
+    <label>
+      {props.label}
+      <input
+        type="number"
+        step={props.step}
+        defaultValue={typeof props.value === "number" ? props.value : undefined}
+        onBlur={(e) => {
+          const v = Number(e.target.value);
+          if (e.target.value !== "" && Number.isFinite(v) && v !== props.value) props.onChange(v);
+        }}
+      />
     </label>
   );
 }

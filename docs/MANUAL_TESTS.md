@@ -165,3 +165,23 @@ Bez `--emulate-lock`: zámky dělá Windows sám. Výsledek musí být `"result"
    ```powershell
    uv run python -m tools.bench samples/synth/hard --hours 3 --out bench_3h.jsonl
    ```
+
+---
+
+## M4-A: nová hala do 10 minut podle návodu (SPEC 15.6)
+
+**Proč:** jen člověk ověří, že návod a UI jsou srozumitelné a rychlé.
+
+1. Spusť aplikaci s novým profilem (`optima-time run --profile test-hala`), vMix běží a posílá tabuli přes NDI.
+2. Spusť stopky a postupuj **jen podle `docs/OPERATOR.md`, část B** (od kroku 3 „Nový profil“).
+3. Zastav stopky, když titulek ve vMixu ukazuje správně čas, skóre i třetinu.
+4. Zapiš:
+   - celkový čas
+   - kde ses zasekl nebo musel hledat
+   - co v návodu nebo UI chybí nebo je nejasné
+5. Zkus ve hře:
+   - **Držet** u skóre
+   - **Pauza výstupu**
+   - **Nahrát vzorek** (60 s)
+   - **Stáhnout diagnostický balíček**
+6. Pošli poznámky, změřený čas a vzorek ze `%APPDATA%\OptimaTime\samples\…`.

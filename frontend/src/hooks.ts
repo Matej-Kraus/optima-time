@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type RefObject } from "react";
 
 /** A counter that increases every `ms` milliseconds (to refresh preview images). */
 export function useTick(ms: number): number {
@@ -32,4 +32,20 @@ export function usePoll<T>(fn: () => Promise<T>, ms: number): T | null {
     };
   }, [fn, ms]);
   return value;
+}
+
+/** The element's current size, kept up to date with a ResizeObserver. */
+export function useElementSize(ref: RefObject<HTMLElement | null>): { width: number; height: number } {
+  const [size, setSize] = useState({ width: 0, height: 0 });
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      setSize({ width, height });
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [ref]);
+  return size;
 }

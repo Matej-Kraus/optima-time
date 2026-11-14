@@ -492,3 +492,70 @@ code {
 .row input[type="number"] {
   width: 80px;
 }
+
+.handle.active {
+  fill: var(--warn);
+}
+
+.magnifier-host {
+  position: relative;
+}
+
+.magnifier {
+  position: absolute;
+  z-index: 5;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  background-color: #000;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+}
+
+.crosshair-mark {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border: 1px solid var(--warn);
+  border-radius: 50%;
+}
+
+.profiles-panel,
+.tools-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.profiles-panel small,
+.tools-panel small {
+  color: var(--muted);
+}
+
+a.button {
+  display: inline-block;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--line);
+  padding: 6px 12px;
+  border-radius: 4px;
+  text-decoration: none;
+  width: fit-content;
+}
+
+.tools-panel input[type="number"] {
+  width: 80px;
+}
+
+.editor details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.editor details label {
+  margin-top: 6px;
+}

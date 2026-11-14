@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { api, type LoggedEvent } from "../api";
+import { translateDetail } from "../events";
 import { usePoll } from "../hooks";
 import { cs } from "../i18n/cs";
 
@@ -14,7 +15,7 @@ export function EventLog() {
           <span className="kind">{cs.eventKinds[e.kind] ?? e.kind}</span>
           <span className="fid">{e.field}</span>
           <span className="text">{e.text}</span>
-          <span className="detail">{e.detail}</span>
+          <span className="detail">{translateDetail(e.detail)}</span>
         </div>
       ))}
     </div>

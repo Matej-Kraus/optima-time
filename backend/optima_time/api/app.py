@@ -6,6 +6,10 @@ GET  /api/profile                 the profile
 PUT  /api/profile                 validate, save, apply
 GET  /api/state                   source, processing, guard, outputs, readings, published values
 GET  /api/sources                 NDI sources on the network, capture devices on this PC
+GET  /api/profiles; POST /api/profiles/load|save-as|import; GET /api/profiles/export
+POST /api/samples/record {"seconds": N}; GET /api/samples/status
+GET  /api/diagnostics.zip
+GET  /api/preview.mjpg?view=source|rectified&fps=8   MJPEG preview stream
 GET  /api/events?limit=N          the latest events (changes, rejections, guard, source, writes)
 GET  /api/frame.jpg?view=source|rectified&max_width=N   latest frame as JPEG
 GET  /api/crop/{field_id}.png     the crop that went to OCR for a field
@@ -24,18 +28,24 @@ Every response carries Cache-Control: no-store where values are involved.
 
 from __future__ import annotations
 
+import hmac
 import json
 import random
+import time
 from dataclasses import asdict
 from pathlib import Path
 from typing import Annotated, Any, Literal
 
 import cv2
-from fastapi import Body, FastAPI, HTTPException, Response
+from fastapi import Body, FastAPI, HTTPException, Request, Response
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 
+from optima_time.config import profiles
 from optima_time.config.models import AnchorConfig, Profile
+from optima_time.config.store import save_profile
+from optima_time.diagnostics import build_zip
 from optima_time.fields.models import ClockField, NumberField, PeriodField, Roi
 from optima_time.guard import capture_template
 from optima_time.outputs.base import OutputMode
@@ -80,8 +90,42 @@ def random_test_values(profile: Profile, rng: random.Random | None = None) -> di
     return out
 
 
-def create_app(runner: Runner, static_dir: Path | None = None) -> FastAPI:
+PIN_COOKIE = "optima_pin"
+LOCAL_HOSTS = {"127.0.0.1", "::1", "localhost", "testclient"}
+
+LOGIN_PAGE = """<!doctype html><html lang="cs"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Optima Time</title>
+<style>body{font-family:system-ui;background:#111418;color:#e8eaed;display:grid;place-items:center;
+height:100vh;margin:0}form{display:flex;gap:8px}input,button{font:inherit;padding:8px}</style>
+</head><body><form method="get" action="/login"><input name="pin" type="password"
+placeholder="PIN" autofocus><button>Přihlásit</button></form></body></html>"""
+
+
+def create_app(runner: Runner, static_dir: Path | None = None, pin: str | None = None) -> FastAPI:
     app = FastAPI(title="Optima Time", docs_url="/api/docs", openapi_url="/api/openapi.json")
+
+    # --- access from the network (SPEC 13.4): only with the PIN; localhost always
+
+    @app.middleware("http")
+    async def require_pin(request: Request, call_next):
+        client = request.client.host if request.client else ""
+        if pin and client not in LOCAL_HOSTS and request.url.path != "/login":
+            given = request.cookies.get(PIN_COOKIE, "")
+            if not hmac.compare_digest(given, pin):
+                if request.url.path.startswith(("/api", "/data")):
+                    return Response("PIN required", status_code=401)
+                return HTMLResponse(LOGIN_PAGE, status_code=401)
+        return await call_next(request)
+
+    @app.get("/login", include_in_schema=False)
+    def login(request: Request) -> Response:
+        given = request.query_params.get("pin", "")
+        if not pin or not hmac.compare_digest(given, pin):
+            time.sleep(0.5)  # slow down guessing
+            return HTMLResponse(LOGIN_PAGE, status_code=401)
+        response = RedirectResponse("/", status_code=303)
+        response.set_cookie(PIN_COOKIE, pin, httponly=True, samesite="strict")
+        return response
 
     # --- data for vMix
 
@@ -228,6 +272,130 @@ def create_app(runner: Runner, static_dir: Path | None = None) -> FastAPI:
         else:
             hub.write_test(dict.fromkeys(runner.state.values(), ""))
         return _json(runner.outputs_status())
+
+    # --- profiles (SPEC 13.3)
+
+    def _current() -> dict[str, Any]:
+        path = runner.profile_path
+        return {"name": runner.profile.name, "path": str(path) if path else None}
+
+    @app.get("/api/profiles")
+    def get_profiles() -> Response:
+        return _json(
+            {
+                "current": _current(),
+                "profiles": profiles.list_profiles(),
+                "folder": str(profiles.profiles_dir()),
+            }
+        )
+
+    @app.post("/api/profiles/load")
+    def load_profile_(name: Annotated[str, Body(embed=True, max_length=200)]) -> Response:
+        try:
+            profile, path = profiles.load(name)
+        except (FileNotFoundError, ValueError) as error:
+            raise HTTPException(404, str(error)) from error
+        runner.switch_profile(profile, path)
+        return _json(_current())
+
+    @app.post("/api/profiles/save-as")
+    def save_as(name: Annotated[str, Body(embed=True, max_length=64)]) -> Response:
+        try:
+            path = profiles.save_as(runner.profile, name)
+        except FileExistsError as error:
+            raise HTTPException(409, str(error)) from error
+        except ValueError as error:
+            raise HTTPException(422, str(error)) from error
+        profile, path = profiles.load(str(path))
+        runner.switch_profile(profile, path)
+        return _json(_current())
+
+    @app.get("/api/profiles/export")
+    def export_profile() -> Response:
+        name = profiles.safe_name(runner.profile.name or "profil")
+        return Response(
+            runner.profile.model_dump_json(indent=2),
+            media_type="application/json",
+            headers={"Content-Disposition": f'attachment; filename="{name}.json"'},
+        )
+
+    @app.post("/api/profiles/import")
+    def import_profile(
+        name: Annotated[str, Body(max_length=64)], profile: Annotated[dict, Body()]
+    ) -> Response:
+        try:
+            parsed = Profile.model_validate(profile)
+            path = profiles.profiles_dir() / f"{profiles.safe_name(name)}.json"
+        except (ValidationError, ValueError) as error:
+            raise HTTPException(422, str(error)) from error
+        if path.exists():
+            raise HTTPException(409, f"profil {path.stem!r} už existuje")
+        save_profile(parsed.model_copy(update={"name": path.stem}), path)
+        runner.switch_profile(*profiles.load(str(path)))
+        return _json(_current())
+
+    # --- samples and diagnostics (SPEC 13.3)
+
+    @app.post("/api/samples/record")
+    def record(seconds: Annotated[float, Body(embed=True, gt=0, le=1800)]) -> Response:
+        try:
+            runner.recorder.start(runner.profile, seconds)
+        except RuntimeError as error:
+            raise HTTPException(409, str(error)) from error
+        return _json(asdict(runner.recorder.status))
+
+    @app.get("/api/samples/status")
+    def record_status() -> Response:
+        return _json(asdict(runner.recorder.status))
+
+    @app.get("/api/diagnostics.zip")
+    def diagnostics() -> Response:
+        stamp = time.strftime("%Y%m%d-%H%M%S")
+        return Response(
+            build_zip(runner, runner.log_dir),
+            media_type="application/zip",
+            headers={"Content-Disposition": f'attachment; filename="diagnostika-{stamp}.zip"'},
+        )
+
+    # --- preview stream (SPEC 13.1): MJPEG, at most `fps`, independent of the processing
+
+    @app.get("/api/preview.mjpg")
+    def preview(
+        view: Literal["source", "rectified"] = "source", fps: float = 8, max_width: int = 960
+    ) -> StreamingResponse:
+        period = 1 / max(1.0, min(fps, 15.0))
+
+        def frames():
+            last_seq = -1
+            while True:
+                snap = runner.snapshot()
+                seq = snap.result.seq if snap.result else -1
+                image = (
+                    snap.rectified
+                    if view == "rectified"
+                    else (snap.frame.image if snap.frame else None)
+                )
+                if image is not None and seq != last_seq:
+                    last_seq = seq
+                    h, w = image.shape[:2]
+                    if w > max_width > 0:
+                        image = cv2.resize(
+                            image,
+                            (max_width, round(h * max_width / w)),
+                            interpolation=cv2.INTER_AREA,
+                        )
+                    ok, data = cv2.imencode(".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, 75])
+                    if ok:
+                        yield (
+                            b"--frame\r\nContent-Type: image/jpeg\r\n\r\n"
+                            + data.tobytes()
+                            + b"\r\n"
+                        )
+                time.sleep(period)
+
+        return StreamingResponse(
+            frames(), media_type="multipart/x-mixed-replace; boundary=frame", headers=NO_CACHE
+        )
 
     # --- anchors
 

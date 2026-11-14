@@ -22,6 +22,7 @@ from optima_time.config.store import save_profile
 from optima_time.outputs.base import OutputHub, OutputWorker
 from optima_time.outputs.xml_file import XmlFileWorker
 from optima_time.pipeline import FrameResult, Pipeline
+from optima_time.recorder import SampleRecorder
 from optima_time.sources.base import Frame, SourceState, VideoSource
 from optima_time.sources.device import DeviceSource
 from optima_time.sources.file import FileSource
@@ -99,8 +100,11 @@ class Runner:
         self.error: str | None = None
         self.heartbeat = time.monotonic()  # the pipeline thread's pulse (supervisor.py)
         self.supervisor = Supervisor(self)
+        self.recorder = SampleRecorder()
+        self.log_dir = log_dir
         self._process = psutil.Process()
-        self._process.cpu_percent(None)  # start measuring
+        self._cpu_mark = (self._cpu_seconds(), time.monotonic())
+        self._cpu_percent = 0.0
 
     # --- profile
 
@@ -122,6 +126,11 @@ class Runner:
         if profile.source != old.source:
             self._restart_source()
 
+    def switch_profile(self, profile: Profile, path: Path) -> None:
+        """Load another profile file (a different hall)."""
+        self.profile_path = path
+        self.update_profile(profile, save=False)
+
     # --- lifecycle
 
     def start(self) -> None:
@@ -141,6 +150,7 @@ class Runner:
         return self._thread is not None and self._thread.is_alive()
 
     def stop(self) -> None:
+        self.recorder.stop()
         self.supervisor.stop()
         self._stop.set()
         if self._thread is not None:
@@ -205,6 +215,8 @@ class Runner:
             with self._lock:
                 self._frame, self._result = frame, result
                 self._done_times.append(time.monotonic())
+            if self.recorder.status.active:
+                self.recorder.offer(self.pipeline.last_rectified, result, self.state.values())
 
     def _mark_source(self, ok: bool) -> None:
         if not ok:
@@ -237,11 +249,20 @@ class Runner:
             "error": source.error or self.error,
         }
 
+    def _cpu_seconds(self) -> float:
+        t = self._process.cpu_times()
+        return t.user + t.system
+
     def process_status(self) -> dict:
-        """CPU (% of one core, averaged since the last call) and memory of this process."""
+        """CPU (% of one core, averaged over the last ~2 s or more) and memory of this process."""
+        now, cpu = time.monotonic(), self._cpu_seconds()
+        mark_cpu, mark_t = self._cpu_mark
+        if now - mark_t >= 2.0:
+            self._cpu_percent = 100 * (cpu - mark_cpu) / (now - mark_t)
+            self._cpu_mark = (cpu, now)
         mem = self._process.memory_info().rss
         return {
-            "cpu_percent": round(self._process.cpu_percent(None), 1),
+            "cpu_percent": round(self._cpu_percent, 1),
             "cpu_count": psutil.cpu_count() or 1,
             "rss_mb": round(mem / 2**20, 1),
             "threads": self._process.num_threads(),

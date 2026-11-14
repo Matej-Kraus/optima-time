@@ -66,7 +66,7 @@ function HoldControl({ id, held, current }: { id: string; held: boolean; current
         setText("");
       }}
     >
-      <input value={text} onChange={(e) => setText(e.target.value)} placeholder={cs.holdPlaceholder} size={6} />
+      <input value={text} onChange={(e) => setText(e.target.value)} placeholder={cs.holdPlaceholder} size={11} />
       <button type="submit">{cs.hold}</button>
     </form>
   );

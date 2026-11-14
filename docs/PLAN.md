@@ -2,7 +2,7 @@
 
 Projekt **optima-time**. Python balíček `optima_time`, příkaz `optima-time`, konfigurace v `%APPDATA%\OptimaTime\`. Zadání je v `docs/SPEC.md` (v1.2).
 
-Stav: Milník 0 (13. 11.), 1, 2 a 3 (14. 11. 2026) jsou hotové, viz `docs/M0_REPORT.md` až `M3_REPORT.md`. Reálná data a ruční testy dodá Matěj na konci; milníky 3–5 pokračují bez nich.
+Stav: Milník 0 (13. 11.), 1–4 (14. 11. 2026) jsou hotové, viz `docs/M0_REPORT.md` až `M4_REPORT.md`. Reálná data a ruční testy dodá Matěj na konci; milníky 3–5 pokračují bez nich.
 
 ## 1. Shrnutí odpovědí
 
@@ -208,3 +208,25 @@ Nové závislosti: `cv2-enumerate-cameras` 1.4.0 (MIT, výpis kamer), `psutil` 7
 - Latence snímek → zapsaný soubor p95 ≤ 80 ms při 25 fps a 8 polích (Mac M1; produkční PC = ruční test).
 - Zátěžový test 3 h ve smyčce na Macu: žádný pád, žádné mrtvé vlákno, paměť neroste o víc než desítky MB.
 - NDI: ověřené proti lokálnímu testovacímu vysílači. NDI z vMixu a capture karta na Windows = ruční test M0-C / M3-A.
+
+## 8. Milník 4 – provozní UI (plán 14. 11. 2026)
+
+### 8.1 Obsah
+
+| Oblast | Co | Kde |
+|---|---|---|
+| Profily (13.3) | seznam, načíst, uložit jako (duplikát), export, import; průběžné ukládání už běží | `config/profiles.py`, API, UI |
+| CLI (14.2) | `--profile NAZEV` hledá i v `%APPDATA%\OptimaTime\profiles`, `--host`, `--pin` | `cli.py` |
+| Vzorky (13.3) | „Nahrát vzorek“: N sekund narovnaného obrazu (MP4) + log čtení (JSONL) + profil do `samples\` | `recorder.py` |
+| Diagnostika (13.3) | ZIP: snímek, narovnaný snímek, výřezy, profil, stav, události, aplikační log, verze | `diagnostics.py` |
+| Logy (14.3) | rotující aplikační log `logs\app.log` | `cli.py` |
+| Náhled (13.1) | MJPEG stream (≤ 10 sn./s, zmenšený), nezávislý na zpracování | API, UI |
+| Rohy (13.1) | lupa při tažení, posun šipkami (Shift po 10 px) | UI |
+| Nastavení pole | práh jistoty, kontrastu, okraj, zpoždění prázdné hodnoty, počet číslic, rozsah periody | UI |
+| Přístup ze sítě (13.4) | výchozí jen 127.0.0.1; `--host 0.0.0.0` vyžaduje PIN (cookie po zadání) | API, UI |
+| Texty | popisy událostí česky | UI |
+| Návod | `docs/OPERATOR.md`: nová hala krok za krokem (do 10 minut) | docs |
+
+### 8.2 Hotovo, když
+
+Nová hala jde nastavit podle `OPERATOR.md`. Ověřím projitím návodu nad syntetickým záznamem od prázdného profilu, čas změřím. Skutečná hala je ruční test.

@@ -47,6 +47,21 @@ export interface SourcesList {
   devices: DeviceInfo[];
 }
 
+export interface ProfilesList {
+  current: { name: string; path: string | null };
+  profiles: { name: string; path: string; modified: string }[];
+  folder: string;
+}
+
+export interface RecorderStatus {
+  active: boolean;
+  folder: string;
+  seconds: number;
+  frames: number;
+  dropped: number;
+  error: string | null;
+}
+
 export interface Anchor {
   roi: Roi;
   template: string;
@@ -152,6 +167,15 @@ export const api = {
       body: JSON.stringify(profile),
     }).then((r) => json<Profile>(r)),
   getState: () => fetch("/api/state").then((r) => json<LiveState>(r)),
+  getProfiles: () => fetch("/api/profiles").then((r) => json<ProfilesList>(r)),
+  loadProfile: (name: string) => post("/api/profiles/load", { name }).then(json),
+  saveProfileAs: (name: string) => post("/api/profiles/save-as", { name }).then(json),
+  importProfile: (name: string, profile: unknown) => post("/api/profiles/import", { name, profile }).then(json),
+  exportUrl: "/api/profiles/export",
+  diagnosticsUrl: "/api/diagnostics.zip",
+  recordSample: (seconds: number) => post("/api/samples/record", { seconds }).then((r) => json<RecorderStatus>(r)),
+  sampleStatus: () => fetch("/api/samples/status").then((r) => json<RecorderStatus>(r)),
+  previewUrl: (view: "source" | "rectified") => `/api/preview.mjpg?view=${view}&fps=8&max_width=960`,
   getSources: () => fetch("/api/sources").then((r) => json<SourcesList>(r)),
   getEvents: (limit = 50) => fetch(`/api/events?limit=${limit}`).then((r) => json<LoggedEvent[]>(r)),
   getXml: () => fetch("/data/values.xml").then((r) => r.text()),
