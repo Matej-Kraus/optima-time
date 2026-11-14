@@ -177,7 +177,7 @@ export const api = {
   diagnosticsUrl: "/api/diagnostics.zip",
   recordSample: (seconds: number) => post("/api/samples/record", { seconds }).then((r) => json<RecorderStatus>(r)),
   sampleStatus: () => fetch("/api/samples/status").then((r) => json<RecorderStatus>(r)),
-  previewUrl: (view: "source" | "rectified") => `/api/preview.mjpg?view=${view}&fps=8&max_width=960`,
+  previewUrl: (view: "source" | "rectified", key = 0) => `/api/preview.mjpg?view=${view}&fps=8&max_width=960&k=${key}`,
   getSources: () => fetch("/api/sources").then((r) => json<SourcesList>(r)),
   getEvents: (limit = 50) => fetch(`/api/events?limit=${limit}`).then((r) => json<LoggedEvent[]>(r)),
   getXml: () => fetch("/data/values.xml").then((r) => r.text()),

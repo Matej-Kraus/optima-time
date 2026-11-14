@@ -9,10 +9,11 @@ interface Props {
   onPointerMove?: (p: Point, e: PointerEvent<SVGSVGElement>) => void;
   onPointerUp?: (p: Point, e: PointerEvent<SVGSVGElement>) => void;
   crosshair?: boolean;
+  onImageError?: () => void;
 }
 
 /** An image with an SVG overlay in relative coordinates (0-1 on both axes). */
-export function Overlay({ src, emptyText, children, onPointerDown, onPointerMove, onPointerUp, crosshair }: Props) {
+export function Overlay({ src, emptyText, children, onPointerDown, onPointerMove, onPointerUp, crosshair, onImageError }: Props) {
   const svg = useRef<SVGSVGElement>(null);
 
   const rel = (e: PointerEvent<SVGSVGElement>): Point => {
@@ -22,7 +23,7 @@ export function Overlay({ src, emptyText, children, onPointerDown, onPointerMove
 
   return (
     <div className="overlay">
-      {src ? <img src={src} alt="" draggable={false} /> : <div className="empty">{emptyText}</div>}
+      {src ? <img src={src} alt="" draggable={false} onError={onImageError} /> : <div className="empty">{emptyText}</div>}
       {src && (
         <svg
           ref={svg}

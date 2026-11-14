@@ -49,3 +49,30 @@ export function useElementSize(ref: RefObject<HTMLElement | null>): { width: num
   }, [ref]);
   return size;
 }
+
+/** A key for live streams (MJPEG): changes when the backend comes back after an outage, and on
+ * demand (e.g. the image reported an error), so a stream that ended reconnects instead of
+ * freezing on its last frame. */
+export function useStreamKey(online: boolean): [number, () => void] {
+  const [key, setKey] = useState(0);
+  const [wasOnline, setWasOnline] = useState(online);
+  if (online !== wasOnline) {
+    setWasOnline(online);
+    if (online) setKey((k) => k + 1);
+  }
+  useEffect(() => {
+    const id = setInterval(() => setKey((k) => k + 1), 5 * 60_000); // safety net
+    return () => clearInterval(id);
+  }, []);
+  return [key, () => setTimeout(() => setKey((k) => k + 1), 1000)];
+}
+
+/** The current time in seconds, refreshed every `ms` (for "před 3 s" texts). */
+export function useNow(ms = 1000): number {
+  const [now, setNow] = useState(() => Date.now() / 1000);
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now() / 1000), ms);
+    return () => clearInterval(id);
+  }, [ms]);
+  return now;
+}
