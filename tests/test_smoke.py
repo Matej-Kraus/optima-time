@@ -11,19 +11,18 @@ def test_cli_version(capsys) -> None:
     assert "optima-time" in capsys.readouterr().out
 
 
-def test_czech_output_survives_a_cp1252_console(capsys) -> None:
+def test_czech_output_survives_a_cp1252_console(monkeypatch) -> None:
     import io
     import sys
 
     from optima_time.cli import utf8_console
 
     raw = io.BytesIO()
-    old = sys.stdout
-    sys.stdout = io.TextIOWrapper(raw, encoding="cp1252")
-    try:
-        utf8_console()
-        print("Přístup ze sítě, ů")
-        sys.stdout.flush()
-    finally:
-        sys.stdout = old
-    assert "ů".encode() in raw.getvalue()
+    console = io.TextIOWrapper(raw, encoding="cp1252")
+    monkeypatch.setattr(sys, "stdout", console)
+    utf8_console()
+    console.write("Přístup ze sítě, ů\n")
+    console.flush()
+    data = raw.getvalue()
+    console.detach()  # keep raw open for the assertion
+    assert "ů".encode() in data
