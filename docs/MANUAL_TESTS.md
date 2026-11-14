@@ -209,6 +209,7 @@ Bez `--emulate-lock`: zámky dělá Windows sám. Výsledek musí být `"result"
 
 ## M5-A: instalace balíčku na Windows (asi 20 minut)
 
+0. **Nejjednodušší cesta:** instalátor `OptimaTime-Setup-0.1.0.exe` si stáhni z GitHubu (Actions → poslední zelený běh → Artifacts → OptimaTime-win64), nebo z Macu příkazem `gh run download -n OptimaTime-win64`. Spusť ho na produkčním PC (administrátor není potřeba) a pokračuj krokem 3. Kroky 1–2 jsou jen pro ruční sestavení.
 1. Na PC s Pythonem a Node.js (stačí jednou, sestavovat může jakékoli Windows PC):
    ```powershell
    powershell -ExecutionPolicy Bypass -File scripts\build_windows.ps1

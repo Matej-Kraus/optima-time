@@ -22,6 +22,23 @@ Celkem 179 testů v Pythonu (+1 volitelný NDI), 12 ve frontendu. Ruff, pyright,
 - `optima-time --self-test` ze složky `build/dist/OptimaTime`: všech 9 kontrol OK. Modely i UI se načítají z `_internal`.
 - `optima-time run` ze zabalené verze nad syntetickým zápasem: 25 fps, UI odpovídá, `/data/values.json` vrací správné hodnoty, kotvy fungují.
 
+## 2b. Ověřeno na Windows (GitHub Actions, windows-latest)
+
+Repozitář je na GitHubu (soukromý, `Matej-Kraus/optima-time`) a každé nahrání spustí testy na Windows a macOS, sestaví ZIP a instalátor a nainstalovanou aplikaci zkontroluje.
+
+| Co | Výsledek |
+|---|---|
+| Všechny testy na Windows | ✓ |
+| `--self-test` ze zdrojů a ze zabaleného balíčku | ✓ vše OK (čtení `12:34` a `7` za 13–15 ms, NDI knihovna se načte) |
+| Simulátor čtenáře proti skutečným zámkům Windows (1 min, 10 zápisů/s, čtenář drží soubor 30 ms) | 426 čtení, 0 neúplných XML, 0 odmítnutých otevření, zápis při kolizi čekal nejvýš 35 ms |
+| Instalátor (Inno Setup): tichá instalace + self-test nainstalované aplikace | CI (D31) |
+
+Chyby, které CI na Windows našlo a které jsou opravené:
+
+1. **Český text v konzoli shazoval self-test** (kódování cp1252). Aplikace si teď výstup přepne na UTF-8.
+2. **Čtenář může dostat „přístup odepřen“ ve chvíli náhrady souboru** (D29). Testy čtou s opakováním jako vMix. Pro vMix je to bod ručního testu M2-A, záloha je HTTP adresa.
+3. **Několik testů záviselo na rychlosti stroje.** Jsou upravené tak, aby kontrolovaly chování, ne přesné počty.
+
 ## 3. Zátěžový test (3 h)
 
 Běží (začal 11:19, konec ~14:20). Výsledek doplním do `M3_REPORT.md`.
@@ -32,7 +49,7 @@ Průběžně: kolem 19. minuty (11:38) byl Mac na několik sekund úplně vytí�
 
 | Co | Ruční test |
 |---|---|
-| Sestavení a instalace na Windows, ikona v liště, neuspání PC | M5-A |
+| Ikona v liště, neuspání PC, instalátor na produkčním PC | M5-A (sestavení, instalace a self-test na Windows už ověřilo CI) |
 | Stínový provoz při přenosu a porovnání | M5-B |
 | Všechny dřívější ruční testy (vMix, NDI, výkon na produkčním PC, reálný záznam, nová hala) | viz pořadí v `MANUAL_TESTS.md` |
 
