@@ -31,3 +31,4 @@ samples/**/*.ts
 Thumbs.db
 samples/synth/
 samples/bench/
+build/

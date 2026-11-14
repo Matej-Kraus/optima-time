@@ -1,0 +1,51 @@
+"""Notification-area icon for the packaged Windows app (SPEC 14.2): "Otevřít UI" and "Ukončit".
+
+pystray (LGPLv3, see THIRD_PARTY.md) runs detached on Windows. Elsewhere this is a no-op: the
+console stays and Ctrl+C stops the app.
+"""
+
+from __future__ import annotations
+
+import logging
+import sys
+import webbrowser
+from collections.abc import Callable
+
+log = logging.getLogger(__name__)
+
+
+def _icon_image():
+    from PIL import Image, ImageDraw
+
+    img = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle((2, 10, 62, 54), radius=8, fill=(17, 20, 24, 255), outline=(61, 220, 132))
+    d.text((12, 22), "12:34", fill=(61, 220, 132))
+    return img
+
+
+def start_tray(url: str, on_quit: Callable[[], None]) -> Callable[[], None] | None:
+    """Show the icon; returns a function that removes it, or None where unsupported."""
+    if sys.platform != "win32":
+        return None
+    try:
+        import pystray
+    except ImportError as error:
+        log.warning("no tray icon: %s", error)
+        return None
+
+    def quit_app(icon, _item) -> None:
+        icon.stop()
+        on_quit()
+
+    icon = pystray.Icon(
+        "optima-time",
+        _icon_image(),
+        "Optima Time",
+        menu=pystray.Menu(
+            pystray.MenuItem("Otevřít UI", lambda _i, _m: webbrowser.open(url), default=True),
+            pystray.MenuItem("Ukončit", quit_app),
+        ),
+    )
+    icon.run_detached()
+    return icon.stop

@@ -18,10 +18,11 @@ Reads a physical LED scoreboard (floorball) from video in real time — clock, s
 ```text
 backend/optima_time/   the product (Python package)
 frontend/              React + TypeScript + Vite, built to static files served by the backend
-tools/                 synth, eval, xml_reader_sim, labeler
+tools/                 synth, eval, labeler, bench, xml_reader_sim, shadow
+packaging/             PyInstaller spec + launcher (OptimaTime.exe, optima-time.exe)
 spikes/                Milestone 0 one-off experiments — never imported by the product
 tests/                 pytest
-docs/                  SPEC, PLAN, DECISIONS, BACKLOG, MANUAL_TESTS (+ OPERATOR later)
+docs/                  SPEC, PLAN, DECISIONS, BACKLOG, MANUAL_TESTS, OPERATOR, M*_REPORT
 samples/               photos, recordings, real XML from production (large videos are git-ignored)
 ```
 
@@ -45,6 +46,18 @@ uv run python -m tools.synth --out samples/synth/default [--hard] [--short] [--i
 uv run python -m tools.eval samples/synth/default [--model small] [--min-width 320] [--dump-errors DIR]
 # pre-fill ground truth for a real recording (review.html to correct it)
 uv run python -m tools.labeler VIDEO --profile PROFILE --out DIR
+# performance (latency frame -> XML, CPU, memory) and the stress test
+uv run python -m tools.bench samples/synth/default --seconds 60 [--hours 3 --out stress.jsonl]
+# vMix-like XML reader against our writer
+uv run python -m tools.xml_reader_sim --with-writer --emulate-lock --minutes 1
+# shadow run: sample the reference app's XML, compare with our event log
+uv run python -m tools.shadow sample --path REF.xml --out ref.jsonl
+uv run python -m tools.shadow compare ref.jsonl events-YYYY-MM-DD.jsonl
+# installation check, packaging
+uv run optima-time --self-test
+uv run pyinstaller packaging/optima-time.spec --noconfirm --distpath build/dist --workpath build/work
+powershell -File scripts\build_windows.ps1   # Windows: tests, package, self-test, zip
+OPTIMA_TIME_NDI_TEST=1 uv run pytest tests/test_ndi.py   # NDI end to end (local sender)
 ```
 
 ## Conventions

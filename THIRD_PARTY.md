@@ -14,8 +14,10 @@
 | NDI® runtime (bundled in the cyndilib wheel) | – | NDI SDK licence (`libndi_licenses.txt` in the wheel) | NDI |
 | PP-OCRv6_tiny_rec (ONNX) | HF rev `2612ab3…` | Apache-2.0 | text recognition |
 | PP-OCRv6_small_rec (ONNX) | HF rev `b8f84f0…` | Apache-2.0 | text recognition |
+| pystray (Windows only) | 0.19.5 | LGPL-3.0 | tray icon of the packaged app; used unmodified as a separate module |
+| Pillow (Windows runtime: tray icon; dev: synth) | 13.0.0 | MIT-CMU | icon image, font rendering in `tools/synth` |
+| PyInstaller (build only) | 6.22.3 | GPL-2.0-or-later with the bootloader exception | packaging; the exception allows distributing the bundled app under any terms |
 | PyYAML (build/dev only) | 6.0.3 | MIT | reading `inference.yml` in `scripts/fetch_models.py` |
-| Pillow (dev only) | 13.0.0 | MIT-CMU | font rendering in `tools/synth` |
 | React, React DOM | 19.3.1 | MIT | UI |
 | Vite, Vitest, TypeScript, oxlint | see `frontend/package.json` | MIT / Apache-2.0 | UI build and tests |
 
@@ -37,3 +39,4 @@ Copyright (c) 2024 OCC AI: Open tools for Content Creators and Streamers. See TH
 
 - NDI®: read the licensing section of the NDI SDK (branding, trademark, URLs to display). "NDI® is a registered trademark of Vizrt NDI AB."
 - Model licences (Apache-2.0): include the licence and notice.
+- pystray (LGPL-3.0): ship it as a replaceable module (PyInstaller keeps it in the archive as bytecode; a user can rebuild with another version) and include the LGPL text.

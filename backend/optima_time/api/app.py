@@ -31,6 +31,7 @@ from __future__ import annotations
 import hmac
 import json
 import random
+import sys
 import time
 from dataclasses import asdict
 from pathlib import Path
@@ -59,6 +60,10 @@ NO_CACHE = {"Cache-Control": "no-store, no-cache, must-revalidate", "Pragma": "n
 
 
 def frontend_dir() -> Path:
+    """The built UI: next to the code in the repository, or inside the PyInstaller bundle."""
+    bundle = getattr(sys, "_MEIPASS", None)
+    if bundle:
+        return Path(bundle) / "frontend" / "dist"
     return Path(__file__).resolve().parents[3] / "frontend" / "dist"
 
 

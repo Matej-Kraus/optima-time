@@ -1,6 +1,24 @@
 # Ruční testy
 
-Testy, které nejde udělat bez reálného vMixu, NDI nebo produkčního PC. Ke každému: postup, co sledovat, co zapsat a poslat zpátky.
+Testy, které nejde udělat bez reálného vMixu, NDI nebo produkčního PC.
+
+## Doporučené pořadí
+
+| # | Test | Čas | Co je potřeba |
+|---|---|---|---|
+| 1 | Fotky a kopie XML do `samples/` | 5 min | přístup k produkčnímu PC |
+| 2 | M5-A instalace balíčku + self-test | 20 min | Windows PC |
+| 3 | M0-B / M2-B vMix čte soubor a HTTP, zámky Windows | 30 min | vMix |
+| 4 | M0-C / M3-A obraz z vMixu přes NDI, výkon vedle vMixu | 30 min | vMix + kamera na tabuli |
+| 5 | M0-A rychlost PP-OCR na produkčním PC | 5 min | produkční PC |
+| 6 | M4-A nová hala do 10 minut podle návodu | 15 min | hala, nebo záznam |
+| 7 | Reálný záznam 10–15 min → `tools.labeler` → oprava → `tools.eval` | 1 h | zápas nebo trénink |
+| 8 | M2-A 30 minut vMix + titulek | 40 min | vMix |
+| 9 | M5-B stínový provoz | zápas | přenos |
+
+Výsledky pošli, podle nich upravím, co je potřeba. Co není v tabulce, je ověřené automaticky (`uv run pytest`, `tools/eval`, `tools/bench`).
+
+Ke každému testu níže: postup, co sledovat, co zapsat a poslat zpátky.
 
 Názvy tlačítek ve vMixu se mezi verzemi mírně liší. Když něco vypadá jinak, zapiš, co vidíš. Postup pak opravím a dám do `OPERATOR.md`.
 
@@ -185,3 +203,42 @@ Bez `--emulate-lock`: zámky dělá Windows sám. Výsledek musí být `"result"
    - **Nahrát vzorek** (60 s)
    - **Stáhnout diagnostický balíček**
 6. Pošli poznámky, změřený čas a vzorek ze `%APPDATA%\OptimaTime\samples\…`.
+
+---
+
+## M5-A: instalace balíčku na Windows (asi 20 minut)
+
+1. Na PC s Pythonem a Node.js (stačí jednou, sestavovat může jakékoli Windows PC):
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File scripts\build_windows.ps1
+   ```
+   Skript spustí testy, sestaví `dist\OptimaTime\`, spustí v ní `--self-test` a zabalí `dist\OptimaTime-<verze>-win64.zip`.
+2. Na **produkčním PC** rozbal ZIP třeba do `C:\OptimaTime\`. Na produkčním PC nemusí být Python ani Node.js.
+3. V příkazovém řádku spusť `C:\OptimaTime\optima-time.exe --self-test`. Všechno musí být OK. NDI a zařízení můžou hlásit POZOR, pokud je zrovna nic neposílá.
+4. Dvojklik na `OptimaTime.exe`:
+   - neotevře se konzole
+   - otevře se prohlížeč s aplikací
+   - v oznamovací oblasti je ikona s menu **Otevřít UI** a **Ukončit**
+5. **Ukončit** v menu ikony aplikaci zavře. Ve Správci úloh nezůstane žádný proces `OptimaTime`.
+6. Znovu dvojklik: otevře se poslední profil.
+7. Během běhu se PC neuspí (nech ho v klidu déle, než je nastavené uspání).
+8. Pošli výpis self-testu a poznámky.
+
+## M5-B: stínový provoz při skutečném přenosu (SPEC 15.6)
+
+**Proč:** poslední krok před ostrým nasazením. Optima Time běží souběžně se stávající aplikací, ale vMix čte jen tu stávající. Po zápase se porovná, co by poslaly do grafiky.
+
+1. Před zápasem: Optima Time s profilem haly, výstup do **vlastního** souboru, např. `C:\vmix-data\optima.xml`. vMix ho nečte, nebo ho čte jen skrytá kopie titulku.
+2. Spusť vzorkovač souboru stávající aplikace (zapisuje změny s časem):
+   ```powershell
+   C:\OptimaTime\optima-time.exe ... (nebo ze zdrojů:)
+   uv run python -m tools.shadow sample --path C:\cesta\k\souboru\stavajici-aplikace.xml --out C:\vmix-data\reference.jsonl
+   ```
+3. Během zápasu nic nedělej. Volitelně nahraj vzorek (Nahrát vzorek, 10–15 minut), poslouží i jako reálný záznam pro ladění.
+4. Po zápase porovnej:
+   ```powershell
+   uv run python -m tools.shadow compare C:\vmix-data\reference.jsonl %APPDATA%\OptimaTime\logs\events-<datum>.jsonl
+   ```
+   Výsledek ukáže u každého pole počet neshod delších než 1 s a první z nich s časem.
+5. Pošli: výstup porovnání, oba JSONL soubory a diagnostický balíček. U každé neshody dohledáme, kdo měl pravdu.
+6. **Do ostrého provozu až po čistém stínovém zápase.**

@@ -21,3 +21,12 @@ Nápady mimo aktuální milník. Priority určuje Matěj.
 - Generátor: font a rozložení podle skutečných fotek tabule, až budou v `samples/`.
 - Labeler: pole, která jsou od začátku záznamu zhasnutá, zapisovat od snímku 0 (teď až po `blank_delay_ms`).
 - UI: lupa a posun rohů šipkami (SPEC 13.1) patří do Milníku 4.
+
+## Nápady z Milníků 2–5
+
+- Instalátor (MSI/Inno Setup) se zástupcem na ploše a volitelným spuštěním s Windows. Teď je to ZIP.
+- Narovnávat jen oblasti polí a kotev místo celé tabule (`warpPerspective` je teď největší položka CPU pipeline, ~1,4 ms na snímek).
+- Hybrid tiny/small: small jen pro potvrzení neočekávané změny.
+- Kotvy: při zakrytí kotvy se zastaví čtení všech polí. Šlo by vyžadovat shodu většiny kotev místo všech (rozhodnout podle reálných dat).
+- NDI s nižší šířkou pásma kvůli paměti (~290 MB bere NDI SDK), jen pokud to nepoškodí čitelnost.
+- Popisy pravidel v logu událostí posílat strukturovaně (kód + čísla) místo anglické věty, překlad v UI.

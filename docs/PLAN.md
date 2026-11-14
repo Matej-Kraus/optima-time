@@ -2,7 +2,7 @@
 
 Projekt **optima-time**. Python balíček `optima_time`, příkaz `optima-time`, konfigurace v `%APPDATA%\OptimaTime\`. Zadání je v `docs/SPEC.md` (v1.2).
 
-Stav: Milník 0 (13. 11.), 1–4 (14. 11. 2026) jsou hotové, viz `docs/M0_REPORT.md` až `M4_REPORT.md`. Reálná data a ruční testy dodá Matěj na konci; milníky 3–5 pokračují bez nich.
+Stav: Milníky 0 (13. 11.) a 1–5 (14. 11. 2026) jsou hotové, viz `docs/M0_REPORT.md` až `M5_REPORT.md`. Zbývají ruční testy podle pořadí v `MANUAL_TESTS.md` a úpravy podle reálných dat. Reálná data a ruční testy dodá Matěj na konci; milníky 3–5 pokračují bez nich.
 
 ## 1. Shrnutí odpovědí
 
