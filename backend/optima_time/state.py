@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import threading
 import time
 from collections import deque
@@ -34,6 +35,11 @@ class LoggedEvent:
     field: str = ""
     text: str = ""
     detail: str = ""
+
+
+def group(field_id: str) -> str:
+    """Fields that differ only in a trailing number form a group (penaltyh1, penaltyh2)."""
+    return re.sub(r"\d+$", "", field_id)
 
 
 class BoardState:
@@ -128,12 +134,18 @@ class BoardState:
             if guard is not None:
                 self._guard(guard)
             readable = source_ok and result is not None and (guard is None or guard.ok)
+            before = {fid: lg.published for fid, lg in self.logic.items()}
             for fid, lg in self.logic.items():
                 read = result.fields.get(fid) if (readable and result) else None
                 if read is None:
                     lg.stale()
                 else:
-                    events += lg.update(read, now)
+                    peers = [
+                        v
+                        for other, v in before.items()
+                        if other != fid and v is not None and group(other) == group(fid)
+                    ]
+                    events += lg.update(read, now, peers)
             changed = any(e.kind == "changed" for e in events)
             for e in events:
                 self._log(e.kind, e.field_id, e.text, e.detail)

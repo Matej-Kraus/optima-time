@@ -267,3 +267,37 @@ def test_gap_does_not_allow_jumps_beyond_elapsed_time_or_backwards() -> None:
         f.t += FRAME
     assert f.reads("00:41", 2) == "01:03"  # 22 s in 1 s: no
     assert f.reads("01:09", 2) == "01:03"  # backwards: no
+
+
+def test_penalty_moving_up_from_the_next_slot_is_accepted_fast() -> None:
+    f = penalty()
+    f.reads("0:02", 11)
+    f.read("0:01")
+    peer = [f.field.parse("0:21", None)]
+    assert all(peer)
+
+    def r(text: str) -> None:
+        value = f.field.parse(text, None)
+        read = FieldRead("penaltyh1", ReadStatus.VALID, 100.0, Reading(text, 0.99), value)
+        f.logic.update(read, f.t, peer)
+
+    r("0:21")
+    f.t += FRAME
+    r("0:21")
+    f.t += FRAME
+    assert f.logic.text == "0:21"  # 2 reads, not 400 ms
+
+
+def test_jump_without_a_matching_sibling_stays_slow() -> None:
+    f = penalty()
+    f.reads("0:02", 11)
+    f.read("0:01")
+    assert f.reads("0:21", 3) == "0:01"  # 120 ms: still waiting
+
+
+def test_group_of_field_ids() -> None:
+    from optima_time.state import group
+
+    assert group("penaltyh1") == group("penaltyh2") == "penaltyh"
+    assert group("penaltya1") != group("penaltyh1")
+    assert group("Time") == "Time"

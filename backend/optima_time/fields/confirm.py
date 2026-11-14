@@ -11,6 +11,7 @@ ignores OCR until released.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 
@@ -119,7 +120,8 @@ class FieldLogic:
         self._blank_since_ns = None
         self.status = FieldStatus.STALE
 
-    def update(self, read: FieldRead, now_ns: int) -> list[Event]:
+    def update(self, read: FieldRead, now_ns: int, peers: Sequence[Value] = ()) -> list[Event]:
+        """peers: published values of sibling fields (see plausibility.classify)."""
         if self.held_text is not None:
             self.status = FieldStatus.HELD
             return []
@@ -149,6 +151,7 @@ class FieldLogic:
                 conf,
                 self.direction,
                 gap_ms,
+                peers,
             )
             if kind is ChangeKind.SAME:
                 self._seen_ns = now_ns

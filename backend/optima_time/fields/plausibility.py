@@ -14,6 +14,7 @@ one step, a goal +1) is accepted fast; anything else must hold for a while first
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 
@@ -82,8 +83,12 @@ def classify(
     confidence: float,
     direction: Direction,
     gap_ms: int = 0,
+    peers: Sequence[Value] = (),
 ) -> tuple[ChangeKind, Requirement]:
-    """gap_ms: time since the published value was last read (0 = just now)."""
+    """gap_ms: time since the published value was last read (0 = just now).
+    peers: published values of sibling fields (penaltyh1 / penaltyh2): when the first penalty
+    ends, the board moves the second one into its slot, so a jump to a sibling's value is a
+    normal event (D30)."""
     if published is not None and published.key == value.key:
         return ChangeKind.SAME, Requirement(1, 0)
 
@@ -99,6 +104,11 @@ def classify(
             return ChangeKind.EXPECTED, Requirement(reads, 0)
         if gap_ms > 0 and clock_caught_up(published, value, field, direction, gap_ms):
             return ChangeKind.EXPECTED, Requirement(2, 0)  # caught up: one more read to be safe
+        for peer in peers:
+            if isinstance(peer, ClockValue) and (
+                peer.key == value.key or clock_step(peer, value, field, direction)
+            ):
+                return ChangeKind.EXPECTED, Requirement(2, 0)  # moved up from the next slot
         return ChangeKind.UNEXPECTED, slow
 
     # number and period
