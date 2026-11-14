@@ -1,0 +1,65 @@
+# Tests on Windows and macOS, and the Windows package (zip) as a build artifact.
+# Runs on every push; the zip is downloadable from the run's "Artifacts".
+name: build
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.13.8"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Python deps
+        run: uv sync --group build
+      - name: Models (pinned, SHA-256 checked)
+        run: uv run python scripts/fetch_models.py
+      - name: UI
+        working-directory: frontend
+        run: |
+          npm ci
+          npm test
+          npm run lint
+          npm run build
+      - name: Lint and types
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+          uv run pyright
+      - name: Tests
+        run: uv run pytest -q
+      - name: Self-test
+        run: uv run optima-time --self-test
+      - name: XML writer against a reader holding the file (real Windows locks)
+        if: runner.os == 'Windows'
+        run: uv run python -m tools.xml_reader_sim --with-writer --minutes 1 --hold 30
+
+  package:
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.13.8"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Build package (tests, PyInstaller, self-test, zip)
+        shell: pwsh
+        run: ./scripts/build_windows.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OptimaTime-win64
+          path: dist/OptimaTime-*-win64.zip
