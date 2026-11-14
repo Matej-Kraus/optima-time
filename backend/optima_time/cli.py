@@ -115,7 +115,19 @@ def last_profile() -> str:
         return "default"
 
 
+def utf8_console() -> None:
+    """Czech messages must not crash a Windows console in cp1252 (found by CI on Windows)."""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            try:
+                reconfigure(encoding="utf-8", errors="replace")
+            except (ValueError, OSError):
+                pass
+
+
 def main(argv: list[str] | None = None) -> int:
+    utf8_console()
     parser = argparse.ArgumentParser(prog="optima-time")
     parser.add_argument("--version", action="store_true")
     parser.add_argument("--self-test", action="store_true", help="check the installation, no UI")
