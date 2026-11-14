@@ -14,6 +14,7 @@ import threading
 import time
 from collections import deque
 from dataclasses import asdict, dataclass
+from datetime import datetime
 from pathlib import Path
 
 from optima_time.config.models import Profile
@@ -27,7 +28,7 @@ log = logging.getLogger(__name__)
 
 @dataclass
 class LoggedEvent:
-    wall: str  # ISO time
+    wall: str  # ISO time with milliseconds and UTC offset
     mono_ns: int
     kind: str
     field: str = ""
@@ -193,7 +194,12 @@ class BoardState:
 
     def _log(self, kind: str, field: str = "", text: str = "", detail: str = "") -> None:
         e = LoggedEvent(
-            time.strftime("%Y-%m-%dT%H:%M:%S%z"), time.monotonic_ns(), kind, field, text, detail
+            datetime.now().astimezone().isoformat(timespec="milliseconds"),
+            time.monotonic_ns(),
+            kind,
+            field,
+            text,
+            detail,
         )
         self.events.append(e)
         if self.log_dir is None:
