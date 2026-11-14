@@ -225,6 +225,8 @@ Bez `--emulate-lock`: zámky dělá Windows sám. Výsledek musí být `"result"
 5. Zavření okna křížkem se zeptá „Ukončit Optima Time?“. **Zrušit** nechá okno otevřené, **Ukončit** aplikaci zavře. Stejně **Ukončit** v menu ikony (bez ptaní). Ve Správci úloh nezůstane žádný proces `OptimaTime`. Okno minimalizuj a **Otevřít Optima Time** v menu ikony ho vrátí.
 6. Znovu dvojklik: otevře se poslední profil.
 7. Během běhu se PC neuspí (nech ho v klidu déle, než je nastavené uspání).
+7b. Upozornění: ve vMixu na chvíli vypni NDI výstup (nebo odpoj zdroj). Do ~3 s se ukáže oznámení Windows „Zdroj obrazu vypadl“ a zazní zvuk, po zapnutí „Zdroj obrazu je zpět.“ Zkontroluj, že oznámení nejsou ve Windows vypnutá (Nastavení → Oznámení).
+7c. Zámek: Nastavení → 5 → Zamknout nastavení. Z tabletu (`--host` s PINem) zkus posunout pole: musí se objevit „Nastavení je zamčené“.
 8. Pošli výpis self-testu a poznámky.
 
 ## M5-B: stínový provoz při skutečném přenosu (SPEC 15.6)

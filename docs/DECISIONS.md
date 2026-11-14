@@ -4,6 +4,12 @@ Formát: datum, co, proč, jaké byly alternativy. Novější nahoře. Položky 
 
 ## 2026-11-14 – Doplnění po Milníku 5
 
+### D34. Zámek nastavení hlídá server
+Zamčené nastavení odmítá změny profilu, kotev a přepnutí profilu přímo v API (HTTP 423), ne jen v UI. Platí tak i pro druhé okno nebo tablet. Ruční hodnoty, pauza, test výstupu a vzorky zůstávají povolené. Zámek se neukládá: po restartu je odemčeno (restart během zápasu je vzácný a odemčené nastavení nic nerozbije).
+
+### D35. Upozornění mimo okno
+Zdroj a zápis XML po 3 s (krátké výpadky se samy spraví a nemají rušit), zaseknuté zpracování hned, ztráta kotev až po 60 s (animace gólu trvá obvykle 5–20 s). Každý problém jedno oznámení Windows z ikony v liště, systémový zvuk a řádek v událostech; konec problému jedno oznámení. Pauza a testovací data upozornění nespouští, jsou to volby operátora.
+
 ### D33. Vlastní okno programu místo záložky v prohlížeči
 Zabalená aplikace otevře UI ve vlastním okně (pywebview na Edge WebView2, který je ve Windows 10/11 předinstalovaný). Okno se nedá splést s jinými záložkami. Zavření okna se nejdřív zeptá, protože ukončí i výstup do vMixu. Ikona v liště okno znovu ukáže nebo aplikaci ukončí. Když WebView2 chybí nebo okno selže, otevře se jako dřív prohlížeč a aplikace běží dál. Prohlížeč a přístup z tabletu (`--host` s PINem) fungují dál. Zpracování ani UI se nemění, okno je jen jiný „rám“. Alternativy: Electron nebo Tauri (velké, druhý build systém), jen prohlížeč v režimu `--app` (závisí na nainstalovaném Edge/Chrome a hůř se ovládá zavření).
 

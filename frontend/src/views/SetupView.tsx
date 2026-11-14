@@ -18,10 +18,12 @@ import { Magnifier } from "../components/Magnifier";
 import { OutputPanel } from "../components/OutputPanel";
 import { Overlay } from "../components/Overlay";
 import { ProfilesPanel } from "../components/ProfilesPanel";
+import { LockButton, ReadyList, XmlCheck } from "../components/SetupChecks";
 import { SourcePanel } from "../components/SourcePanel";
 import { useElementSize, useStreamKey } from "../hooks";
 import { cs } from "../i18n/cs";
 import { applyDrag, corners as rectCorners, nudge, type DragMode } from "../roiEdit";
+import { addTemplate } from "../setupTools";
 
 type DrawMode = "none" | "field" | "anchor";
 type Target = { kind: "field"; id: string } | { kind: "anchor"; index: number };
@@ -368,6 +370,31 @@ export function SetupView({ profile, live, tick, save, setProfile, reloadProfile
     </div>
   );
 
+  if (live?.locked) {
+    return (
+      <div className="setup-grid">
+        <section className="card locked-card">
+          <div className="card-head">
+            <h2 className="panel-title">🔒 {cs.lock.lockedTitle}</h2>
+            <LockButton live={live} onError={onError} />
+          </div>
+          <p className="hint">{cs.lock.lockedHint}</p>
+          <Overlay src={hasFrame ? api.previewUrl("rectified", streamKey) : null} emptyText={cs.noFrame} onImageError={reconnect}>
+            {profile.fields.map((f) => (
+              <rect key={f.id} className={`field-rect ${live.fields[f.id]?.read_status ?? ""}`} x={f.roi.x} y={f.roi.y} width={f.roi.w} height={f.roi.h} />
+            ))}
+          </Overlay>
+        </section>
+        <section className="card">
+          <div className="card-head">
+            <h2 className="panel-title">{cs.ready.title}</h2>
+          </div>
+          <ReadyList profile={profile} live={live} />
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div>
       <nav className="wizard" aria-label="Kroky nastavení">
@@ -545,6 +572,19 @@ export function SetupView({ profile, live, tick, save, setProfile, reloadProfile
               <button onClick={runAuto} disabled={!hasFrame || !profile.fields.length}>
                 {cs.autoAnchors}
               </button>
+              <button
+                title={cs.template.hint}
+                onClick={() => {
+                  const { fields, added } = addTemplate(profile.fields);
+                  setNotice(cs.template.added(added));
+                  if (!added.length) return;
+                  const n = structuredClone(profile);
+                  n.fields = fields;
+                  save(n);
+                }}
+              >
+                {cs.template.floorball}
+              </button>
               {selAnchor !== null && (
                 <button
                   className="danger"
@@ -641,6 +681,12 @@ export function SetupView({ profile, live, tick, save, setProfile, reloadProfile
                 </button>
               </div>
             </section>
+            <section className="card">
+              <div className="card-head">
+                <h2 className="panel-title">{cs.xmlCheck.title}</h2>
+              </div>
+              <XmlCheck ids={profile.fields.map((f) => f.id)} onRename={(from, to) => updateField(from, { id: to })} />
+            </section>
             {next}
           </div>
         </div>
@@ -648,6 +694,14 @@ export function SetupView({ profile, live, tick, save, setProfile, reloadProfile
 
       {step === 5 && (
         <div className="setup-grid">
+          <div className="side-col">
+          <section className="card">
+            <div className="card-head">
+              <h2 className="panel-title">{cs.ready.title}</h2>
+              <LockButton live={live} onError={onError} />
+            </div>
+            <ReadyList profile={profile} live={live} />
+          </section>
           <section className="card">
             <div className="card-head">
               <h2 className="panel-title">{cs.advancedPanel}</h2>
@@ -659,6 +713,7 @@ export function SetupView({ profile, live, tick, save, setProfile, reloadProfile
               onProfile={save}
             />
           </section>
+          </div>
           <section className="card">
             <div className="card-head">
               <h2 className="panel-title">{cs.profilesPanel}</h2>

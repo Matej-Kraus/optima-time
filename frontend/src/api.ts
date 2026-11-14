@@ -131,6 +131,8 @@ export interface LiveState {
   outputs: { mode: OutputMode; workers: Record<string, OutputStatus> };
   rectified_size: [number, number] | null;
   fields: Record<string, FieldState>;
+  locked?: boolean;
+  last_test_wall?: number | null;
   process?: {
     cpu_percent: number;
     cpu_count: number;
@@ -213,6 +215,7 @@ export const api = {
   frameUrl: (view: "source" | "rectified", tick: number) => `/api/frame.jpg?view=${view}&max_width=960&t=${tick}`,
   cropUrl: (id: string, tick: number, mode: "raw" | "otsu" = "raw") =>
     `/api/crop/${encodeURIComponent(id)}.png?mode=${mode}&t=${tick}`,
+  lock: (locked: boolean) => post("/api/lock", { locked }).then((r) => json<{ locked: boolean }>(r)),
   guardHistory: () => fetch("/api/guard/history").then((r) => json<GuardHistory>(r)),
 };
 

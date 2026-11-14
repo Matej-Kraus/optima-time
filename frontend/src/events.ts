@@ -25,6 +25,10 @@ const LEVELS: Record<string, EventLevel> = {
   thread_restarted: "warn",
   source_lost: "bad",
   pipeline_stuck: "bad",
+  alert: "bad",
+  alert_ok: "info",
+  locked: "info",
+  unlocked: "info",
 };
 
 /** How an event is coloured in the log. Unknown kinds are informational. */

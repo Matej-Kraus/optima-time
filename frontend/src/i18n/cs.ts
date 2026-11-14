@@ -12,6 +12,52 @@ export const cs = {
     resumeOutput: "Obnovit výstup",
     backToLive: "Zpět na živé",
   },
+  template: {
+    floorball: "Přidat pole: florbal",
+    added: (ids: string[]) =>
+      ids.length
+        ? `Přidáno ${ids.length} polí (${ids.join(", ")}). Posuň obdélníky na hodnoty na tabuli a pak nech najít kotvy.`
+        : "Všechna pole florbalu už v profilu jsou.",
+    hint: "Vytvoří Time, period, scoreh, scorea a 4 tresty se správným typem. Pak stačí posunout obdélníky.",
+  },
+  xmlCheck: {
+    title: "Kontrola názvů podle vMixu",
+    hint: "Vyber XML soubor, který vMix teď používá (např. ze stávající aplikace). Názvy polí musí přesně sedět, včetně velkých a malých písmen.",
+    choose: "Vybrat XML soubor…",
+    ok: "Sedí",
+    caseOnly: "Liší se jen velikostí písmen (vMix je nespáruje)",
+    rename: (to: string) => `Přejmenovat na ${to}`,
+    missing: "V XML z vMixu, ale tady chybí pole",
+    extra: "Tady navíc (vMix je v tom XML nemá)",
+    none: "V souboru nejsou žádné hodnoty.",
+    allOk: "Všechny názvy sedí.",
+    readError: "Soubor nejde přečíst.",
+  },
+  ready: {
+    title: "Připraveno k přenosu",
+    allOk: "Vše připraveno.",
+    missing: (n: number) => `Chybí ${n} ${n === 1 ? "bod" : n < 5 ? "body" : "bodů"}.`,
+    recommended: "doporučeno",
+    items: {
+      source: ["Zdroj obrazu běží", "Krok 1: zkontroluj zdroj."],
+      fields: ["Pole jsou nakreslená", "Krok 3: přidej pole (třeba šablonou Florbal)."],
+      reading: ["Všechna pole se čtou", "Krok 3: některé pole se nečte jistě. Uprav obdélník nebo prahy."],
+      anchors: ["Kotvy sedí", "Krok 3: najdi nebo uprav kotvy, když tabule ukazuje běžné skóre."],
+      xml: ["Zápis XML funguje", "Krok 4: nastav cestu k souboru."],
+      test: ["Test vMixu proběhl", "Krok 4: Zapsat testovací data a zkontroluj titulek ve vMixu."],
+      live: ["Výstup je živý", "Klikni Zpět na živé / Obnovit výstup."],
+      profile: ["Profil má název haly", "Krok 5: Uložit jako nový… s názvem haly."],
+      lock: ["Nastavení je zamčené", "Před zápasem zamkni, ať se nic nechtěně neposune."],
+    } as Record<string, [string, string]>,
+  },
+  lock: {
+    lock: "Zamknout nastavení",
+    unlock: "Odemknout nastavení",
+    lockedTitle: "Nastavení je zamčené",
+    lockedHint: "Během zápasu se nic nedá posunout ani smazat, ani z jiného zařízení. Ruční hodnoty, pauza a test výstupu fungují dál.",
+    unlockConfirm: "Odemknout nastavení? Během zápasu se pak dá omylem posunout roh nebo pole.",
+    badge: "zamčeno",
+  },
   telemetry: { source: "Zdroj", ocr: "Čtení", anchors: "Kotvy", vmix: "vMix" },
   sourceStates: {
     ok: "běží",
@@ -296,5 +342,9 @@ export const cs = {
     source_ok: "zdroj zpět",
     thread_restarted: "vlákno restartováno",
     pipeline_stuck: "zpracování se zaseklo",
+    alert: "upozornění",
+    alert_ok: "v pořádku",
+    locked: "nastavení zamčeno",
+    unlocked: "nastavení odemčeno",
   } as Record<string, string>,
 } as const;

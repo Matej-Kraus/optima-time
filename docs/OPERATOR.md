@@ -66,7 +66,8 @@ Na záložce **Nastavení** v kroku **5. Profil a pokročilé** klikni **Uložit
 
 V tomto kroku je **narovnaná tabule**. Musí být rovná a bez okolí, jinak oprav rohy.
 
-**Pole:** pro každou hodnotu na tabuli:
+**Pole:** nejrychlejší je tlačítko **Přidat pole: florbal**. Vytvoří všech 8 polí (`Time`, `period`, `scoreh`, `scorea`, `penaltyh1`, `penaltyh2`, `penaltya1`, `penaltya2`) se správným typem a volbami. Obdélníky pak jen přetáhni na hodnoty na tabuli (kliknout, táhnout, za rohy změnit velikost). Jiné pole přidáš ručně:
+
 
 1. Klikni **Přidat pole** a táhnutím nakresli obdélník kolem hodnoty.
    - Obdélník ať pokryje **všechny číslice i při nejdelší hodnotě** (např. `20:00`, skóre `10`).
@@ -82,7 +83,7 @@ V tomto kroku je **narovnaná tabule**. Musí být rovná a bez okolí, jinak op
 | trest domácí 1, 2 | `penaltyh1`, `penaltyh2` | Čas | Prázdná hodnota „Vyprázdnit“, Tvar „Jak je na tabuli“ |
 | trest hosté 1, 2 | `penaltya1`, `penaltya2` | Čas | Prázdná hodnota „Vyprázdnit“, Tvar „Jak je na tabuli“ |
 
-**Názvy v XML musí sedět s tím, co je namapované ve vMixu.** Rozlišují se velká a malá písmena (`Time` není `time`).
+**Názvy v XML musí sedět s tím, co je namapované ve vMixu.** Rozlišují se velká a malá písmena (`Time` není `time`). Zkontroluje to krok 4 (**Kontrola názvů podle vMixu**).
 
 **Kotvy (důležité):** kotva je **nápis, který se na tabuli nikdy nemění**, např. `PERIÓDA`, `DOMÁCI`, `HOSTIA`. Podle kotev aplikace pozná, že video stěna ukazuje něco jiného (animace gólu, reklama). Pak nic nečte a drží hodnoty.
 
@@ -103,7 +104,12 @@ Stejně se upravují i **pole**: kliknutím vybrat, tažením posunout, za rohy 
    4. Pole titulku napojené na Data Source se nesmí zároveň měnit jinak (ručně, jiným zdrojem).
 3. **Zkouška:** vpravo klikni **Zapsat testovací data** (je i na záložce Živě v **Rychlých zásazích**). Titulek ve vMixu ukáže náhodné hodnoty. Pak **Zpět na živé hodnoty**.
 
+4. **Kontrola názvů:** v kartě **Kontrola názvů podle vMixu** klikni **Vybrat XML soubor…** a vyber XML, které vMix používá teď (třeba ze stávající aplikace). Aplikace ukáže, které názvy sedí, které se liší jen velikostí písmen (jedním klikem je přejmenuješ) a které chybí.
+
 ### 5. Profil a pokročilé
+
+**Připraveno k přenosu:** seznam nahoře musí být celý zelený (zdroj, pole, čtení, kotvy, zápis XML, test vMixu, živý výstup). U chybějícího bodu je napsané, co udělat. Pak klikni **Zamknout nastavení**.
+
 
 Rozbalovací **Pokročilé nastavení** použij jen při problému:
 
@@ -112,6 +118,10 @@ Rozbalovací **Pokročilé nastavení** použij jen při problému:
 - **Práh shody kotev:** kotvy hlásí „lost“, i když tabule ukazuje skóre. Snížit třeba na 0,7.
 
 U pole je v editoru pod **Pokročilé**: směr počítání času, zarovnání mezerami (aby text v grafice neposkakoval), prahy čtení a názvy period (např. `1=1. tretina; 4=predĺženie`).
+
+### Zámek nastavení
+
+**Zamknout nastavení** (krok 5 nebo na záložce Živě v Rychlých zásazích) zamkne nastavení na zápas. Nic se nedá posunout ani smazat, ani z jiného zařízení. Ruční hodnoty, pauza a test výstupu fungují dál. Nastavení pak ukazuje jen náhled a seznam Připraveno k přenosu. **Odemknout nastavení** se zeptá, jestli opravdu. Zámek platí do restartu aplikace.
 
 ### Před přenosem
 
@@ -150,6 +160,9 @@ Stavy u hodnot:
 ---
 
 ## D. Když svítí žlutá nebo červená
+
+Aplikace se ozve i mimo své okno: když zdroj nebo zápis XML nefunguje déle než 3 s, zpracování se zasekne, nebo tabule ukazuje přes minutu něco jiného, Windows ukážou oznámení a zazní varovný zvuk. Když se to spraví, přijde ještě oznámení „… zpět“. Vše je i v událostech.
+
 
 | Hláška | Co udělat |
 |---|---|

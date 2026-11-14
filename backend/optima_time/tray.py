@@ -29,10 +29,23 @@ def _icon_image():
     return img
 
 
+class Tray:
+    """The running icon: `notify()` shows a Windows notification, `stop()` removes the icon."""
+
+    def __init__(self, icon) -> None:
+        self._icon = icon
+
+    def notify(self, title: str, message: str, _problem: bool = True) -> None:
+        self._icon.notify(message or title, title)
+
+    def stop(self) -> None:
+        self._icon.stop()
+
+
 def start_tray(
     url: str, on_quit: Callable[[], None], on_open: Callable[[], None] | None = None
-) -> Callable[[], None] | None:
-    """Show the icon; returns a function that removes it, or None where unsupported.
+) -> Tray | None:
+    """Show the icon; returns it, or None where unsupported.
     `on_open` brings up the UI (the app window); without it the browser opens."""
     if sys.platform != "win32":
         return None
@@ -62,4 +75,4 @@ def start_tray(
         ),
     )
     icon.run_detached()
-    return icon.stop
+    return Tray(icon)

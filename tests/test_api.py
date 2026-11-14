@@ -159,3 +159,38 @@ def test_telemetry_otsu_crop_and_guard_history(runner: Runner, tmp_path: Path) -
     assert set(np.unique(img).tolist()) <= {0, 255}
     h = c.get("/api/guard/history").json()
     assert h["threshold"] == 0.8 and len(h["points"]) > 0
+
+
+def test_lock_refuses_setup_changes_but_not_match_controls(runner: Runner, tmp_path: Path) -> None:
+    c = client(runner, tmp_path)
+    profile = c.get("/api/profile").json()
+    assert c.get("/api/state").json()["locked"] is False
+    assert c.post("/api/lock", json={"locked": True}).json() == {"locked": True}
+    assert c.put("/api/profile", json=profile).status_code == 423
+    assert (
+        c.post("/api/anchors", json={"roi": {"x": 0, "y": 0, "w": 0.2, "h": 0.2}}).status_code
+        == 423
+    )
+    assert c.post("/api/profiles/save-as", json={"name": "x"}).status_code == 423
+    # during a match: holds, output control and test values still work
+    assert c.post("/api/fields/scoreh/hold", json={"text": "3"}).status_code == 200
+    assert c.post("/api/output/pause").status_code == 200
+    assert c.post("/api/output/test").status_code == 200
+    state = c.get("/api/state").json()
+    assert state["locked"] is True and state["last_test_wall"] > 0
+    c.post("/api/lock", json={"locked": False})
+    assert c.put("/api/profile", json=profile).status_code == 200
+    kinds = [e["kind"] for e in c.get("/api/events?limit=50").json()]
+    assert "locked" in kinds and "unlocked" in kinds
+
+
+def test_alert_conditions_from_a_running_app(runner: Runner) -> None:
+    from optima_time.alerts import current_problems
+
+    wait(lambda: runner.state.values().get("scoreh") == "7")
+    assert current_problems(runner) == {
+        "source": False,
+        "output": False,
+        "stuck": False,
+        "guard": False,
+    }

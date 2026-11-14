@@ -111,7 +111,10 @@ export function Sidebar({ live, profile }: { live: LiveState | null; profile: Pr
             <span className={`mono ${outLevel}`}>{xml ? cs.modes[mode] : "—"}</span>
           </div>
           <div className="side-card">
-            <strong>{cs.shell.profile}</strong>
+            <strong>
+              {cs.shell.profile}
+              {live?.locked && <span className="badge warn lock-badge">🔒 {cs.lock.badge}</span>}
+            </strong>
             <span className="mono">{profile.name}</span>
             <br />
             <a className="mono" href="#setup">

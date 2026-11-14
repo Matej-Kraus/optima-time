@@ -1629,3 +1629,98 @@ pre {
   border-color: var(--border-strong);
   transform: translate(10px, -50%);
 }
+
+/* setup checks: ready list, XML name check, lock */
+.ready-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ready-list li {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: 9px 12px;
+  background: var(--bg-core);
+}
+
+.ready-list li small {
+  display: block;
+  color: var(--text-dim);
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.ready-list .mark {
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+.ready-list .ok .mark {
+  color: var(--accent-primary);
+}
+
+.ready-list .bad {
+  border-color: rgba(255, 23, 68, 0.4);
+}
+
+.ready-list .bad .mark {
+  color: var(--accent-danger);
+}
+
+.ready-list .warn .mark {
+  color: var(--accent-warn);
+}
+
+.ready-list button.ghost {
+  margin-left: 10px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.ready-ok {
+  color: var(--accent-primary);
+  font-weight: 700;
+}
+
+.xml-check {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.file-button {
+  display: inline-block;
+  align-self: flex-start;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 8px 14px;
+}
+
+.file-button input {
+  display: none;
+}
+
+.locked-card {
+  border-color: rgba(255, 171, 0, 0.5);
+}
+
+.lock-badge {
+  margin-left: 8px;
+  font-size: 11px;
+  padding: 1px 6px;
+}

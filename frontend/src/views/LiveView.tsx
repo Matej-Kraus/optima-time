@@ -3,6 +3,7 @@ import { api, type LiveState, type Profile } from "../api";
 import { CompactEventLog } from "../components/EventLog";
 import { FieldRows, HoldForm } from "../components/FieldRows";
 import { OnAirBoard } from "../components/OnAirBoard";
+import { LockButton } from "../components/SetupChecks";
 import { Overlay } from "../components/Overlay";
 import { useNow, useStreamKey } from "../hooks";
 import { cs } from "../i18n/cs";
@@ -80,6 +81,9 @@ export function LiveView({ profile, live }: Props) {
               </button>
               <button onClick={() => api.output("test-clear")}>{cs.testClear}</button>
               <button onClick={() => api.clearValues()}>{cs.clearValues}</button>
+            </div>
+            <div className="toggle-row">
+              <LockButton live={live} onError={() => {}} />
             </div>
           </section>
         </div>

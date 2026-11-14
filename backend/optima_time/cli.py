@@ -107,25 +107,37 @@ def run(args: argparse.Namespace) -> int:
     server = uvicorn.Server(config)
     try:
         if args.window:
-            return _run_windowed(args, server, url)
+            return _run_windowed(args, runner, server, url)
         if not args.no_browser:
             threading.Timer(1.0, webbrowser.open, args=(url,)).start()
-        remove_tray = None
+        tray = None
         if args.tray:
             from optima_time.tray import start_tray
 
-            remove_tray = start_tray(url, lambda: setattr(server, "should_exit", True))
+            tray = start_tray(url, lambda: setattr(server, "should_exit", True))
+        alerts = start_alerts(runner, tray)
         try:
             server.run()  # Ctrl+C or "Ukončit" in the tray menu ends it
         finally:
-            if remove_tray:
-                remove_tray()
+            alerts.stop()
+            if tray:
+                tray.stop()
     finally:
         runner.stop()
     return 0
 
 
-def _run_windowed(args: argparse.Namespace, server, url: str) -> int:
+def start_alerts(runner, tray):
+    """Problems lasting a few seconds: event log, Windows notification and a sound."""
+    from optima_time.alerts import AlertThread, system_sound
+
+    sinks = [system_sound] + ([tray.notify] if tray else [])
+    alerts = AlertThread(runner, sinks)
+    alerts.start()
+    return alerts
+
+
+def _run_windowed(args: argparse.Namespace, runner, server, url: str) -> int:
     """The UI in the app's own window; the server runs in a thread until the window closes
     (or "Ukončit" in the tray). Without a window the browser opens and the app runs on."""
     from optima_time.window import AppWindow, run_with_window
@@ -158,11 +170,12 @@ def _run_windowed(args: argparse.Namespace, server, url: str) -> int:
         else:
             webbrowser.open(url)
 
-    remove_tray = None
+    tray = None
     if args.tray:
         from optima_time.tray import start_tray
 
-        remove_tray = start_tray(url, quit_app, open_ui)
+        tray = start_tray(url, quit_app, open_ui)
+    alerts = start_alerts(runner, tray)
     try:
         try:
             shown = run_with_window(url, start_server, stop_server, remember_window)
@@ -180,8 +193,9 @@ def _run_windowed(args: argparse.Namespace, server, url: str) -> int:
             except KeyboardInterrupt:
                 stop_server()
     finally:
-        if remove_tray:
-            remove_tray()
+        alerts.stop()
+        if tray:
+            tray.stop()
     return 0
 
 

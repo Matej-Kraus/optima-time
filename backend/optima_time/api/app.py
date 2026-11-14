@@ -161,8 +161,21 @@ def create_app(runner: Runner, static_dir: Path | None = None, pin: str | None =
     def get_profile() -> dict[str, Any]:
         return runner.profile.model_dump(mode="json")
 
+    def unlocked() -> None:
+        """Setup changes are refused while the settings are locked (during a match)."""
+        if runner.settings_locked:
+            raise HTTPException(423, "Nastavení je zamčené. Odemkni ho v záložce Nastavení.")
+
+    @app.post("/api/lock")
+    def lock(locked: Annotated[bool, Body(embed=True)]) -> Response:
+        if locked != runner.settings_locked:
+            runner.settings_locked = locked
+            runner.state.log_event("locked" if locked else "unlocked")
+        return _json({"locked": runner.settings_locked})
+
     @app.put("/api/profile")
     def put_profile(body: dict[str, Any]) -> dict[str, Any]:
+        unlocked()
         try:
             profile = Profile.model_validate(body)
         except ValidationError as error:
@@ -199,6 +212,8 @@ def create_app(runner: Runner, static_dir: Path | None = None, pin: str | None =
             if result
             else None,
             "outputs": runner.outputs_status(),
+            "locked": runner.settings_locked,
+            "last_test_wall": runner.last_test_wall,
             "process": runner.process_status(),
             "rectified_size": [rect.shape[1], rect.shape[0]] if rect is not None else None,
             "fields": fields,
@@ -299,6 +314,7 @@ def create_app(runner: Runner, static_dir: Path | None = None, pin: str | None =
             hub.set_mode(OutputMode.LIVE)
         elif action == "test":
             hub.write_test(random_test_values(runner.profile))
+            runner.last_test_wall = time.time()
         else:
             hub.write_test(dict.fromkeys(runner.state.values(), ""))
         return _json(runner.outputs_status())
@@ -321,6 +337,7 @@ def create_app(runner: Runner, static_dir: Path | None = None, pin: str | None =
 
     @app.post("/api/profiles/load")
     def load_profile_(name: Annotated[str, Body(embed=True, max_length=200)]) -> Response:
+        unlocked()
         try:
             profile, path = profiles.load(name)
         except (FileNotFoundError, ValueError) as error:
@@ -330,6 +347,7 @@ def create_app(runner: Runner, static_dir: Path | None = None, pin: str | None =
 
     @app.post("/api/profiles/save-as")
     def save_as(name: Annotated[str, Body(embed=True, max_length=64)]) -> Response:
+        unlocked()
         try:
             path = profiles.save_as(runner.profile, name)
         except FileExistsError as error:
@@ -353,6 +371,7 @@ def create_app(runner: Runner, static_dir: Path | None = None, pin: str | None =
     def import_profile(
         name: Annotated[str, Body(max_length=64)], profile: Annotated[dict, Body()]
     ) -> Response:
+        unlocked()
         try:
             parsed = Profile.model_validate(profile)
             path = profiles.profiles_dir() / f"{profiles.safe_name(name)}.json"
@@ -431,6 +450,7 @@ def create_app(runner: Runner, static_dir: Path | None = None, pin: str | None =
 
     @app.post("/api/anchors")
     def add_anchor(roi: Annotated[Roi, Body(embed=True)]) -> dict[str, Any]:
+        unlocked()
         rectified = runner.snapshot().rectified
         if rectified is None:
             raise HTTPException(409, "no frame yet")
@@ -449,6 +469,7 @@ def create_app(runner: Runner, static_dir: Path | None = None, pin: str | None =
     def auto_anchors() -> dict[str, Any]:
         """Find captions that don't change (away from the fields) and use them as anchors,
         replacing the current ones. Edit or delete them afterwards as needed."""
+        unlocked()
         rectified = runner.snapshot().rectified
         if rectified is None:
             raise HTTPException(409, "zatím není obraz")
@@ -471,6 +492,7 @@ def create_app(runner: Runner, static_dir: Path | None = None, pin: str | None =
     @app.put("/api/anchors/{index}")
     def update_anchor(index: int, roi: Annotated[Roi, Body(embed=True)]) -> dict[str, Any]:
         """Move or resize an anchor; its template is captured again from the current frame."""
+        unlocked()
         rectified = runner.snapshot().rectified
         if rectified is None:
             raise HTTPException(409, "zatím není obraz")
@@ -487,6 +509,7 @@ def create_app(runner: Runner, static_dir: Path | None = None, pin: str | None =
 
     @app.delete("/api/anchors/{index}")
     def delete_anchor(index: int) -> dict[str, Any]:
+        unlocked()
         profile = runner.profile.model_copy(deep=True)
         if not 0 <= index < len(profile.guard.anchors):
             raise HTTPException(404, "no such anchor")

@@ -104,6 +104,8 @@ class Runner:
         self.heartbeat = time.monotonic()  # the pipeline thread's pulse (supervisor.py)
         self.supervisor = Supervisor(self)
         self.recorder = SampleRecorder()
+        self.settings_locked = False  # during a match: the setup can't be changed (SPEC 13.1)
+        self.last_test_wall: float | None = None  # when test values last went to vMix
         # telemetry for the diagnostics screen
         self._arrivals: deque[int] = deque(maxlen=100)  # frame arrival times (ns)
         self._frame_ms: deque[float] = deque(maxlen=250)  # pipeline time per frame
