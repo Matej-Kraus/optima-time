@@ -10,10 +10,12 @@ interface Props {
   onPointerUp?: (p: Point, e: PointerEvent<SVGSVGElement>) => void;
   crosshair?: boolean;
   onImageError?: () => void;
+  /** HTML on top of the image (labels), positioned in % of the image. */
+  labels?: ReactNode;
 }
 
 /** An image with an SVG overlay in relative coordinates (0-1 on both axes). */
-export function Overlay({ src, emptyText, children, onPointerDown, onPointerMove, onPointerUp, crosshair, onImageError }: Props) {
+export function Overlay({ src, emptyText, children, onPointerDown, onPointerMove, onPointerUp, crosshair, onImageError, labels }: Props) {
   const svg = useRef<SVGSVGElement>(null);
 
   const rel = (e: PointerEvent<SVGSVGElement>): Point => {
@@ -40,6 +42,7 @@ export function Overlay({ src, emptyText, children, onPointerDown, onPointerMove
           {children}
         </svg>
       )}
+      {src && labels && <div className="roi-labels">{labels}</div>}
     </div>
   );
 }

@@ -48,8 +48,17 @@ interface Props {
   onError: (message: string | null) => void;
 }
 
-/** The one-time setup, in the order it is done (OPERATOR.md part B). */
+function stepFromHash(): number {
+  const n = Number(window.location.hash.split("/")[1]);
+  return n >= 1 && n <= 5 ? n : 1;
+}
+
 export function SetupView({ profile, live, tick, save, setProfile, reloadProfile, onError }: Props) {
+  const [step, setStep] = useState(stepFromHash);
+  const goStep = (n: number) => {
+    window.location.hash = `setup/${n}`;
+    window.scrollTo(0, 0);
+  };
   const [selected, setSelected] = useState<string | null>(null);
   const [drawMode, setDrawMode] = useState<DrawMode>("none");
   const [draft, setDraft] = useState<[Point, Point] | null>(null);
@@ -135,6 +144,12 @@ export function SetupView({ profile, live, tick, save, setProfile, reloadProfile
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [activeCorner, selected, selAnchor, anchorDraft, profile, live?.source.width, live?.source.height, live?.rectified_size, save, commitAnchor]);
+
+  useEffect(() => {
+    const onHash = () => setStep(stepFromHash());
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
 
   useEffect(() => {
     // anchors are suggested automatically once the fields exist (then edited by hand)
@@ -282,184 +297,376 @@ export function SetupView({ profile, live, tick, save, setProfile, reloadProfile
     ));
   };
 
-  return (
-    <ol className="steps">
-      <li className="step">
-        <h2>{cs.steps.source}</h2>
-        <SourcePanel profile={profile} locked={false} onProfile={save} />
-      </li>
+  const [srcW, srcH] = [live?.source.width || 1920, live?.source.height || 1080];
+  const moveCorner = (i: number, dx: number, dy: number) => {
+    const [x, y] = corners[i];
+    setCorner(i, [Math.min(1, Math.max(0, x + dx / srcW)), Math.min(1, Math.max(0, y + dy / srcH))], true);
+  };
+  const guardOk = live?.guard?.state === "ok";
+  const done = [
+    live?.source.state === "ok",
+    live?.source.state === "ok" && live?.rectified_size != null,
+    profile.fields.length > 0 && profile.guard.anchors.length > 0 && guardOk,
+    !!profile.outputs.xml_file.path && live?.outputs.workers.xml_file?.ok === true,
+    false,
+  ];
+  const stepNames = [cs.steps.source, cs.steps.corners, cs.steps.fields, cs.steps.output, cs.steps.profile];
+  const next =
+    step < 5 ? (
+      <button className="primary next-btn" onClick={() => goStep(step + 1)}>
+        {cs.setup.next(step + 1, stepNames[step])}
+      </button>
+    ) : null;
+  const ac = activeCorner ?? 0;
 
-      <li className="step">
-        <h2>{cs.steps.corners}</h2>
-        <p className="hint">{cs.sourceHint} {cs.cornerKeys}</p>
-        <div className="magnifier-host" ref={sourceHost}>
-          {dragCorner !== null && hasFrame && (
-            <Magnifier
-              src={api.frameUrl("source", tick).replace("max_width=960", "max_width=0")}
-              at={corners[dragCorner]}
-              hostWidth={sourceSize.width}
-              hostHeight={sourceSize.height}
-            />
-          )}
-          <Overlay
-            src={hasFrame ? api.previewUrl("source", streamKey) : null}
-            emptyText={cs.noFrame}
-            onImageError={reconnect}
-            onPointerMove={(p) => dragCorner !== null && setCorner(dragCorner, p, false)}
-            onPointerUp={(p) => {
-              if (dragCorner !== null) setCorner(dragCorner, p, true);
-              setDragCorner(null);
-            }}
-          >
-            <polygon className="board-outline" points={corners.map((c) => c.join(",")).join(" ")} />
-            {corners.map((c, i) => (
-              <circle
-                key={i}
-                className={`handle ${i === activeCorner ? "active" : ""}`}
-                cx={c[0]}
-                cy={c[1]}
-                r={0.012}
-                onPointerDown={() => {
-                  setDragCorner(i);
-                  setActiveCorner(i);
-                  setSelected(null);
-                  setSelAnchor(null);
-                }}
-              />
-            ))}
-          </Overlay>
-        </div>
-      </li>
-
-      <li className="step">
-        <h2>{cs.steps.fields}</h2>
-        <p className="hint">{cs.boardHint}</p>
-        <div className="toolbar">
-          <button onClick={() => toggleDraw("field")} className={drawMode === "field" ? "primary" : undefined}>
-            {drawMode === "field" ? cs.cancelDraw : cs.addField}
-          </button>
-          <button onClick={() => toggleDraw("anchor")} className={drawMode === "anchor" ? "primary" : undefined}>
-            {drawMode === "anchor" ? cs.cancelDraw : cs.addAnchor}
-          </button>
-          <button onClick={runAuto} disabled={!hasFrame || !profile.fields.length}>
-            {cs.autoAnchors}
-          </button>
-          {profile.guard.anchors.map((_, i) => (
-            <button
-              key={i}
-              className="quiet"
-              onClick={async () => {
-                try {
-                  setProfile(await api.deleteAnchor(i));
-                } catch (e) {
-                  onError(errorText(e));
-                }
-              }}
-            >
-              {cs.deleteAnchor} {i + 1}
-            </button>
-          ))}
-          {live?.guard && live.guard.state !== "off" && (
-            <span className="muted">
-              {cs.anchor}: {live.guard.state === "ok" ? "sedí" : live.guard.state} ({live.guard.scores.join(", ")})
+  const sourceCanvas = (
+    <div className="magnifier-host" ref={sourceHost}>
+      {dragCorner !== null && hasFrame && (
+        <Magnifier
+          src={api.frameUrl("source", tick).replace("max_width=960", "max_width=0")}
+          at={corners[dragCorner]}
+          hostWidth={sourceSize.width}
+          hostHeight={sourceSize.height}
+        />
+      )}
+      <Overlay
+        src={hasFrame ? api.previewUrl("source", streamKey) : null}
+        emptyText={cs.noFrame}
+        onImageError={reconnect}
+        onPointerMove={(p) => dragCorner !== null && setCorner(dragCorner, p, false)}
+        onPointerUp={(p) => {
+          if (dragCorner !== null) setCorner(dragCorner, p, true);
+          setDragCorner(null);
+        }}
+        labels={
+          step === 2 &&
+          corners.map((c, i) => (
+            <span key={i} className="corner-label" style={{ left: `${c[0] * 100}%`, top: `${c[1] * 100}%` }}>
+              C{i + 1} [{Math.round(c[0] * srcW)}, {Math.round(c[1] * srcH)}]
             </span>
-          )}
-        </div>
-        <p className="hint">{cs.editHint}</p>
-        {notice && <p className="notice">{notice}</p>}
-        <div className="fields-setup">
-          <Overlay
-            src={hasFrame ? api.previewUrl("rectified", streamKey) : null}
-            emptyText={cs.noFrame}
-            onImageError={reconnect}
-            crosshair={drawMode !== "none"}
-            onPointerDown={onBoardDown}
-            onPointerMove={onBoardMove}
-            onPointerUp={onBoardUp}
+          ))
+        }
+      >
+        <polygon className="board-outline" points={corners.map((c) => c.join(",")).join(" ")} />
+        {step === 2 &&
+          corners.map((c, i) => (
+            <circle
+              key={i}
+              className={`handle ${i === activeCorner ? "active" : ""}`}
+              cx={c[0]}
+              cy={c[1]}
+              r={0.012}
+              onPointerDown={() => {
+                setDragCorner(i);
+                setActiveCorner(i);
+                setSelected(null);
+                setSelAnchor(null);
+              }}
+            />
+          ))}
+      </Overlay>
+    </div>
+  );
+
+  return (
+    <div>
+      <nav className="wizard" aria-label="Kroky nastavení">
+        {stepNames.map((name, i) => (
+          <a
+            key={i}
+            href={`#setup/${i + 1}`}
+            className={i + 1 === step ? "current" : done[i] ? "done" : undefined}
+            aria-current={i + 1 === step ? "step" : undefined}
           >
-            {profile.guard.anchors.map((a, i) => {
-              const r = anchorDraft?.index === i ? anchorDraft.roi : a.roi;
-              const target: Target = { kind: "anchor", index: i };
-              return (
-                <g key={`a${i}`}>
-                  <rect
-                    className={`anchor-rect ${selAnchor === i ? "selected" : ""}`}
-                    x={r.x}
-                    y={r.y}
-                    width={r.w}
-                    height={r.h}
-                    onPointerDown={grabber(target, "move")}
-                  />
-                  {selAnchor === i && handles(target, r)}
-                </g>
-              );
-            })}
-            {profile.fields.map((f) => {
-              const target: Target = { kind: "field", id: f.id };
-              return (
-                <g key={f.id}>
-                  <rect
-                    className={`field-rect ${f.id === selected ? "selected" : ""} ${live?.fields[f.id]?.read_status ?? ""}`}
-                    x={f.roi.x}
-                    y={f.roi.y}
-                    width={f.roi.w}
-                    height={f.roi.h}
-                    onPointerDown={grabber(target, "move")}
-                  />
-                  {f.id === selected && handles(target, f.roi)}
-                </g>
-              );
-            })}
-            {draft && (() => {
-              const r = rectFromPoints(draft[0], draft[1]);
-              return <rect className={`field-rect draft ${drawMode}`} x={r.x} y={r.y} width={r.w} height={r.h} />;
-            })()}
-          </Overlay>
-          <div className="field-side">
-            <ul className="field-list">
-              {profile.fields.map((f) => (
-                <li key={f.id}>
-                  <button className={f.id === selected ? "selected" : ""} onClick={() => select({ kind: "field", id: f.id })}>
-                    <code>{f.id}</code>
-                    <span>{live?.fields[f.id]?.read_text ?? live?.fields[f.id]?.text ?? "—"}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-            {field && (
-              <FieldEditor
-                key={field.id}
-                field={field}
-                idError={idError}
-                onChange={(patch) => updateField(field.id, patch)}
-                onType={(t) => changeType(field, t)}
-                onDelete={() => {
-                  const next = structuredClone(profile);
-                  next.fields = next.fields.filter((x) => x.id !== field.id);
-                  setSelected(null);
-                  save(next);
-                }}
-              />
-            )}
+            <span className="n">{done[i] && i + 1 !== step ? "✓" : i + 1}</span>
+            {name}
+          </a>
+        ))}
+      </nav>
+
+      {step === 1 && (
+        <div className="setup-grid">
+          <section className="card">
+            <div className="card-head">
+              <h2 className="panel-title">{cs.setup.canvasSource}</h2>
+            </div>
+            {sourceCanvas}
+          </section>
+          <div className="side-col">
+            <section className="card">
+              <div className="card-head">
+                <h2 className="panel-title">{cs.steps.source}</h2>
+              </div>
+              <SourcePanel profile={profile} locked={false} onProfile={save} />
+            </section>
+            {next}
           </div>
         </div>
-      </li>
+      )}
 
-      <li className="step">
-        <h2>{cs.steps.output}</h2>
-        <OutputPanel key={profile.outputs.xml_file.path} profile={profile} locked={false} onProfile={save} />
-      </li>
+      {step === 2 && (
+        <div className="setup-grid">
+          <section className="card">
+            <div className="card-head">
+              <h2 className="panel-title">{cs.setup.canvasSource}</h2>
+              <span className="label-mono">
+                {srcW}×{srcH}
+              </span>
+            </div>
+            <p className="hint">
+              {cs.sourceHint} {cs.cornerKeys}
+            </p>
+            {sourceCanvas}
+          </section>
+          <div className="side-col">
+            <section className="card">
+              <div className="card-head">
+                <h2 className="panel-title">{cs.setup.activePoint}</h2>
+                <span className="label-mono">{cs.setup.corners[ac]}</span>
+              </div>
+              <div className="corner-tabs" role="group">
+                {corners.map((_, i) => (
+                  <button key={i} className={i === ac ? "on" : undefined} aria-pressed={i === ac} onClick={() => setActiveCorner(i)} title={cs.setup.corners[i]}>
+                    C{i + 1}
+                  </button>
+                ))}
+              </div>
+              <div className="coords">
+                {(["X", "Y"] as const).map((axis, k) => (
+                  <div key={axis} className="coord">
+                    <span className="label-mono">{axis} (px)</span>
+                    <div className="stepper">
+                      <button aria-label={`${axis} −1`} onClick={() => moveCorner(ac, k === 0 ? -1 : 0, k === 1 ? -1 : 0)}>
+                        −
+                      </button>
+                      <b>{Math.round(corners[ac][k] * (k === 0 ? srcW : srcH))}</b>
+                      <button aria-label={`${axis} +1`} onClick={() => moveCorner(ac, k === 0 ? 1 : 0, k === 1 ? 1 : 0)}>
+                        +
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="canvas-tools">
+                <button
+                  onClick={() => {
+                    const n = structuredClone(profile);
+                    n.geometry.corners = [
+                      [0.1, 0.1],
+                      [0.9, 0.1],
+                      [0.9, 0.9],
+                      [0.1, 0.9],
+                    ];
+                    save(n);
+                  }}
+                >
+                  {cs.setup.resetCorners}
+                </button>
+              </div>
+            </section>
+            <section className="card">
+              <div className="card-head">
+                <h2 className="panel-title">{cs.setup.canvasBoard}</h2>
+              </div>
+              <Overlay src={hasFrame ? api.previewUrl("rectified", streamKey) : null} emptyText={cs.noFrame} onImageError={reconnect} />
+            </section>
+            {next}
+          </div>
+        </div>
+      )}
 
-      <li className="step">
-        <h2>{cs.steps.profile}</h2>
-        <ProfilesPanel locked={false} onSwitched={reloadProfile} />
-        <AdvancedPanel
-          key={JSON.stringify([profile.geometry.rotate, profile.guard.threshold, profile.detection, profile.preprocess])}
-          profile={profile}
-          locked={false}
-          onProfile={save}
-        />
-      </li>
-    </ol>
+      {step === 3 && (
+        <div className="setup-grid">
+          <section className="card">
+            <div className="card-head">
+              <h2 className="panel-title">{cs.setup.canvasBoard}</h2>
+              {live?.guard && live.guard.state !== "off" && (
+                <span className={`badge ${guardOk ? "" : "warn"}`}>
+                  {cs.anchor}: {guardOk ? "sedí" : live.guard.state}
+                </span>
+              )}
+            </div>
+            <p className="hint">{cs.boardHint}</p>
+            <Overlay
+              src={hasFrame ? api.previewUrl("rectified", streamKey) : null}
+              emptyText={cs.noFrame}
+              onImageError={reconnect}
+              crosshair={drawMode !== "none"}
+              onPointerDown={onBoardDown}
+              onPointerMove={onBoardMove}
+              onPointerUp={onBoardUp}
+            >
+              {profile.guard.anchors.map((a, i) => {
+                const r = anchorDraft?.index === i ? anchorDraft.roi : a.roi;
+                const target: Target = { kind: "anchor", index: i };
+                return (
+                  <g key={`a${i}`}>
+                    <rect
+                      className={`anchor-rect ${selAnchor === i ? "selected" : ""}`}
+                      x={r.x}
+                      y={r.y}
+                      width={r.w}
+                      height={r.h}
+                      onPointerDown={grabber(target, "move")}
+                    />
+                    {selAnchor === i && handles(target, r)}
+                  </g>
+                );
+              })}
+              {profile.fields.map((f) => {
+                const target: Target = { kind: "field", id: f.id };
+                return (
+                  <g key={f.id}>
+                    <rect
+                      className={`field-rect ${f.id === selected ? "selected" : ""} ${live?.fields[f.id]?.read_status ?? ""}`}
+                      x={f.roi.x}
+                      y={f.roi.y}
+                      width={f.roi.w}
+                      height={f.roi.h}
+                      onPointerDown={grabber(target, "move")}
+                    />
+                    {f.id === selected && handles(target, f.roi)}
+                  </g>
+                );
+              })}
+              {draft &&
+                (() => {
+                  const r = rectFromPoints(draft[0], draft[1]);
+                  return <rect className={`field-rect draft ${drawMode}`} x={r.x} y={r.y} width={r.w} height={r.h} />;
+                })()}
+            </Overlay>
+            <div className="canvas-tools">
+              <button onClick={() => toggleDraw("field")} className={drawMode === "field" ? "primary" : "cyan"}>
+                {drawMode === "field" ? cs.cancelDraw : cs.addField}
+              </button>
+              <button onClick={() => toggleDraw("anchor")} className={drawMode === "anchor" ? "primary" : "warn"}>
+                {drawMode === "anchor" ? cs.cancelDraw : cs.addAnchor}
+              </button>
+              <button onClick={runAuto} disabled={!hasFrame || !profile.fields.length}>
+                {cs.autoAnchors}
+              </button>
+              {selAnchor !== null && (
+                <button
+                  className="danger"
+                  onClick={async () => {
+                    try {
+                      const i = selAnchor;
+                      setSelAnchor(null);
+                      setProfile(await api.deleteAnchor(i));
+                    } catch (e) {
+                      onError(errorText(e));
+                    }
+                  }}
+                >
+                  {cs.deleteAnchor} {selAnchor + 1}
+                </button>
+              )}
+            </div>
+            <p className="hint section-gap">{cs.editHint}</p>
+            {notice && <p className="notice">{notice}</p>}
+          </section>
+          <div className="side-col">
+            <section className="card">
+              <div className="card-head">
+                <h2 className="panel-title">{cs.setup.fieldsAnchors}</h2>
+              </div>
+              <ul className="field-picker">
+                {profile.fields.map((f) => {
+                  const s = live?.fields[f.id];
+                  return (
+                    <li key={f.id}>
+                      <button className={f.id === selected ? "selected" : ""} onClick={() => select({ kind: "field", id: f.id })}>
+                        <code>{f.id}</code>
+                        <span>
+                          <b>{s?.read_text ?? s?.text ?? "—"}</b>
+                          {s?.confidence != null && <span className="dim"> {Math.round(s.confidence * 100)} %</span>}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+                {profile.guard.anchors.map((_, i) => (
+                  <li key={`a${i}`}>
+                    <button className={selAnchor === i ? "selected" : ""} onClick={() => select({ kind: "anchor", index: i })}>
+                      <code>
+                        {cs.anchor} {i + 1}
+                      </code>
+                      <span className="dim">{live?.guard?.scores[i]?.toFixed(2) ?? "—"}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+            {field && (
+              <section className="card">
+                <FieldEditor
+                  key={field.id}
+                  field={field}
+                  idError={idError}
+                  onChange={(patch) => updateField(field.id, patch)}
+                  onType={(t) => changeType(field, t)}
+                  onDelete={() => {
+                    const n = structuredClone(profile);
+                    n.fields = n.fields.filter((x) => x.id !== field.id);
+                    setSelected(null);
+                    save(n);
+                  }}
+                />
+              </section>
+            )}
+            {next}
+          </div>
+        </div>
+      )}
+
+      {step === 4 && (
+        <div className="setup-grid">
+          <section className="card">
+            <div className="card-head">
+              <h2 className="panel-title">{cs.steps.output}</h2>
+            </div>
+            <OutputPanel key={profile.outputs.xml_file.path} profile={profile} locked={false} onProfile={save} />
+          </section>
+          <div className="side-col">
+            <section className="card">
+              <div className="card-head">
+                <h2 className="panel-title">{cs.testData}</h2>
+              </div>
+              <div className="quick">
+                <button className="cyan" onClick={() => api.output("test")}>
+                  {cs.testData}
+                </button>
+                <button className="primary" onClick={() => api.output("live")}>
+                  {cs.backToLive}
+                </button>
+              </div>
+            </section>
+            {next}
+          </div>
+        </div>
+      )}
+
+      {step === 5 && (
+        <div className="setup-grid">
+          <section className="card">
+            <div className="card-head">
+              <h2 className="panel-title">{cs.advancedPanel}</h2>
+            </div>
+            <AdvancedPanel
+              key={JSON.stringify([profile.geometry.rotate, profile.guard.threshold, profile.detection, profile.preprocess])}
+              profile={profile}
+              locked={false}
+              onProfile={save}
+            />
+          </section>
+          <section className="card">
+            <div className="card-head">
+              <h2 className="panel-title">{cs.profilesPanel}</h2>
+            </div>
+            <ProfilesPanel locked={false} onSwitched={reloadProfile} />
+          </section>
+        </div>
+      )}
+    </div>
   );
 }

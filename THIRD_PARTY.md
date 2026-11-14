@@ -19,6 +19,7 @@
 | PyInstaller (build only) | 6.22.3 | GPL-2.0-or-later with the bootloader exception | packaging; the exception allows distributing the bundled app under any terms |
 | PyYAML (build/dev only) | 6.0.3 | MIT | reading `inference.yml` in `scripts/fetch_models.py` |
 | React, React DOM | 19.3.1 | MIT | UI |
+| Chivo, JetBrains Mono fonts (`@fontsource/chivo`, `@fontsource/jetbrains-mono`) | 5.3.0 | SIL OFL 1.1 | UI fonts, bundled so the UI works offline |
 | Vite, Vitest, TypeScript, oxlint | see `frontend/package.json` | MIT / Apache-2.0 | UI build and tests |
 
 ## Code reused from ScoreSight

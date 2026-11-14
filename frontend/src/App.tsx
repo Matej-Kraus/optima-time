@@ -1,18 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, errorText, type LiveState, type Profile } from "./api";
-import { Problems, StatusLights } from "./components/StatusBar";
+import { Sidebar, TopBar } from "./components/Shell";
+import { Problems } from "./components/StatusBar";
 import { usePoll, useTick } from "./hooks";
-import { cs } from "./i18n/cs";
+import { TABS, type SaveState, type Tab } from "./tabs";
 import { DiagnosticsView } from "./views/DiagnosticsView";
 import { LiveView } from "./views/LiveView";
 import { SetupView } from "./views/SetupView";
 
-type Tab = "live" | "setup" | "diagnostics";
-type SaveState = "idle" | "saving" | "saved" | "error";
-const TABS: Tab[] = ["live", "setup", "diagnostics"];
-
 function tabFromHash(): Tab {
-  const t = window.location.hash.slice(1) as Tab;
+  const t = window.location.hash.slice(1).split("/")[0] as Tab;
   return TABS.includes(t) ? t : "live";
 }
 
@@ -55,29 +52,14 @@ export default function App() {
   }, []);
 
   return (
-    <div className="app">
-      <header className="topbar">
-        <div className="brand">
-          <span className="logo">Optima Time</span>
-          {profile && <span className="profile-name">{profile.name}</span>}
-        </div>
-        <nav className="tabs" aria-label="Sekce">
-          {TABS.map((t) => (
-            <a key={t} href={`#${t}`} className={t === tab ? "active" : undefined} aria-current={t === tab ? "page" : undefined}>
-              {cs.tabs[t]}
-            </a>
-          ))}
-        </nav>
-        <StatusLights live={live} />
-        <span className={`save ${saveState}`} aria-live="polite">
-          {saveState === "saving" ? cs.saving : saveState === "saved" ? cs.saved : saveState === "error" ? cs.saveError : ""}
-        </span>
-      </header>
-      <Problems live={live} />
-      {error && <p className="error-bar">{error}</p>}
+    <div className="shell">
+      <TopBar live={live} tab={tab} saveState={saveState} />
+      <Sidebar live={live} profile={profile} />
       <main>
+        <Problems live={live} />
+        {error && <p className="error-bar">{error}</p>}
         {!profile ? (
-          <p className="muted">…</p>
+          <p className="dim">…</p>
         ) : tab === "live" ? (
           <LiveView profile={profile} live={live} tick={tick} />
         ) : tab === "setup" ? (
@@ -91,7 +73,7 @@ export default function App() {
             onError={setError}
           />
         ) : (
-          <DiagnosticsView live={live} />
+          <DiagnosticsView live={live} profile={profile} tick={tick} />
         )}
       </main>
     </div>

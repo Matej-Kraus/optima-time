@@ -6,6 +6,7 @@ source's own thread, and the API's event loop. Between them only the latest data
 
 from __future__ import annotations
 
+import itertools
 import logging
 import threading
 import time
@@ -103,6 +104,11 @@ class Runner:
         self.heartbeat = time.monotonic()  # the pipeline thread's pulse (supervisor.py)
         self.supervisor = Supervisor(self)
         self.recorder = SampleRecorder()
+        # telemetry for the diagnostics screen
+        self._arrivals: deque[int] = deque(maxlen=100)  # frame arrival times (ns)
+        self._frame_ms: deque[float] = deque(maxlen=250)  # pipeline time per frame
+        self.guard_history: deque[tuple[float, float | None, str]] = deque(maxlen=240)
+        self._guard_at = 0.0
         # small gray copies of the last ~12 s of rectified frames, for anchor suggestions
         self.history: deque[npt.NDArray[np.uint8]] = deque(maxlen=60)
         self._history_at = 0.0
@@ -220,6 +226,14 @@ class Runner:
             with self._lock:
                 self._frame, self._result = frame, result
                 self._done_times.append(time.monotonic())
+            self._arrivals.append(frame.t_ns)
+            self._frame_ms.append(result.timings_ms.get("total", 0.0))
+            if time.monotonic() - self._guard_at >= 0.1:  # 24 s of anchor scores
+                self._guard_at = time.monotonic()
+                scores = result.guard.scores
+                self.guard_history.append(
+                    (time.time(), min(scores) if scores else None, result.guard.state.value)
+                )
             if (
                 time.monotonic() - self._history_at >= 0.2
                 and self.pipeline.last_rectified is not None
@@ -277,7 +291,14 @@ class Runner:
             self._cpu_percent = 100 * (cpu - mark_cpu) / (now - mark_t)
             self._cpu_mark = (cpu, now)
         mem = self._process.memory_info().rss
+        arrivals = list(self._arrivals)
+        gaps = [(b - a) / 1e6 for a, b in itertools.pairwise(arrivals)]
+        jitter = float(np.std(gaps)) if len(gaps) > 2 else None
+        ms = sorted(self._frame_ms)
         return {
+            "frame_jitter_ms": round(jitter, 2) if jitter is not None else None,
+            "frame_ms_p50": round(ms[len(ms) // 2], 1) if ms else None,
+            "frame_ms_p95": round(ms[int(0.95 * (len(ms) - 1))], 1) if ms else None,
             "cpu_percent": round(self._cpu_percent, 1),
             "cpu_count": psutil.cpu_count() or 1,
             "rss_mb": round(mem / 2**20, 1),

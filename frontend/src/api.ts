@@ -20,6 +20,11 @@ export interface FieldConfig {
   [key: string]: unknown; // type-specific options are kept as the backend sends them
 }
 
+export interface GuardHistory {
+  threshold: number;
+  points: { ago: number; score: number | null; state: string }[];
+}
+
 export interface SourceConfig {
   type: "file" | "ndi" | "device";
   path: string;
@@ -126,7 +131,17 @@ export interface LiveState {
   outputs: { mode: OutputMode; workers: Record<string, OutputStatus> };
   rectified_size: [number, number] | null;
   fields: Record<string, FieldState>;
-  process?: { cpu_percent: number; cpu_count: number; rss_mb: number; threads: number; supervisor_restarts: number; pipeline_stuck: boolean };
+  process?: {
+    cpu_percent: number;
+    cpu_count: number;
+    rss_mb: number;
+    threads: number;
+    supervisor_restarts: number;
+    pipeline_stuck: boolean;
+    frame_jitter_ms: number | null;
+    frame_ms_p50: number | null;
+    frame_ms_p95: number | null;
+  };
 }
 
 export interface LoggedEvent {
@@ -196,7 +211,9 @@ export const api = {
     }).then((r) => json<Profile>(r)),
   deleteAnchor: (i: number) => fetch(`/api/anchors/${i}`, { method: "DELETE" }).then((r) => json<Profile>(r)),
   frameUrl: (view: "source" | "rectified", tick: number) => `/api/frame.jpg?view=${view}&max_width=960&t=${tick}`,
-  cropUrl: (id: string, tick: number) => `/api/crop/${encodeURIComponent(id)}.png?t=${tick}`,
+  cropUrl: (id: string, tick: number, mode: "raw" | "otsu" = "raw") =>
+    `/api/crop/${encodeURIComponent(id)}.png?mode=${mode}&t=${tick}`,
+  guardHistory: () => fetch("/api/guard/history").then((r) => json<GuardHistory>(r)),
 };
 
 // XML element name rule, same as the backend (fields/models.py FIELD_ID_PATTERN)

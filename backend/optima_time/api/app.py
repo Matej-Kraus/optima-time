@@ -12,7 +12,8 @@ GET  /api/diagnostics.zip
 GET  /api/preview.mjpg?view=source|rectified&fps=8   MJPEG preview stream
 GET  /api/events?limit=N          the latest events (changes, rejections, guard, source, writes)
 GET  /api/frame.jpg?view=source|rectified&max_width=N   latest frame as JPEG
-GET  /api/crop/{field_id}.png     the crop that went to OCR for a field
+GET  /api/crop/{field_id}.png?mode=raw|otsu   the crop that went to OCR (or binarized)
+GET  /api/guard/history           anchor match over the last ~24 s
 POST /api/fields/{field_id}/hold  {"text": "..."}: publish this, ignore OCR (SPEC 11.6)
 POST /api/fields/{field_id}/release
 POST /api/values/clear            empty every value that isn't held
@@ -56,6 +57,7 @@ from optima_time.fields.models import ClockField, NumberField, PeriodField, Roi
 from optima_time.guard import capture_template, history_frame, suggest_anchors
 from optima_time.outputs.base import OutputMode
 from optima_time.outputs.xml import build_xml
+from optima_time.preprocess import gray_max
 from optima_time.runner import Runner
 from optima_time.sources.device import list_devices
 from optima_time.sources.live import SourceUnavailable
@@ -214,6 +216,16 @@ def create_app(runner: Runner, static_dir: Path | None = None, pin: str | None =
         devices = [d.as_dict() for d in list_devices()]
         return _json({"ndi": ndi, "ndi_error": ndi_error, "devices": devices})
 
+    @app.get("/api/guard/history")
+    def guard_history() -> Response:
+        """Anchor match over the last ~24 s (lowest anchor score, 10 per second)."""
+        now = time.time()
+        points = [
+            {"ago": round(now - t, 1), "score": score, "state": state}
+            for t, score, state in runner.guard_history
+        ]
+        return _json({"threshold": runner.profile.guard.threshold, "points": points})
+
     @app.get("/api/events")
     def get_events(limit: int = 100) -> Response:
         events = list(runner.state.events)[-max(1, min(limit, 300)) :]
@@ -240,12 +252,17 @@ def create_app(runner: Runner, static_dir: Path | None = None, pin: str | None =
         return Response(content=data.tobytes(), media_type="image/jpeg", headers=NO_CACHE)
 
     @app.get("/api/crop/{field_id}.png")
-    def get_crop(field_id: str) -> Response:
+    def get_crop(field_id: str, mode: Literal["raw", "otsu"] = "raw") -> Response:
+        """The crop that went to OCR; mode=otsu shows it binarized (Otsu) for inspection.
+        (OCR itself always reads the raw colour crop, DECISIONS D3.)"""
         result = runner.snapshot().result
         r = result.fields.get(field_id) if result else None
         if r is None or r.crop is None:
             raise HTTPException(404, "no crop")
-        ok, data = cv2.imencode(".png", r.crop)
+        image = r.crop
+        if mode == "otsu":
+            _, image = cv2.threshold(gray_max(image), 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        ok, data = cv2.imencode(".png", image)
         if not ok:
             raise HTTPException(500, "encoding failed")
         return Response(content=data.tobytes(), media_type="image/png", headers=NO_CACHE)

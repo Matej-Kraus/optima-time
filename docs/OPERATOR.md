@@ -12,7 +12,7 @@ Aplikace má nahoře tři záložky:
 | **Nastavení** | jednou pro novou halu, kroky 1–5 |
 | **Diagnostika** | při problému: vzorek, diagnostický balíček, log událostí |
 
-Vpravo nahoře je semafor: **Zdroj, Zpracování, Kotvy, Zápis XML**. Zelená znamená v pořádku. Při problému se pod lištou objeví věta, co se děje a co udělat (část D).
+Na horní liště je stav s čísly: **Zdroj** (běží / vypadl), **Čtení** (ms na snímek), **Kotvy** (shoda 0–1), **vMix** (doba zápisu XML). Zelená tečka znamená v pořádku. Při problému se nad obsahem objeví věta, co se děje a co udělat (část D). Vpravo nahoře je červené tlačítko **Pauza výstupu**. Levý panel ukazuje zdroj obrazu, cílový XML soubor, profil a počty snímků.
 
 ---
 
@@ -44,6 +44,8 @@ Capture kartu s kamerou drží vMix, proto aplikace bere obraz z vMixu přes **N
 
 > Záložní cesta: virtuální kamera vMixu (**External** výstup → zařízení „vMix Video External 2“).
 
+Nastavení je průvodce s pěti kroky. Kroky jsou nahoře, dají se přepínat i přímo, hotový krok má ✓. Dole vpravo je vždy **Pokračovat** na další krok.
+
 ### Nový profil
 
 Na záložce **Nastavení** v kroku **5. Profil a pokročilé** klikni **Uložit jako nový…** a zadej název, např. `hala-ostrava-florbal`. Od teď se každá změna ukládá sama (vpravo nahoře „Uloženo“).
@@ -56,8 +58,9 @@ Na záložce **Nastavení** v kroku **5. Profil a pokročilé** klikni **Uložit
 
 ### 2. Rohy tabule
 
-1. Přetáhni čtyři modré body na **rohy tabule**: levý horní, pravý horní, pravý dolní, levý dolní.
-2. Při tažení se ukáže lupa. Na přesné doladění klikni na roh (zoranžoví) a posouvej **šipkami**, se **Shiftem** po 10 px.
+1. Přetáhni čtyři body **C1–C4** na **rohy tabule**: C1 levý horní, C2 pravý horní, C3 pravý dolní, C4 levý dolní. U každého je vidět jeho pozice v pixelech.
+2. Při tažení se ukáže lupa. Na přesné doladění vyber roh vpravo v **Aktivní bod** (C1–C4) a posouvej ho tlačítky **− / +** u X a Y, nebo **šipkami** (se **Shiftem** po 10 px).
+3. Vpravo dole je **narovnaná tabule**: musí být rovná a bez okolí. Pak **Pokračovat**.
 
 ### 3. Pole a kotvy
 
@@ -84,8 +87,8 @@ V tomto kroku je **narovnaná tabule**. Musí být rovná a bez okolí, jinak op
 **Kotvy (důležité):** kotva je **nápis, který se na tabuli nikdy nemění**, např. `PERIÓDA`, `DOMÁCI`, `HOSTIA`. Podle kotev aplikace pozná, že video stěna ukazuje něco jiného (animace gólu, reklama). Pak nic nečte a drží hodnoty.
 
 1. Jakmile jsou nakreslená pole, aplikace **navrhne kotvy sama**. Najde nápisy, které se během posledních ~12 s neměnily (oranžové čárkované rámečky). Znovu je navrhne tlačítko **Najít kotvy automaticky**. Spouštěj ho, když tabule ukazuje běžné skóre, ne animaci.
-2. **Zkontroluj je a uprav:** kliknutím kotvu vybereš, tažením posuneš, za bílé rohy změníš velikost, šipkami doladíš (se Shiftem po 10 px). Vzor kotvy se po úpravě sám sejme znovu. Špatnou kotvu smaž (**Smazat kotvu N**), chybějící přidej (**Přidat kotvu** a táhnutím označ nápis).
-3. Vedle tlačítek se ukáže „Kotva: sedí“ a čísla blízko 1. Světlo **Kotvy** zezelená.
+2. **Zkontroluj je a uprav:** kliknutím kotvu vybereš, tažením posuneš, za bílé rohy změníš velikost, šipkami doladíš (se Shiftem po 10 px). Vzor kotvy se po úpravě sám sejme znovu. Špatnou kotvu vyber (na obrázku nebo vpravo v seznamu **Pole a kotvy**) a smaž (**Smazat kotvu N** pod obrázkem), chybějící přidej (**Přidat kotvu** a táhnutím označ nápis).
+3. Nad obrázkem se ukáže „Kotva: sedí“ a v seznamu vpravo u kotev čísla blízko 1. **Kotvy** na horní liště zezelenají.
 
 Stejně se upravují i **pole**: kliknutím vybrat, tažením posunout, za rohy zvětšit, šipkami doladit.
 
@@ -98,7 +101,7 @@ Stejně se upravují i **pole**: kliknutím vybrat, tažením posunout, za rohy 
    2. **XPath:** `/root`, interval obnovy (Auto Refresh / Update every) **100 ms**.
    3. V titulku přiřaď polím titulku sloupce `Time`, `scoreh`, `scorea`, `period`, `penaltyh1` …
    4. Pole titulku napojené na Data Source se nesmí zároveň měnit jinak (ručně, jiným zdrojem).
-3. **Zkouška:** na záložce **Živě** klikni **Zapsat testovací data**. Titulek ve vMixu ukáže náhodné hodnoty. Pak **Zpět na živé hodnoty**.
+3. **Zkouška:** vpravo klikni **Zapsat testovací data** (je i na záložce Živě v **Rychlých zásazích**). Titulek ve vMixu ukáže náhodné hodnoty. Pak **Zpět na živé hodnoty**.
 
 ### 5. Profil a pokročilé
 
@@ -112,7 +115,7 @@ U pole je v editoru pod **Pokročilé**: směr počítání času, zarovnání m
 
 ### Před přenosem
 
-Na záložce **Diagnostika** nahraj krátký vzorek (**Nahrát vzorek**, 60 s). Hodí se pro pozdější ladění.
+Na záložce **Diagnostika** nahraj krátký vzorek (**Nahrát vzorek 60 s**). Hodí se pro pozdější ladění.
 
 ---
 
@@ -124,13 +127,13 @@ Na záložce **Diagnostika** nahraj krátký vzorek (**Nahrát vzorek**, 60 s). 
 
 | Situace | Co udělat |
 |---|---|
-| Hodnota je špatně nebo se nečte | V řádku pole napiš správnou hodnotu a klikni **Držet**. Grafika ukazuje tvou hodnotu (na tabuli Na vysílání v čárkovaném rámečku), dokud neklikneš **Uvolnit**. |
-| Grafika se nemá hýbat | **Pauza výstupu**. Grafika drží poslední hodnoty. Pak **Obnovit výstup**. |
+| Hodnota je špatně nebo se nečte | Vpravo v **Stav polí** klikni na pole, napiš správnou hodnotu a klikni **Držet**. (U času stačí **Držet ručně** vedle času.) Grafika ukazuje tvou hodnotu (na tabuli Na vysílání v čárkovaném rámečku), dokud neklikneš **Uvolnit**. |
+| Grafika se nemá hýbat | **Pauza výstupu** (vpravo nahoře nebo v Rychlých zásazích). Grafika drží poslední hodnoty. Pak **Obnovit výstup**. |
 | Vyčistit hodnoty (po zápase) | **Vyprázdnit hodnoty** (ruční hodnoty zůstanou). |
 | Gól, animace na stěně | Nic, aplikace to pozná podle kotev a hodnoty drží. |
 | Někdo projde před kamerou | Nic. Hodnoty se drží a po chvíli se čtou dál. |
-| Chceš vidět, co kamera vidí | **Zobrazit náhled tabule** pod hodnotami. |
-| Chceš vidět, co se dělo | **Zobrazit události**. |
+| Chceš vidět, co kamera vidí | **Náhled kamery** dole. Když překáží, **Skrýt**. |
+| Chceš vidět, co se dělo | **Poslední události** dole, celý log s filtrem a hledáním na záložce Diagnostika. |
 
 Stavy u hodnot:
 
@@ -157,7 +160,9 @@ Stavy u hodnot:
 | Výstup je pozastavený / testovací data | Na záložce Živě klikni **Obnovit výstup** / **Zpět na živé hodnoty**. |
 | Zpracování se zaseklo | Restartuj aplikaci (ikona v oznamovací oblasti → Ukončit, pak znovu spustit). Hodnoty v souboru zůstanou a po startu se navážou. |
 
-Při jakémkoli problému: **Diagnostika → Stáhnout diagnostický balíček** a pošli ho. Obsahuje snímek, výřezy, profil a logy.
+Při jakémkoli problému: **Diagnostika → Diagnostický balíček (ZIP)** a pošli ho. Obsahuje snímek, výřezy, profil a logy.
+
+Na Diagnostice jsou dál: doba zpracování snímku, zahozené snímky, rozptyl příchodu snímků a procesor; **výřezy polí** (původní i binarizované, tak jak je čte OCR); graf **stability kotev** (čárkovaná čára je práh, pod ním se nečte); log událostí s filtrem (Změny hodnot, Kotvy a zdroj, Výstrahy) a hledáním. Kliknutím na událost se zobrazí celý záznam.
 
 ![Diagnostika](img/diagnostika.png)
 

@@ -146,3 +146,16 @@ def test_auto_anchors_and_editing(runner: Runner, tmp_path: Path) -> None:
     r = c.put("/api/anchors/0", json={"roi": moved})
     assert r.status_code == 200 and r.json()["guard"]["anchors"][0]["roi"] == moved
     assert c.put("/api/anchors/5", json={"roi": moved}).status_code == 404
+
+
+def test_telemetry_otsu_crop_and_guard_history(runner: Runner, tmp_path: Path) -> None:
+    c = client(runner, tmp_path)
+    wait(lambda: len(runner._arrivals) > 5)
+    proc = c.get("/api/state").json()["process"]
+    assert proc["frame_ms_p50"] is not None and proc["frame_jitter_ms"] is not None
+    r = c.get("/api/crop/scoreh.png?mode=otsu")
+    assert r.status_code == 200
+    img = np.asarray(cv2.imdecode(np.frombuffer(r.content, np.uint8), cv2.IMREAD_GRAYSCALE))
+    assert set(np.unique(img).tolist()) <= {0, 255}
+    h = c.get("/api/guard/history").json()
+    assert h["threshold"] == 0.8 and len(h["points"]) > 0

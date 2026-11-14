@@ -5,65 +5,84 @@ import { cs } from "../i18n/cs";
 interface Props {
   fields: FieldConfig[];
   live: LiveState | null;
-  details: boolean;
-  tick: number;
+  selected: string | null;
+  onSelect: (id: string) => void;
 }
 
-/** One row per field: what is on air, its state, and the manual hold. */
-export function FieldRows({ fields, live, details, tick }: Props) {
+function dotLevel(status: string | undefined): string {
+  if (status === "new" || status === "same") return "ok";
+  if (status === "blank" || !status) return "";
+  return "warn";
+}
+
+/** One row per field: what is on air, its state and read confidence. Click to hold it by hand. */
+export function FieldRows({ fields, live, selected, onSelect }: Props) {
   return (
-    <div className="rows" role="table">
+    <ul className="field-list">
       {fields.map((f) => {
         const s = live?.fields[f.id];
+        const conf = s?.confidence;
         return (
-          <div key={f.id} className={`row-field ${s?.held ? "held" : ""}`} role="row">
-            <div className="name" role="cell">
-              <span className="label">{f.label || f.id}</span>
-              <code>{f.id}</code>
-            </div>
-            <div className="value" role="cell">{s?.text || "—"}</div>
-            <div className={`chip ${s?.status ?? ""}`} role="cell">
-              {s ? cs.fieldStatus[s.status] : ""}
-              {s?.pending ? ` ${s.pending}` : ""}
-            </div>
-            <div className="hold-cell" role="cell">
-              <HoldControl id={f.id} held={s?.held ?? false} current={s?.text ?? ""} />
-            </div>
-            {details && (
-              <div className="details" role="cell">
-                <img className="crop" src={api.cropUrl(f.id, tick)} alt="" />
-                <span>
-                  {cs.raw}: {s?.raw ?? "—"} · {cs.confidence}: {s?.confidence ?? "—"} · {cs.contrast}: {s?.contrast ?? "—"}
-                </span>
-              </div>
-            )}
-          </div>
+          <li key={f.id}>
+            <button
+              className={`field-row ${f.id === selected ? "selected" : ""} ${s?.held ? "held" : ""}`}
+              onClick={() => onSelect(f.id)}
+              aria-pressed={f.id === selected}
+              title={s ? `${cs.raw}: ${s.raw ?? "—"} · ${cs.contrast}: ${s.contrast ?? "—"}` : undefined}
+            >
+              <span className={`dot ${dotLevel(s?.status)}`} aria-hidden />
+              <span className="fid">{f.id}</span>
+              <span className="fval">{s?.text || "—"}</span>
+              <span className={`status-chip ${s?.status ?? ""}`}>
+                {s ? cs.fieldStatus[s.status] : ""}
+                {s?.pending ? ` ${s.pending}` : ""}
+              </span>
+              <span className={`pct ${conf != null && conf < 0.8 ? "low" : ""}`}>
+                {conf != null ? `${Math.round(conf * 100)} %` : "—"}
+              </span>
+            </button>
+          </li>
         );
       })}
-    </div>
+    </ul>
   );
 }
 
-function HoldControl({ id, held, current }: { id: string; held: boolean; current: string }) {
+/** Type a value for the selected field and hold it on air until released. */
+export function HoldForm({ id, live }: { id: string | null; live: LiveState | null }) {
   const [text, setText] = useState("");
-  if (held) {
+  if (!id) return <p className="hint section-gap">{cs.live.selectField}</p>;
+  const s = live?.fields[id];
+  if (s?.held) {
     return (
-      <button className="release" onClick={() => api.release(id)}>
-        {cs.release}
-      </button>
+      <div className="hold-form">
+        <span className="dim">
+          {cs.fieldStatus.held}: <b>{s.text}</b>
+        </span>
+        <button className="primary" onClick={() => api.release(id)}>
+          {cs.release}
+        </button>
+      </div>
     );
   }
   return (
     <form
-      className="hold"
+      className="hold-form"
       onSubmit={(e) => {
         e.preventDefault();
-        api.hold(id, text || current);
+        api.hold(id, text || s?.text || "");
         setText("");
       }}
     >
-      <input value={text} onChange={(e) => setText(e.target.value)} placeholder={cs.holdPlaceholder} size={9} aria-label={`${cs.holdPlaceholder} ${id}`} />
-      <button type="submit">{cs.hold}</button>
+      <input
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder={s?.text || cs.holdPlaceholder}
+        aria-label={cs.live.holdFor(id)}
+      />
+      <button type="submit" className="warn">
+        {cs.hold} {id}
+      </button>
     </form>
   );
 }
