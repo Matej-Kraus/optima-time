@@ -28,12 +28,23 @@ samples/               photos, recordings, real XML from production (large video
 ## Commands
 
 ```sh
-uv sync                          # install Python deps (dev group by default)
-uv sync --group spikes           # + deps for spikes/
-uv run pytest                    # tests
+uv sync                                   # Python deps (dev group by default)
+uv run python scripts/fetch_models.py     # PP-OCR models -> models/ppocr/ (once; git-ignored)
+uv run pytest                             # tests (model tests skip without models)
 uv run ruff check . && uv run ruff format --check .
-uv run pyright                   # backend, tests, tools (not spikes/)
-cd frontend && npm ci && npm test && npm run lint && npm run build
+uv run pyright                            # backend, tests, tools (not spikes/)
+cd frontend && npm ci && npm test && npm run lint && npm run build   # build before `run`
+
+# run the app on a recording (UI at http://127.0.0.1:8787, serves frontend/dist)
+uv run optima-time run --profile samples/synth/short/profile.json
+# frontend dev server with hot reload (proxies /api to :8787)
+cd frontend && npm run dev
+
+# synthetic recording + ground truth + ready profile, then evaluate it
+uv run python -m tools.synth --out samples/synth/default [--hard] [--short] [--interlaced]
+uv run python -m tools.eval samples/synth/default [--model small] [--min-width 320] [--dump-errors DIR]
+# pre-fill ground truth for a real recording (review.html to correct it)
+uv run python -m tools.labeler VIDEO --profile PROFILE --out DIR
 ```
 
 ## Conventions
@@ -42,3 +53,7 @@ cd frontend && npm ci && npm test && npm run lint && npm run build
 - Time: `time.monotonic_ns()` for measurements; wall-clock time also goes into the event log.
 - Between pipeline stages "latest wins": no queue may grow.
 - ONNX Runtime: CPU only, few threads (default 1–2), spinning off — vMix runs on the same PC.
+- Field values: `fields/formats.py` (pure parse/render), field types in `fields/models.py` (Pydantic, discriminated by `type`), each with `parse()`/`render()`.
+- Relative coordinates everywhere in profiles: corners relative to the source frame, ROIs relative to the rectified board.
+- OpenCV returns `MatLike`; wrap with `np.asarray(..., np.uint8)` where a typed `ndarray` is needed (pyright).
+- tools/ are run as modules from the repo root (`python -m tools.eval`); pytest has `pythonpath = ["."]`.

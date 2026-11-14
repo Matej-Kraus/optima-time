@@ -2,6 +2,26 @@
 
 Formát: datum, co, proč, jaké byly alternativy. Novější nahoře. Položky označené **předpoklad** platí, dokud je Matěj nepotvrdí nebo nevyvrátí.
 
+## 2026-11-14 – Milník 1
+
+### D11. Oprava oddělovače: nejednoznačné čtení bez poslední hodnoty se zahodí
+Dvě číslice za oddělovačem znamenají `mm:ss`, jedna `ss.d` (opraví `02.44` i `54:7`). Bez oddělovače se zkusí obě možnosti. Když projdou obě (např. `547` = `5:47` nebo `54.7`), vybere se ta bližší poslední platné hodnotě. Když poslední hodnota chybí, čtení se zahodí. Alternativa: vždy preferovat `mm:ss`. Zamítnuto, protože v poslední minutě by to dávalo špatné hodnoty s vysokou jistotou.
+
+### D12. Typy polí jako diskriminované sjednocení (Pydantic)
+`ClockField` / `NumberField` / `PeriodField` podle `type`, každý typ má jen svoje volby a vlastní `parse()` a `render()`. Alternativa: jeden plochý model se všemi volbami. Je jednodušší pro UI, ale profil by pak připouštěl nesmyslné kombinace.
+
+### D13. Náhled v UI Milníku 1: JPEG dotazovaný 2,5× za sekundu, ne MJPEG
+Pro minimální stránku na rohy a pole stačí. MJPEG (SPEC 13.1) přijde s plným UI v Milníku 4.
+
+### D14. Brána kontrastu: zmenšení celočíselným poměrem
+`contrast()` nejdřív zmenší výřez celočíselným poměrem průměrováním (INTER_AREA). OpenCV má pro takový poměr rychlou cestu: 0,05–0,18 ms místo 1–2,7 ms na pole. Průměrování na rozdíl od podvzorkování nepřehlédne body LED. Percentily se počítají přes `np.partition`.
+
+### D15. Modely: převod `inference.yml` při sestavení
+`scripts/fetch_models.py` zapíše `characters.txt` a `config.json`, takže aplikace za běhu nepotřebuje parser YAML. PyYAML je jen ve skupině `dev`.
+
+### D16. Generátor: zakrytí počítané z geometrie
+Pole zakrytá procházející osobou se v pravdě počítají z masky postavy promítnuté do souřadnic tabule, včetně okraje výřezu. Ruční seznam zakrytých polí byl chybný: hlava zakryla číslici času, který pravda vedla jako viditelný.
+
 ## 2026-11-13 – Milník 0
 
 ### D1. Název projektu `optima-time`

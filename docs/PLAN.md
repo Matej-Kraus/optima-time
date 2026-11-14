@@ -2,7 +2,7 @@
 
 Projekt **optima-time**. Python balíček `optima_time`, příkaz `optima-time`, konfigurace v `%APPDATA%\OptimaTime\`. Zadání je v `docs/SPEC.md` (v1.2).
 
-Stav: Milník 0 schválen 13. 11. 2026 a proveden. Výsledky jsou v `docs/M0_REPORT.md`. Ruční testy M0-A/B/C čekají na Windows s vMixem. **Milník 1 čeká na schválení.**
+Stav: Milník 0 schválen a proveden 13. 11. 2026 (`docs/M0_REPORT.md`). Milník 1 schválen 13. 11. a proveden 14. 11. 2026 (`docs/M1_REPORT.md`). Ruční testy M0-A/B/C a reálný záznam čekají. **Milník 1 čeká na převzetí.**
 
 ## 1. Shrnutí odpovědí
 
