@@ -25,7 +25,19 @@ Přesnost zůstala stejná: 0 špatně publikovaných hodnot na běžném i tě�
 
 ## 2. Zátěžový test (SPEC 15.5)
 
-3 hodiny v reálném čase ve smyčce nad těžkým zápasem. **Běží, výsledek doplním.**
+3 hodiny (10 800 s) v reálném čase ve smyčce nad těžkým zápasem, Mac M1, záznam `samples/bench/stress_3h.jsonl` (vzorek každou minutu).
+
+| | Začátek | Konec | Nejhorší |
+|---|---|---|---|
+| Zpracováno snímků/s (zdroj 25) | 25,0 | 25,0 | 1,6 (krátce, viz níže) |
+| Paměť (RSS) | 170 MB | 106 MB | 170 MB, **neroste** |
+| Latence snímek → XML, p95 | 20,8 ms | 19,6 ms | 102 ms (průměr klouzavého okna po výkyvu) |
+| Selhané zápisy XML | 0 | 0 | 0 z 40 984 |
+| Restarty vláken | 0 | 0 | 0 |
+
+Zahozeno 2 087 z 264 787 snímků (0,8 %) a 15 pomalých zápisů. Všechno přišlo v několika krátkých epizodách, kdy Mac usínal nebo jsem vedle sestavoval aplikaci, frontend a spouštěl testy (19. min, ~1:54 h, ~2:20 h, ~2:34 h). Mimo ně je p95 20–35 ms a nic se nezahazuje. Po každé epizodě se aplikace vrátila sama na 25 sn./s, žádné vlákno nespadlo, paměť neunikala.
+
+**Závěr:** 3 h provozu bez chyby a bez růstu paměti. Doporučení pro produkci zůstává: vedle vMixu během přenosu nespouštět nic náročného a nenechat PC usnout (aplikace to na Windows sama blokuje). Ověření na produkčním PC je ruční test M3-A.
 
 ## 3. Co je hotové
 

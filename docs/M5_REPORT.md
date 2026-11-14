@@ -41,7 +41,7 @@ Chyby, které CI na Windows našlo a které jsou opravené:
 
 ## 3. Zátěžový test (3 h)
 
-Běží (začal 11:19, konec ~14:20). Výsledek doplním do `M3_REPORT.md`.
+Doběhl bez chyby: 0 selhaných zápisů, 0 restartů, paměť neroste (konec 106 MB), p95 na konci 19,6 ms. Podrobně v `M3_REPORT.md`, část 2.
 
 Průběžně: kolem 19. minuty (11:38) byl Mac na několik sekund úplně vytížený mým souběžným sestavováním (PyInstaller, celá sada testů, zabalená aplikace). Aplikace tehdy zahodila 225 snímků, jeden zápis XML trval 948 ms a latence vyskočila na 3,9 s. Před tím i po tom je p95 21–33 ms bez zahozených snímků. Aplikace se zotavila sama, žádné vlákno nespadlo. Plyne z toho jedno doporučení: **na produkčním PC nespouštět během přenosu nic náročného vedle vMixu.**
 
