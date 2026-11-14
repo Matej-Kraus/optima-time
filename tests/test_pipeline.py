@@ -1,8 +1,9 @@
 """Pipeline tests with a fake recognizer (no model needed): gates, status and format handling."""
 
+import cv2
 import numpy as np
 
-from optima_time.config.models import Profile
+from optima_time.config.models import DetectionConfig, Profile
 from optima_time.fields.formats import ClockStyle
 from optima_time.fields.models import ClockField, NumberField, Roi
 from optima_time.pipeline import Pipeline, ReadStatus
@@ -36,12 +37,13 @@ def frame(seq: int = 1, lit: tuple[bool, bool] = (True, True)) -> Frame:
     return Frame(img, seq, 0, seq / 25)
 
 
-def pipeline(rec: FakeRecognizer) -> Pipeline:
+def pipeline(rec: FakeRecognizer, detection: bool = False) -> Pipeline:
     profile = Profile(
         fields=[
             ClockField(id="Time", roi=LEFT, tenths=True, style=ClockStyle.NO_LEADING_ZERO),
             NumberField(id="scoreh", roi=RIGHT),
-        ]
+        ],
+        detection=DetectionConfig(enabled=detection),
     )
     return Pipeline(profile, recognizer_factory=lambda _model: rec)
 
@@ -99,3 +101,43 @@ def test_rectifier_follows_frame_size() -> None:
     big.image[60:140, 40:160] = 255
     big.image[60:140, 240:360] = 255
     assert p.process(big).fields["Time"].text == "5:12"
+
+
+# --- change detection (SPEC 10.5)
+
+
+def digit_frame(seq: int, text: str, gain: float = 1.0) -> Frame:
+    img = np.zeros((100, 200, 3), np.uint8)
+    cv2.putText(img, text, (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 2.0, (40, 255, 40), 5)
+    cv2.putText(img, "3", (130, 70), cv2.FONT_HERSHEY_SIMPLEX, 2.0, (255, 230, 20), 5)
+    img = np.clip(img.astype(np.float32) * gain, 0, 255).astype(np.uint8)
+    return Frame(img, seq, 0, seq / 25)
+
+
+def test_unchanged_crops_are_not_read_again() -> None:
+    rec = FakeRecognizer([[("12", 0.99), ("3", 0.99)]] * 10)
+    p = pipeline(rec, detection=True)
+    p.process(digit_frame(1, "12"))
+    for i in range(2, 6):  # same picture, slightly flickering
+        r = p.process(digit_frame(i, "12", gain=1.0 + 0.04 * (-1) ** i))
+        assert r.fields["Time"].cached and r.fields["Time"].text == "1.2"
+    assert len(rec.calls) == 1
+
+
+def test_changed_digit_is_read() -> None:
+    rec = FakeRecognizer([[("12", 0.99), ("3", 0.99)], [("13", 0.99)]])
+    p = pipeline(rec, detection=True)
+    p.process(digit_frame(1, "12"))
+    r = p.process(digit_frame(2, "13"))
+    assert not r.fields["Time"].cached and r.fields["scoreh"].cached
+    assert len(rec.calls) == 2 and len(rec.calls[1]) == 1
+
+
+def test_must_read_and_max_age_force_a_read() -> None:
+    rec = FakeRecognizer([[("12", 0.99), ("3", 0.99)], [("3", 0.99)], [("12", 0.99), ("3", 0.99)]])
+    p = pipeline(rec, detection=True)
+    p.process(digit_frame(1, "12"))
+    r = p.process(digit_frame(2, "12"), must_read={"scoreh"})
+    assert r.fields["Time"].cached and not r.fields["scoreh"].cached
+    r = p.process(digit_frame(40, "12"))  # 1.56 s later: older than max_age
+    assert not r.fields["Time"].cached and not r.fields["scoreh"].cached

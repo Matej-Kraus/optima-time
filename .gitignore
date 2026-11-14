@@ -30,3 +30,4 @@ samples/**/*.ts
 .DS_Store
 Thumbs.db
 samples/synth/
+samples/bench/

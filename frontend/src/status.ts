@@ -45,6 +45,10 @@ export function lights(s: LiveState | null): { lights: Light[]; problems: Proble
     processing = "warn";
     problems.push({ level: "warn", text: cs.problems.slow(s.processing_fps, fps) });
   }
+  if (s.process?.pipeline_stuck) {
+    processing = "bad";
+    problems.push({ level: "bad", text: cs.problems.stuck });
+  }
   // layout guard
   let guard: Level = "off";
   if (s.guard && s.guard.state !== "off") {
@@ -78,7 +82,13 @@ export function lights(s: LiveState | null): { lights: Light[]; problems: Proble
   return {
     lights: [
       { key: "source", level: source, label: cs.lights.source },
-      { key: "processing", level: processing, label: `${cs.lights.processing} ${s.processing_fps} ${cs.fps}` },
+      {
+        key: "processing",
+        level: processing,
+        label:
+          `${cs.lights.processing} ${s.processing_fps} ${cs.fps}` +
+          (s.process ? ` · CPU ${s.process.cpu_percent} % · ${Math.round(s.process.rss_mb)} MB` : ""),
+      },
       { key: "guard", level: guard, label: cs.lights.guard },
       { key: "output", level: output, label: cs.lights.output },
     ],

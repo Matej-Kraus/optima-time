@@ -9,10 +9,11 @@ from __future__ import annotations
 
 import threading
 import time
-from collections.abc import Callable
-from dataclasses import dataclass, field
+from collections.abc import Callable, Collection
+from dataclasses import dataclass, field, replace
 from enum import StrEnum
 
+import cv2
 import numpy as np
 import numpy.typing as npt
 
@@ -20,7 +21,7 @@ from optima_time.config.models import Profile
 from optima_time.fields.formats import ClockValue, NumberValue
 from optima_time.geometry import Rectifier, crop
 from optima_time.guard import GuardResult, GuardState, LayoutGuard
-from optima_time.preprocess import contrast
+from optima_time.preprocess import contrast, difference, signature
 from optima_time.recognizers.base import Crop, Reading, Recognizer
 from optima_time.sources.base import Frame
 
@@ -43,6 +44,7 @@ class FieldRead:
     value: Value | None = None
     text: str | None = None  # rendered output text (VALID only)
     crop: npt.NDArray[np.uint8] | None = None  # kept only with keep_crops
+    cached: bool = False  # crop unchanged: the last reading repeated, no OCR run
 
 
 @dataclass
@@ -72,6 +74,9 @@ def default_factory(threads: int) -> RecognizerFactory:
     return make
 
 
+OPENCV_THREADS = 1  # DECISIONS D23: halves CPU; small images don't gain from parallel loops
+
+
 class Pipeline:
     def __init__(
         self,
@@ -80,6 +85,7 @@ class Pipeline:
         threads: int = 2,
         keep_crops: bool = False,
     ) -> None:
+        cv2.setNumThreads(OPENCV_THREADS)  # process-wide; vMix needs the other cores
         self._lock = threading.Lock()
         self._profile = profile
         self._factory = recognizer_factory or default_factory(threads)
@@ -87,6 +93,9 @@ class Pipeline:
         self._rectifier: Rectifier | None = None
         self._last_valid: dict[str, Value] = {}
         self._guard = LayoutGuard(profile.guard)
+        self._sig: dict[str, npt.NDArray[np.float32]] = {}  # signature at the last OCR read
+        self._last_read: dict[str, FieldRead] = {}
+        self._read_at: dict[str, float] = {}  # time (s) of the last OCR read
         self.keep_crops = keep_crops
         self.last_rectified: npt.NDArray[np.uint8] | None = None
 
@@ -105,6 +114,13 @@ class Pipeline:
             self._profile = profile
             ids = {f.id for f in profile.fields}
             self._last_valid = {k: v for k, v in self._last_valid.items() if k in ids}
+            self._forget()
+
+    def _forget(self) -> None:
+        """Drop change-detection memory: every field is read fresh on the next frame."""
+        self._sig.clear()
+        self._last_read.clear()
+        self._read_at.clear()
 
     def _recognizer(self, model: str) -> Recognizer:
         if model not in self._recognizers:
@@ -119,7 +135,9 @@ class Pipeline:
                 self._rectifier = rect
             return rect
 
-    def process(self, frame: Frame) -> FrameResult:
+    def process(self, frame: Frame, must_read: Collection[str] = ()) -> FrameResult:
+        """must_read: fields to read even if their crop didn't change (unconfirmed values need
+        fresh evidence, not repeats)."""
         t0 = time.perf_counter_ns()
         profile = self.profile
         h, w = frame.image.shape[:2]
@@ -131,6 +149,7 @@ class Pipeline:
 
         results: dict[str, FieldRead] = {}
         if not guard.ok:  # the board shows something else: read nothing (SPEC 9.4)
+            self._forget()
             done = time.perf_counter_ns()
             return FrameResult(
                 frame.seq,
@@ -143,10 +162,26 @@ class Pipeline:
             )
         batches: dict[str, list[tuple[str, Crop]]] = {}
         fields = {f.id: f for f in profile.fields if f.enabled}
+        det = profile.detection
+        now_s = frame.pts if frame.pts is not None else frame.t_ns / 1e9
+        fresh: dict[str, npt.NDArray[np.float32]] = {}
         for f in fields.values():
             image = crop(rectified, f.roi, f.margin)
             c = contrast(image)
             kept = image if self.keep_crops else None
+            sig = signature(image)
+            last = self._last_read.get(f.id)
+            age = now_s - self._read_at.get(f.id, -1e9)
+            if (
+                det.enabled
+                and last is not None
+                and f.id not in must_read
+                and 0 <= age * 1000 < det.max_age_ms
+                and difference(sig, self._sig[f.id]) <= det.threshold
+            ):
+                results[f.id] = replace(last, contrast=c, crop=kept, cached=True)
+                continue
+            fresh[f.id] = sig
             if c < f.min_contrast:  # gate: unlit / blown out / covered
                 results[f.id] = FieldRead(f.id, ReadStatus.BLANK, c, crop=kept)
                 continue
@@ -171,6 +206,10 @@ class Pipeline:
                 else:
                     r.status, r.value, r.text = ReadStatus.VALID, value, f.render(value)
                     self._last_valid[fid] = value
+        for fid, sig in fresh.items():  # remember what was read, for change detection
+            self._sig[fid] = sig
+            self._last_read[fid] = replace(results[fid], crop=None)
+            self._read_at[fid] = now_s
         t_ocr = time.perf_counter_ns()
 
         return FrameResult(
@@ -185,5 +224,6 @@ class Pipeline:
                 "crop_gate": (t_crop - t_warp) / 1e6,
                 "ocr": (t_ocr - t_crop) / 1e6,
                 "total": (t_ocr - t0) / 1e6,
+                "ocr_fields": float(sum(len(v) for v in batches.values())),
             },
         )

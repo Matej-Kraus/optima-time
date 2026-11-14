@@ -130,6 +130,7 @@ class PPOCRRecognizer:
         options.intra_op_num_threads = threads
         options.inter_op_num_threads = 1
         options.add_session_config_entry("session.intra_op.allow_spinning", "0")
+        options.enable_cpu_mem_arena = False  # ~40 MB less, same speed (DECISIONS D24)
         self.session = ort.InferenceSession(str(onnx), options, providers=["CPUExecutionProvider"])
         self.input_name = self.session.get_inputs()[0].name
         classes = self.session.get_outputs()[0].shape[-1]

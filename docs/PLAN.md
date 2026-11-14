@@ -2,7 +2,7 @@
 
 Projekt **optima-time**. Python balíček `optima_time`, příkaz `optima-time`, konfigurace v `%APPDATA%\OptimaTime\`. Zadání je v `docs/SPEC.md` (v1.2).
 
-Stav: Milník 0 (13. 11.), 1 a 2 (14. 11. 2026) jsou hotové, viz `docs/M0_REPORT.md`, `M1_REPORT.md`, `M2_REPORT.md`. Reálná data a ruční testy dodá Matěj na konci; milníky 3–5 pokračují bez nich.
+Stav: Milník 0 (13. 11.), 1, 2 a 3 (14. 11. 2026) jsou hotové, viz `docs/M0_REPORT.md` až `M3_REPORT.md`. Reálná data a ruční testy dodá Matěj na konci; milníky 3–5 pokračují bez nich.
 
 ## 1. Shrnutí odpovědí
 
@@ -181,3 +181,30 @@ frontend/                 hold/uvolnit, pauza výstupu, vyprázdnit, testovací 
 - 0 špatně publikovaných hodnot na syntetickém běžném i těžkém zápase, aspoň 99 % zachycených změn.
 - Simulátor čtenáře: žádné neúplné ani nekompletní XML. Na Windows se ověří ruční test (kolize zámků).
 - Ruční test „záznam → XML → titulek ve vMixu“ je připravený v `MANUAL_TESTS.md`.
+
+## 7. Milník 3 – živé zdroje a výkon (plán 14. 11. 2026)
+
+### 7.1 Soubory
+
+```text
+backend/optima_time/
+  sources/live.py      společný základ živých zdrojů: vlákno, poslední snímek, znovupřipojení s rostoucí prodlevou
+  sources/ndi.py       NDI přes cyndilib (výpis zdrojů, příjem, změna rozlišení, zmizení zdroje)
+  sources/device.py    capture zařízení přes OpenCV (DirectShow/MSMF na Windows), výpis se jmény (cv2-enumerate-cameras)
+  pipeline.py          detekce změny: OCR jen při změně výřezu, při nepotvrzeném poli a povinně 1× za sekundu (SPEC 10.5)
+  supervisor.py        hlídání vláken (tep pipeline, pracovní vlákna výstupů) a jejich restart (SPEC 14.3)
+  power.py             zabránění uspání PC za běhu (Windows), jinde nic
+  api/                 /api/sources (NDI, zařízení), metriky procesu (CPU, paměť)
+frontend/            výběr zdroje
+tools/bench/         běh v reálném čase se zápisem XML: latence snímek → soubor (p50/p95), CPU, paměť, zahozené snímky;
+                     režim zátěžového testu (hodiny ve smyčce, paměť a latence v čase)
+```
+
+Nové závislosti: `cv2-enumerate-cameras` 1.4.0 (MIT, výpis kamer), `psutil` 7.2.2 (BSD, CPU a paměť).
+
+### 7.2 Hotovo, když
+
+- Detekce změny ušetří většinu čtení OCR bez ztráty přesnosti (0 špatně publikovaných hodnot na syntetických zápasech).
+- Latence snímek → zapsaný soubor p95 ≤ 80 ms při 25 fps a 8 polích (Mac M1; produkční PC = ruční test).
+- Zátěžový test 3 h ve smyčce na Macu: žádný pád, žádné mrtvé vlákno, paměť neroste o víc než desítky MB.
+- NDI: ověřené proti lokálnímu testovacímu vysílači. NDI z vMixu a capture karta na Windows = ruční test M0-C / M3-A.

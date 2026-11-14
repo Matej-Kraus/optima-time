@@ -19,10 +19,20 @@ class Deinterlace(StrEnum):
 
 
 class SourceConfig(Model):
-    type: Literal["file"] = "file"  # ndi, device: Milestone 3
+    type: Literal["file", "ndi", "device"] = "file"
+    # file / image
     path: str = ""
     loop: bool = True
     speed: float = Field(default=1.0, ge=0)  # 1 = real time, 0 = as fast as possible
+    # NDI
+    ndi_name: str = ""  # e.g. "PC (vMix - KOM BOX)"
+    # capture device (OpenCV index incl. backend offset; the name finds it again if it moves)
+    device_index: int = Field(default=-1, ge=-1)
+    device_name: str = ""
+    width: int = Field(default=0, ge=0, le=7680)  # 0 = device default
+    height: int = Field(default=0, ge=0, le=4320)
+    fps: float = Field(default=0.0, ge=0, le=240)
+    fourcc: str = Field(default="", max_length=4)  # e.g. "MJPG"
     deinterlace: Deinterlace = Deinterlace.NONE
 
 
@@ -71,6 +81,14 @@ class OutputsConfig(Model):
     xml_file: XmlFileOutput = XmlFileOutput()
 
 
+class DetectionConfig(Model):
+    """Read a field only when its crop changed (SPEC 10.5)."""
+
+    enabled: bool = True
+    threshold: float = Field(default=0.15, ge=0, le=5)  # preprocess.difference (D22)
+    max_age_ms: int = Field(default=1000, ge=100, le=10_000)  # read at least this often
+
+
 class Profile(Model):
     schema_version: Literal[1] = SCHEMA_VERSION
     name: str = "profil"
@@ -78,6 +96,7 @@ class Profile(Model):
     geometry: GeometryConfig = GeometryConfig()
     fields: list[FieldConfig] = Field(default_factory=list)
     guard: GuardConfig = GuardConfig()
+    detection: DetectionConfig = DetectionConfig()
     outputs: OutputsConfig = OutputsConfig()
 
     @model_validator(mode="after")

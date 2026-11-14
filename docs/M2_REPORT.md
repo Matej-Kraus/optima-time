@@ -29,7 +29,7 @@ Stav k 14. 11. 2026. Reálná data a vMix zatím nejsou k dispozici (Matěj je d
 | Vyhodnocení přes skutečnou logiku, kotvy v syntetických profilech | `tools/eval`, `tools/synth/anchors.py` | 10 |
 | UI: semafor s větami, publikované hodnoty, hold, výstup, kotvy, log, živý režim | `frontend/` | 9 (vitest) |
 
-Celkem 177 testů v Pythonu a 9 ve frontendu. Ruff, pyright, oxlint a build jsou čisté. UI jsem ověřil v headless Chromu nad syntetickým zápasem se zápisem XML.
+Celkem 161 testů v Pythonu a 9 ve frontendu. Ruff, pyright, oxlint a build jsou čisté. UI jsem ověřil v headless Chromu nad syntetickým zápasem se zápisem XML.
 
 ## 3. Co jsem po cestě opravil
 

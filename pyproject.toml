@@ -11,6 +11,9 @@ dependencies = [
     "pydantic==2.14.3",
     "fastapi==0.162.7",
     "uvicorn==0.54.0",
+    "cyndilib==0.1.3",
+    "cv2-enumerate-cameras==1.4.0",
+    "psutil==7.2.2",
 ]
 
 [project.scripts]
@@ -29,10 +32,6 @@ dev = [
 spikes = [
     "pyyaml==6.0.3",
     "pillow==13.0.0",
-]
-# NDI receiving (licence terms of the NDI SDK: see THIRD_PARTY.md).
-ndi = [
-    "cyndilib==0.1.3",
 ]
 
 [build-system]

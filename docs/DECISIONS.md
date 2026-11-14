@@ -2,6 +2,30 @@
 
 Formát: datum, co, proč, jaké byly alternativy. Novější nahoře. Položky označené **předpoklad** platí, dokud je Matěj nepotvrdí nebo nevyvrátí.
 
+## 2026-11-14 – Milník 3
+
+### D22. Detekce změny: normalizovaný podpis a nejhorší pruh
+Podpis výřezu = maximum kanálů, zmenšení na výšku ~24 px, rozmazání, normalizace průměrem a odchylkou (blikání a expozice se neprojeví). Rozdíl = průměrný absolutní rozdíl v nejhorším svislém pruhu širokém zhruba jako jedna číslice. Měřeno na syntetice:
+
+| | stejná hodnota (max) | změna (min) |
+|---|---:|---:|
+| běžný | 0,144 | 0,221 |
+| těžký | 0,223 | 0,206 |
+
+Práh je 0,15. Prostý průměr přes celý výřez rozložení nerozděloval (změna jedné číslice se ztratila v blikání). Pojistky: pole bez potvrzené hodnoty se čtou vždy a každé pole aspoň 1× za sekundu. Výsledek: OCR běží jen u 4,5 % pole-snímků, přesnost a zpoždění zůstaly stejné.
+
+### D23. OpenCV na jednom vlákně
+`cv2.setNumThreads(1)`. Malé obrázky z paralelních smyček OpenCV nic nezískají a na 8 jádrech jen spálí režii: spotřeba CPU pipeline klesla z 11,9 na 6,1 ms na snímek (čas na snímek 3,8 → 5,9 ms, hluboko pod 40 ms). Zbytek jader patří vMixu.
+
+### D24. ONNX Runtime bez paměťové arény
+`enable_cpu_mem_arena = False` ušetří asi 40 MB a rychlost čtení se nezmění (měřeno pro dávky 1, 4 a 8).
+
+### D25. NDI: ~290 MB si bere samotné NDI SDK
+Po připojení k NDI zdroji vyroste paměť o ~290 MB a dál je stálá (45 s měření, žádný růst). Počet bufferů `cyndilib` (`max_buffers`) na tom nic nemění, jde o knihovnu NDI. Celá aplikace s NDI má na Macu ~500 MB, tedy na hraně cíle ze zadání (500 MB). Změřit na produkčním PC (ruční test M3-A). Kdyby to vadilo: nižší šířka pásma NDI (`RecvBandwidth.lowest`) zmenší obraz, ale nejspíš i čitelnost číslic. Nejdřív měřit.
+
+### D26. Výpis capture zařízení: `cv2-enumerate-cameras`
+Vrací jména i indexy, které sedí na `cv2.VideoCapture` včetně backendu (DirectShow/MSMF/AVFoundation). Profil ukládá index i jméno a podle jména zařízení najde znovu, když se indexy posunou.
+
 ## 2026-11-14 – Milník 2
 
 ### D17. Kotvy: práh korelace 0,8

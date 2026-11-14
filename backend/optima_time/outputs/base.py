@@ -11,7 +11,8 @@ import logging
 import threading
 import time
 from abc import ABC, abstractmethod
-from dataclasses import asdict, dataclass
+from collections import deque
+from dataclasses import asdict, dataclass, field
 from enum import StrEnum
 
 log = logging.getLogger(__name__)
@@ -30,9 +31,14 @@ class OutputStatus:
     last_write_ms: float | None = None
     max_write_ms: float = 0.0
     last_latency_ms: float | None = None  # frame arrival -> write done
+    latencies_ms: deque[float] = field(default_factory=lambda: deque(maxlen=2000), repr=False)
 
     def as_dict(self) -> dict:
-        return asdict(self)
+        d = asdict(self)
+        lat = sorted(d.pop("latencies_ms"))
+        d["latency_ms_p50"] = round(lat[len(lat) // 2], 1) if lat else None
+        d["latency_ms_p95"] = round(lat[int(0.95 * (len(lat) - 1))], 1) if lat else None
+        return d
 
 
 class OutputWorker(ABC):
@@ -73,6 +79,9 @@ class OutputWorker(ABC):
         self._stop = False
         self._thread = threading.Thread(target=self._run, name=f"output-{self.name}", daemon=True)
         self._thread.start()
+
+    def alive(self) -> bool:
+        return self._thread is not None and self._thread.is_alive()
 
     def stop(self, final: dict[str, str] | None = None, timeout: float = 3.0) -> None:
         """Stop the thread; write `final` first if given (e.g. emptied values on exit)."""
@@ -129,6 +138,7 @@ class OutputWorker(ABC):
                 s.message = ""
             if arrived_ns is not None:
                 s.last_latency_ms = (done - arrived_ns) / 1e6
+                s.latencies_ms.append(s.last_latency_ms)
             with self._cond:
                 self._busy = False
 

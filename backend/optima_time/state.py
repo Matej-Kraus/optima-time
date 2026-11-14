@@ -94,6 +94,21 @@ class BoardState:
                 for fid, lg in self.logic.items()
             }
 
+    def unsettled(self) -> set[str]:
+        """Fields that need fresh reads even if their crop looks unchanged: a change waiting for
+        confirmation, nothing confirmed yet, or the last read was unusable."""
+        with self._lock:
+            return {
+                fid
+                for fid, lg in self.logic.items()
+                if lg.held_text is None
+                and (
+                    lg.candidate is not None
+                    or (not lg.ever_published and lg.status is not FieldStatus.BLANK)
+                    or lg.status in (FieldStatus.REJECTED, FieldStatus.STALE)
+                )
+            }
+
     def update(
         self,
         result: FrameResult | None,
@@ -151,6 +166,10 @@ class BoardState:
                     lg.published, lg.text, lg.ever_published, lg.candidate = None, "", False, None
             self._log("cleared")
             self._publish(None)
+
+    def log_event(self, kind: str, field: str = "", text: str = "", detail: str = "") -> None:
+        with self._lock:
+            self._log(kind, field, text, detail)
 
     # --- internals
 

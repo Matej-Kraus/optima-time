@@ -20,6 +20,33 @@ export interface FieldConfig {
   [key: string]: unknown; // type-specific options are kept as the backend sends them
 }
 
+export interface SourceConfig {
+  type: "file" | "ndi" | "device";
+  path: string;
+  loop: boolean;
+  speed: number;
+  ndi_name: string;
+  device_index: number;
+  device_name: string;
+  width: number;
+  height: number;
+  fps: number;
+  fourcc: string;
+  deinterlace: "none" | "blend" | "bob";
+}
+
+export interface DeviceInfo {
+  index: number;
+  name: string;
+  backend: string;
+}
+
+export interface SourcesList {
+  ndi: string[] | null;
+  ndi_error: string | null;
+  devices: DeviceInfo[];
+}
+
 export interface Anchor {
   roi: Roi;
   template: string;
@@ -28,7 +55,7 @@ export interface Anchor {
 export interface Profile {
   schema_version: number;
   name: string;
-  source: { type: string; path: string; [key: string]: unknown };
+  source: SourceConfig;
   geometry: { corners: Point[]; rotate: number; max_width: number };
   fields: FieldConfig[];
   guard: { anchors: Anchor[]; threshold: number; recover_frames: number; search_margin: number };
@@ -81,6 +108,7 @@ export interface LiveState {
   outputs: { mode: OutputMode; workers: Record<string, OutputStatus> };
   rectified_size: [number, number] | null;
   fields: Record<string, FieldState>;
+  process?: { cpu_percent: number; cpu_count: number; rss_mb: number; threads: number; supervisor_restarts: number; pipeline_stuck: boolean };
 }
 
 export interface LoggedEvent {
@@ -124,6 +152,7 @@ export const api = {
       body: JSON.stringify(profile),
     }).then((r) => json<Profile>(r)),
   getState: () => fetch("/api/state").then((r) => json<LiveState>(r)),
+  getSources: () => fetch("/api/sources").then((r) => json<SourcesList>(r)),
   getEvents: (limit = 50) => fetch(`/api/events?limit=${limit}`).then((r) => json<LoggedEvent[]>(r)),
   getXml: () => fetch("/data/values.xml").then((r) => r.text()),
   hold: (id: string, text: string) => post(`/api/fields/${encodeURIComponent(id)}/hold`, { text }).then(json),

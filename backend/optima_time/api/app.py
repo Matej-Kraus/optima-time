@@ -5,6 +5,7 @@ GET  /data/values.json            the same values as JSON (debugging)
 GET  /api/profile                 the profile
 PUT  /api/profile                 validate, save, apply
 GET  /api/state                   source, processing, guard, outputs, readings, published values
+GET  /api/sources                 NDI sources on the network, capture devices on this PC
 GET  /api/events?limit=N          the latest events (changes, rejections, guard, source, writes)
 GET  /api/frame.jpg?view=source|rectified&max_width=N   latest frame as JPEG
 GET  /api/crop/{field_id}.png     the crop that went to OCR for a field
@@ -40,6 +41,9 @@ from optima_time.guard import capture_template
 from optima_time.outputs.base import OutputMode
 from optima_time.outputs.xml import build_xml
 from optima_time.runner import Runner
+from optima_time.sources.device import list_devices
+from optima_time.sources.live import SourceUnavailable
+from optima_time.sources.ndi import list_ndi_sources
 
 NO_CACHE = {"Cache-Control": "no-store, no-cache, must-revalidate", "Pragma": "no-cache"}
 
@@ -136,10 +140,22 @@ def create_app(runner: Runner, static_dir: Path | None = None) -> FastAPI:
             if result
             else None,
             "outputs": runner.outputs_status(),
+            "process": runner.process_status(),
             "rectified_size": [rect.shape[1], rect.shape[0]] if rect is not None else None,
             "fields": fields,
         }
         return _json(body)
+
+    @app.get("/api/sources")
+    def get_sources() -> Response:
+        """NDI sources on the network and capture devices on this PC."""
+        try:
+            ndi: list[str] | None = list_ndi_sources(wait_s=1.0)
+            ndi_error = None
+        except SourceUnavailable as error:
+            ndi, ndi_error = None, str(error)
+        devices = [d.as_dict() for d in list_devices()]
+        return _json({"ndi": ndi, "ndi_error": ndi_error, "devices": devices})
 
     @app.get("/api/events")
     def get_events(limit: int = 100) -> Response:

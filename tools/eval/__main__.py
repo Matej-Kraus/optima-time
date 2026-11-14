@@ -45,6 +45,11 @@ def main() -> int:
         help="naive publishing (Milestone 1 baseline) instead of the app's logic",
     )
     parser.add_argument("--no-guard", action="store_true", help="ignore the layout anchors")
+    parser.add_argument(
+        "--no-detection",
+        action="store_true",
+        help="read every field on every frame (no change detection)",
+    )
     args = parser.parse_args()
 
     folder = args.recording if args.recording.is_dir() else args.recording.parent
@@ -58,6 +63,8 @@ def main() -> int:
             f.engine.min_width = args.min_width
     if args.no_guard:
         profile.guard.anchors = []
+    if args.no_detection:
+        profile.detection.enabled = False
     model = profile.fields[0].engine.model if profile.fields else "?"
     min_width = profile.fields[0].engine.min_width if profile.fields else 0
     truth = load_truth(truth_path)
@@ -65,6 +72,7 @@ def main() -> int:
 
     pipeline = Pipeline(profile, threads=args.threads, keep_crops=bool(args.dump_errors))
     state = BoardState(profile)
+    ocr_reads = field_frames = 0
     guard_lost = 0
     obs: dict[str, list[Observation]] = {f.id: [] for f in profile.fields}
     totals, ocr_ms = [], []
@@ -77,7 +85,9 @@ def main() -> int:
             index = frame.seq - 1
             if max_frames is not None and index >= max_frames:
                 break
-            result = pipeline.process(frame)
+            result = pipeline.process(frame, state.unsettled())
+            ocr_reads += int(result.timings_ms.get("ocr_fields", 0))
+            field_frames += len(fields)
             totals.append(result.timings_ms["total"])
             ocr_ms.append(result.timings_ms.get("ocr", 0.0))
             guard_lost += not result.guard.ok
@@ -143,13 +153,15 @@ def main() -> int:
     print(
         f"\ntime per frame: median {timing['frame_ms_median']} ms, "
         f"p95 {timing['frame_ms_p95']} ms "
-        f"(OCR median {timing['ocr_ms_median']} ms); every field read on every frame "
-        "(change detection comes in Milestone 3)"
+        f"(OCR median {timing['ocr_ms_median']} ms); "
+        "(with change detection unless --no-detection)"
     )
     total_wrong = sum(s["wrong_published"] for s, _ in rows)
     mode = "naive publishing" if args.naive else "app logic"
     guard_info = "off" if not profile.guard.anchors else f"{guard_lost} frames lost"
     print(f"layout guard: {guard_info}")
+    share = 100 * ocr_reads / max(1, field_frames)
+    print(f"OCR reads: {ocr_reads} of {field_frames} field-frames ({share:.1f} %)")
     print(f"WRONG PUBLISHED VALUES ({mode}): {total_wrong}")
 
     report = {
@@ -158,6 +170,8 @@ def main() -> int:
         "min_width": min_width,
         "threads": args.threads,
         "publishing": mode,
+        "ocr_reads": ocr_reads,
+        "ocr_read_share_%": round(share, 2),
         "guard_lost_frames": guard_lost if profile.guard.anchors else None,
         "machine": f"{platform.system()} {platform.machine()}",
         "frames": len(totals),

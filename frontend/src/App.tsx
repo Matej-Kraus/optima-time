@@ -16,6 +16,7 @@ import { FieldEditor } from "./components/FieldEditor";
 import { FieldsTable } from "./components/FieldsTable";
 import { OutputPanel } from "./components/OutputPanel";
 import { Overlay } from "./components/Overlay";
+import { SourcePanel } from "./components/SourcePanel";
 import { StatusBar } from "./components/StatusBar";
 import { usePoll, useTick } from "./hooks";
 import { cs } from "./i18n/cs";
@@ -214,6 +215,7 @@ export default function App() {
       <div className="panels">
         <section>
           <h2>{cs.sourcePanel}</h2>
+          <SourcePanel profile={profile} locked={locked} onProfile={save} />
           {!locked && <p className="hint">{cs.sourceHint}</p>}
           <Overlay
             src={hasFrame ? api.frameUrl("source", tick) : null}

@@ -9,6 +9,8 @@
 | fastapi | 0.162.7 | MIT | API |
 | uvicorn | 0.54.0 | BSD-3-Clause | ASGI server |
 | cyndilib | 0.1.3 | MIT | NDI receiving |
+| cv2-enumerate-cameras | 1.4.0 | MIT | capture device names and OpenCV indices |
+| psutil | 7.2.2 | BSD-3-Clause | CPU and memory of the process |
 | NDI® runtime (bundled in the cyndilib wheel) | – | NDI SDK licence (`libndi_licenses.txt` in the wheel) | NDI |
 | PP-OCRv6_tiny_rec (ONNX) | HF rev `2612ab3…` | Apache-2.0 | text recognition |
 | PP-OCRv6_small_rec (ONNX) | HF rev `b8f84f0…` | Apache-2.0 | text recognition |

@@ -15,6 +15,7 @@ from pathlib import Path
 
 import numpy as np
 import numpy.typing as npt
+import psutil
 
 from optima_time.config.models import NewLine, Profile
 from optima_time.config.store import save_profile
@@ -22,8 +23,11 @@ from optima_time.outputs.base import OutputHub, OutputWorker
 from optima_time.outputs.xml_file import XmlFileWorker
 from optima_time.pipeline import FrameResult, Pipeline
 from optima_time.sources.base import Frame, SourceState, VideoSource
+from optima_time.sources.device import DeviceSource
 from optima_time.sources.file import FileSource
+from optima_time.sources.ndi import NdiSource
 from optima_time.state import BoardState
+from optima_time.supervisor import Supervisor
 
 log = logging.getLogger(__name__)
 
@@ -40,6 +44,20 @@ class Snapshot:
 
 def make_source(profile: Profile) -> VideoSource | None:
     cfg = profile.source
+    if cfg.type == "ndi":
+        return NdiSource(cfg.ndi_name, cfg.deinterlace) if cfg.ndi_name else None
+    if cfg.type == "device":
+        if cfg.device_index < 0 and not cfg.device_name:
+            return None
+        return DeviceSource(
+            cfg.device_index,
+            cfg.device_name,
+            cfg.width,
+            cfg.height,
+            cfg.fps,
+            cfg.fourcc,
+            cfg.deinterlace,
+        )
     if not cfg.path:
         return None
     return FileSource(cfg.path, cfg.loop, cfg.speed, cfg.deinterlace)
@@ -79,7 +97,10 @@ class Runner:
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
         self.error: str | None = None
-        self.heartbeat = time.monotonic()  # the pipeline thread's pulse (watchdog: Milestone 3)
+        self.heartbeat = time.monotonic()  # the pipeline thread's pulse (supervisor.py)
+        self.supervisor = Supervisor(self)
+        self._process = psutil.Process()
+        self._process.cpu_percent(None)  # start measuring
 
     # --- profile
 
@@ -108,10 +129,19 @@ class Runner:
         self.state.publish_all()
         self._open_source()
         self._stop.clear()
+        self.start_pipeline_thread()
+        self.supervisor.start()
+
+    def start_pipeline_thread(self) -> None:
+        self.heartbeat = time.monotonic()
         self._thread = threading.Thread(target=self._run, name="pipeline", daemon=True)
         self._thread.start()
 
+    def pipeline_alive(self) -> bool:
+        return self._thread is not None and self._thread.is_alive()
+
     def stop(self) -> None:
+        self.supervisor.stop()
         self._stop.set()
         if self._thread is not None:
             self._thread.join(timeout=3)
@@ -166,7 +196,7 @@ class Runner:
                 continue
             self._last_frame_at = time.monotonic()
             try:
-                result = self.pipeline.process(frame)
+                result = self.pipeline.process(frame, self.state.unsettled())
                 self.state.update(result, result.guard, True, frame.t_ns)
             except Exception:  # never let a bad frame kill the thread
                 log.exception("pipeline failed on frame %s", frame.seq)
@@ -205,6 +235,18 @@ class Runner:
             "received": source.stats.received,
             "dropped": source.stats.dropped,
             "error": source.error or self.error,
+        }
+
+    def process_status(self) -> dict:
+        """CPU (% of one core, averaged since the last call) and memory of this process."""
+        mem = self._process.memory_info().rss
+        return {
+            "cpu_percent": round(self._process.cpu_percent(None), 1),
+            "cpu_count": psutil.cpu_count() or 1,
+            "rss_mb": round(mem / 2**20, 1),
+            "threads": self._process.num_threads(),
+            "supervisor_restarts": self.supervisor.restarts,
+            "pipeline_stuck": self.supervisor.stuck,
         }
 
     def outputs_status(self) -> dict:

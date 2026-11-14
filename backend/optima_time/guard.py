@@ -51,10 +51,9 @@ def _scale_for(roi: Roi, size: tuple[int, int]) -> float:
 
 
 def _prepare(image: Image, scale: float) -> Image:
-    gray = gray_max(image)
-    h, w = gray.shape[:2]
+    h, w = image.shape[:2]
     size = (max(4, round(w * scale)), max(4, round(h * scale)))
-    small = cv2.resize(gray, size, interpolation=cv2.INTER_AREA)
+    small = gray_max(np.asarray(cv2.resize(image, size, interpolation=cv2.INTER_AREA), np.uint8))
     return np.asarray(cv2.GaussianBlur(small, (3, 3), 0), np.uint8)
 
 

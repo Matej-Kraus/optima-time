@@ -140,3 +140,28 @@ uv run python -m tools.xml_reader_sim --with-writer --minutes 5 --hold 30
 ```
 
 Bez `--emulate-lock`: zámky dělá Windows sám. Výsledek musí být `"result": "OK"`. Zajímají mě i hodnoty `max_write_ms` a `slow_writes`. Pošli celý výpis JSON.
+
+---
+
+## M3-A: živý zdroj a výkon na produkčním PC (asi 30 minut)
+
+**Proč:** NDI z vMixu, capture zařízení a hlavně spotřeba CPU a paměti vedle běžícího vMixu jdou změřit jen na tvém PC.
+
+1. Zapni ve vMixu NDI pro vstup s tabulí (viz M0-C).
+2. Spusť aplikaci s novým profilem a v UI v panelu „1. Zdroj“ zvol „NDI“ → „Obnovit seznam“ → zdroj z vMixu. Pak nastav rohy, pole a kotvy.
+3. Nech běžet aspoň 10 minut při běžící produkci ve vMixu. Do semaforu se dívej na „Zpracování … CPU … MB“.
+4. Zapiš si:
+   - CPU aplikace ve Správci úloh (Podrobnosti, proces `python` nebo `optima-time`)
+   - CPU celého PC a vMixu
+   - paměť aplikace
+   - jestli vMix nehlásí zahozené snímky
+5. Stejné zkus se zdrojem „Capture zařízení“ → `vMix Video External 2` (zapni ve vMixu External output). Pozor: kartu, kterou má otevřenou vMix, aplikace nedostane.
+6. Změř výkon i nástrojem, nad syntetickým záznamem (ve vlastním okně, vMix běží):
+   ```powershell
+   uv run python -m tools.bench samples/synth/default --seconds 120
+   ```
+   Pošli celý výpis JSON.
+7. Volitelně zátěžový test přes noc:
+   ```powershell
+   uv run python -m tools.bench samples/synth/hard --hours 3 --out bench_3h.jsonl
+   ```

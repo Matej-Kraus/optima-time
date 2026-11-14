@@ -463,3 +463,32 @@ code {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.source-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.source-panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.source-panel small {
+  color: var(--muted);
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.row input[type="number"] {
+  width: 80px;
+}
