@@ -20,6 +20,7 @@ from pathlib import Path
 
 import cv2
 
+from optima_time.config.models import Deinterlace
 from optima_time.config.store import load_profile
 from optima_time.pipeline import Pipeline
 from optima_time.sources.file import FileSource
@@ -123,7 +124,13 @@ def main() -> int:
     for f in profile.fields:
         if f.id not in truth:
             continue
-        m = evaluate_field(f, truth[f.id], obs[f.id], fps)
+        m = evaluate_field(
+            f,
+            truth[f.id],
+            obs[f.id],
+            fps,
+            interlaced=profile.source.deinterlace is not Deinterlace.NONE,
+        )
         rows.append((m.summary(), m.examples))
 
     print(

@@ -110,3 +110,12 @@ def test_nothing_published_yet_at_start_is_not_wrong() -> None:
     readings = [Observation(i, ReadStatus.VALID, "3", 0.9, 3, None) for i in range(3)]
     readings += [Observation(i, ReadStatus.VALID, "3", 0.9, 3, 3) for i in range(3, 6)]
     assert evaluate_field(SCORE, truth, readings, FPS).summary()["wrong_published"] == 0
+
+
+def test_interlaced_value_one_frame_early_is_on_time() -> None:
+    # the frame's second field already shows the next value
+    truth = track((0, "1", True), (5, "2", True))
+    readings = [obs(i, 1) for i in range(4)] + [obs(i, 2) for i in range(4, 8)]
+    assert evaluate_field(SCORE, truth, readings, FPS).summary()["wrong_published"] == 1
+    s = evaluate_field(SCORE, truth, readings, FPS, interlaced=True).summary()
+    assert s["wrong_published"] == 0

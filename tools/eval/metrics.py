@@ -130,7 +130,10 @@ def evaluate_field(
     observations: Iterable[Observation],
     fps: float,
     max_examples: int = 20,
+    interlaced: bool = False,
 ) -> FieldMetrics:
+    """`interlaced`: a frame's second field is shot half a frame later, so it can already show the
+    next value; publishing the value of the next frame is then on time, not wrong."""
     m = FieldMetrics(f.id)
     obs = list(observations)
     published: object | None = None  # naive publishing state (key)
@@ -199,6 +202,9 @@ def evaluate_field(
         # or a value the board showed within the last STALE_WINDOW_S (late, not wrong)
         cur = last_visible[0] if last_visible else None
         ok = published in (cur, tkey) or any(published == k for k, _ in recent)
+        if not ok and interlaced:
+            upcoming, up_visible = truth.at(o.frame + 1)
+            ok = up_visible and published == key_of(f, upcoming)
         if published is not None:
             published_any = True
         if not last_visible or (published is None and not published_any):
