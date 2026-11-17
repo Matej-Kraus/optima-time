@@ -254,3 +254,12 @@ Bez `--emulate-lock`: zámky dělá Windows sám. Výsledek musí být `"result"
 2. V aplikaci Nastavení → 1 → Stream ze sítě, adresa `srt://IP-PC-s-vMixem:9000?mode=caller`.
 3. Do pár sekund se ukáže obraz. Porovnej zpoždění s NDI (stopky na tabuli × hodnota v XML).
 4. Volitelně IP kamera: `rtsp://jméno:heslo@IP:554/…`.
+
+## vMix TCP API (D41)
+
+1. Ve vMixu titulek (GT) s poli `Time`, `scoreh`, `scorea`, `period` …, název vstupu např. `Skore`.
+2. Nastavení → 4 → Přímo do vMixu: zapnout, PC `127.0.0.1` (nebo IP PC s vMixem), titulek `Skore`, přípona `.Text`.
+3. Pod nastavením musí být „Spojeno“ a žádné odmítnuté pole. Titulek se mění s tabulí.
+4. Přejmenuj ve vMixu jedno pole: aplikace ho ukáže jako odmítnuté, ostatní běží dál.
+5. Zavři vMix: stav „Nespojeno“, upozornění „Výstup do vMixu selhává“. Po spuštění vMixu se samo spojí a pošle všechny hodnoty.
+6. Porovnej zpoždění s XML Data Source (stopky na tabuli × titulek).

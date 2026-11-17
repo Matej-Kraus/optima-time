@@ -40,9 +40,10 @@ CONDITIONS = [
     Condition(
         "output",
         3.0,
-        "Zápis XML pro vMix selhává",
-        "Grafika nedostává nové hodnoty. Soubor má asi otevřený jiný program.",
-        "Zápis XML je zase v pořádku.",
+        "Výstup do vMixu selhává",
+        "Grafika nedostává nové hodnoty. Zkontroluj soubor XML (není otevřený jinde?) "
+        "nebo spojení s vMixem.",
+        "Výstup do vMixu je zase v pořádku.",
     ),
     Condition(
         "stuck",

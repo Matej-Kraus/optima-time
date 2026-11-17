@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { FieldConfig, LiveState, Profile } from "./api";
-import { addTemplate, compareNames, FLOORBALL, readiness, xmlLeafNames } from "./setupTools";
+import { addTemplate, compareNames, FLOORBALL, formatTitleNames, parseTitleNames, readiness, xmlLeafNames } from "./setupTools";
 
 describe("floorball template", () => {
   it("adds only the missing fields, ignoring case", () => {
@@ -58,5 +58,13 @@ describe("readiness", () => {
     const missing = readiness(profile, bad).filter((i) => !i.ok).map((i) => i.key);
     expect(missing).toEqual(["xml", "test", "live", "lock"]);
     expect(readiness(profile, null).every((i) => !i.ok || i.key === "fields" || i.key === "profile")).toBe(true);
+  });
+});
+
+describe("vMix title names", () => {
+  it("parses and formats id=name pairs", () => {
+    expect(parseTitleNames("Time=Cas.Text; scoreh = Domaci.Text;; bad")).toEqual({ Time: "Cas.Text", scoreh: "Domaci.Text" });
+    expect(formatTitleNames({ Time: "Cas.Text" })).toBe("Time=Cas.Text");
+    expect(parseTitleNames("")).toEqual({});
   });
 });

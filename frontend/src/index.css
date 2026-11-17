@@ -1779,3 +1779,17 @@ pre {
   text-transform: none;
   letter-spacing: 0;
 }
+
+.vmix-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.vmix-panel .grow {
+  flex: 1;
+}
+
+.vmix-panel input[type="number"] {
+  width: 90px;
+}

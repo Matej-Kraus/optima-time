@@ -7,6 +7,15 @@ Formát: datum, co, proč, jaké byly alternativy. Novější nahoře. Položky 
 ### D34. Zámek nastavení hlídá server
 Zamčené nastavení odmítá změny profilu, kotev a přepnutí profilu přímo v API (HTTP 423), ne jen v UI. Platí tak i pro druhé okno nebo tablet. Ruční hodnoty, pauza, test výstupu a vzorky zůstávají povolené. Zámek se neukládá: po restartu je odemčeno (restart během zápasu je vzácný a odemčené nastavení nic nerozbije).
 
+### D41. Přímý výstup do vMixu přes TCP API
+Druhý výstup vedle XML: trvalé spojení na port 8099, `FUNCTION SetText Input=…&SelectedName=…&Value=…` (hodnoty URL kódované, podle nápovědy vMixu: dotaz je stejný jako u HTTP API). Na každý příkaz se čeká odpověď, posílají se jen změny, po novém spojení vše. Pole, které vMix odmítne (`FUNCTION ER`), se ukáže v nastavení a neposílá se znovu, dokud se nezmění, takže jeden špatný název nezastaví ostatní a nespustí upozornění. Když vMix neběží, připojování se zpomaluje až na 10 s. Ověřeno proti napodobenému vMixu, skutečný vMix je ruční test. TCP místo HTTP: jedno spojení bez režie na každou hodnotu.
+
+### D40. Indikátory bez OCR
+Typ pole `indicator`: 90. percentil jasu (max. kanál) výřezu proti prahu `lit_level`, výstup `on_text` / `off_text`. Změna oběma směry po `reads` (3) shodných čteních, takže hráč před tabulí indikátor nepřepne. Kontrastní práh se nepoužívá: svítící symbol přes celý výřez má nízký kontrast.
+
+### D39. Odvozená pole jen z potvrzených hodnot; HTTP feed = co šlo ven
+Šablony (`fields/template.py`) počítají z publikovaných hodnot, ne ze čtení, takže nemůžou poslat dál nic, co neprošlo potvrzením. Šablona se kontroluje při uložení profilu (neznámé pole nebo filtr = chyba 422). `/data/values.xml|json` teď ukazuje, co dostaly výstupy (pauza, test, zpoždění), dřív ukazovaly živé hodnoty i během pauzy.
+
 ### D38. Zpoždění výstupu v aplikaci
 `outputs.delay_ms` (0–10 s) drží každou změnu zpátky ve frontě a pouští je v pořadí (žádná se nepřeskočí). Pauza, testovací data a obnovení výstupu platí hned. Scoreboard OCR to řeší zpožděním vstupu ve vMixu. U nás jde obojí, ale zpoždění v aplikaci nepotřebuje zpožďovat obraz pro čtení a nestojí paměť vMixu.
 

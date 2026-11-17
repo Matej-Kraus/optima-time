@@ -40,9 +40,9 @@ Nápady mimo aktuální milník. Priority určuje Matěj.
 Hotovo z jejich funkcí: úprava obrazu (D36), SRT/RTSP/RTMP vstup (D37), zpoždění (D38), testovací data, „ignorovat prázdné“ (prázdná hodnota), názvy period, presety (profily), automatický start s profilem, tichá instalace, druhá instance (`--port`).
 
 Chybí, podle užitku pro florbal s vMixem:
-- **Přímý výstup do vMix API** (TCP 8099 / HTTP SetText), rychlejší než XML Data Source. Ze zadání Fáze 2. Až po ověření s vMixem v hale.
-- **Odvozená pole a šablony výstupu** (jejich „scripted output“): spojit pole („0 : 2“), výchozí hodnota pro prázdné, text podle podmínky, jiný obrázek podle hodnoty (vMix SetImage), viditelnost prvku (trest běží → ukázat pozadí). Fáze 2.
-- **Indikátory / symboly**: obdélník svítí = 1, nesvítí = 0, víc obdélníků = počet (time-out, fauly). Jednoduché, náš kontrastní práh to skoro umí.
+- ~~Přímý výstup do vMix API~~ hotovo (D41), ověřit se skutečným vMixem.
+- ~~Odvozená pole a šablony výstupu~~ hotovo (D39), viditelnost a obrázky přes `if`/`map` do XML. Zbývá: přímé SetImage / SetTextVisible přes vMix API. Původně: (jejich „scripted output“): spojit pole („0 : 2“), výchozí hodnota pro prázdné, text podle podmínky, jiný obrázek podle hodnoty (vMix SetImage), viditelnost prvku (trest běží → ukázat pozadí). Fáze 2.
+- ~~Indikátory~~ hotovo (D40), jeden obdélník = jeden indikátor; počet (fauly) přes víc indikátorů a odvozené pole zatím nejde sečíst.
 - **Další výstupy**: TCP/UDP, WebSocket, CSV/TXT, CasparCG, OBS. Malé každý zvlášť, až bude potřeba.
 - **Snímání obrazovky** jako zdroj.
 - **Automatické nalezení tabule** (rohů).

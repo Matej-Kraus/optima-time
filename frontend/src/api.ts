@@ -20,6 +20,15 @@ export interface FieldConfig {
   [key: string]: unknown; // type-specific options are kept as the backend sends them
 }
 
+export interface VmixApiConfig {
+  enabled: boolean;
+  host: string;
+  port: number;
+  input: string;
+  suffix: string;
+  names: Record<string, string>;
+}
+
 export interface DerivedField {
   id: string;
   template: string;
@@ -101,7 +110,11 @@ export interface Profile {
   preprocess: { blend_frames: number; blend_mode: "max" | "mean" };
   image: ImageConfig;
   detection: { enabled: boolean; threshold: number; max_age_ms: number };
-  outputs: { xml_file: { enabled: boolean; path: string; newline: string; clear_on_exit: boolean }; delay_ms: number };
+  outputs: {
+    xml_file: { enabled: boolean; path: string; newline: string; clear_on_exit: boolean };
+    vmix_api: VmixApiConfig;
+    delay_ms: number;
+  };
 }
 
 export type ReadStatus = "valid" | "invalid" | "low_confidence" | "blank";
@@ -130,6 +143,7 @@ export interface OutputStatus {
   max_write_ms: number;
   last_latency_ms: number | null;
   target: string;
+  problems?: Record<string, string>;
 }
 
 export type OutputMode = "live" | "paused" | "test";

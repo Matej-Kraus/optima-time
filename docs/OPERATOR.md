@@ -97,6 +97,8 @@ V tomto kroku je **narovnaná tabule**. Musí být rovná a bez okolí, jinak op
 
 Stejně se upravují i **pole**: kliknutím vybrat, tažením posunout, za rohy zvětšit, šipkami doladit.
 
+**Indikátor:** pro kontrolku nebo symbol na tabuli (time-out, oddechový čas) přidej pole a dej mu typ **Indikátor (svítí / nesvítí)**. Nečte číslice, jen jestli výřez svítí. Nastav text pro svítí a nesvítí (výchozí `1` a `0`) a případně práh jasu.
+
 ### 4. Výstup pro vMix
 
 1. Zadej **Cestu k XML souboru**, např. `C:\vmix-data\tabule.xml`.
@@ -109,7 +111,9 @@ Stejně se upravují i **pole**: kliknutím vybrat, tažením posunout, za rohy 
 3. **Zpoždění výstupu:** když je obraz tabule ve vMixu zpožděný (Advanced → Delay), zadej stejné zpoždění v ms, ať se grafika mění zároveň s obrazem. Jinak nech 0.
 4. **Zkouška:** vpravo klikni **Zapsat testovací data** (je i na záložce Živě v **Rychlých zásazích**). Titulek ve vMixu ukáže náhodné hodnoty. Pak **Zpět na živé hodnoty**.
 
-5. **Kontrola názvů:** v kartě **Kontrola názvů podle vMixu** klikni **Vybrat XML soubor…** a vyber XML, které vMix používá teď (třeba ze stávající aplikace). Aplikace ukáže, které názvy sedí, které se liší jen velikostí písmen (jedním klikem je přejmenuješ) a které chybí.
+5. **Přímo do vMixu (API)** (volitelné, rychlejší než XML): zaškrtni **Posílat hodnoty přímo do vMixu**, zadej název titulku ve vMixu (např. `Skore`) a nech příponu `.Text` (pole titulku GT se jmenují `Time.Text`, `scoreh.Text` …). Když se pole titulku jmenují jinak, vyplň **Vlastní názvy polí** (`Time=Cas.Text; scoreh=Domaci.Text`). Pod tím je vidět, jestli je spojeno a které pole vMix odmítl. XML se zapisuje dál jako záloha.
+6. **Odvozená pole** (volitelné): další sloupce pro vMix složené z hodnot, např. `skore` = `{scoreh} : {scorea}`, viditelnost trestu `{penaltyh1|if:1;0}`, třetina slovy `{period|map:1=1. třetina;2=2. třetina;3=3. třetina;*=Prodloužení}`, cesta k obrázku podle hodnoty přes `map`. Hotové příklady jsou na tlačítkách, nápověda pod nimi. Vpravo u každého je, co by teď šlo do vMixu.
+7. **Kontrola názvů:** v kartě **Kontrola názvů podle vMixu** klikni **Vybrat XML soubor…** a vyber XML, které vMix používá teď (třeba ze stávající aplikace). Aplikace ukáže, které názvy sedí, které se liší jen velikostí písmen (jedním klikem je přejmenuješ) a které chybí.
 
 ### 5. Profil a pokročilé
 

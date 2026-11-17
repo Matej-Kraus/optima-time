@@ -19,6 +19,7 @@ import { OutputPanel } from "../components/OutputPanel";
 import { Overlay } from "../components/Overlay";
 import { ProfilesPanel } from "../components/ProfilesPanel";
 import { DerivedPanel } from "../components/DerivedPanel";
+import { VmixApiPanel } from "../components/VmixApiPanel";
 import { ImagePanel } from "../components/ImagePanel";
 import { LockButton, ReadyList, XmlCheck } from "../components/SetupChecks";
 import { SourcePanel } from "../components/SourcePanel";
@@ -696,6 +697,12 @@ export function SetupView({ profile, live, tick, save, setProfile, reloadProfile
                   {cs.backToLive}
                 </button>
               </div>
+            </section>
+            <section className="card">
+              <div className="card-head">
+                <h2 className="panel-title">{cs.vmixApi.title}</h2>
+              </div>
+              <VmixApiPanel key={profile.name} profile={profile} live={live} locked={false} onProfile={save} />
             </section>
             <section className="card">
               <div className="card-head">

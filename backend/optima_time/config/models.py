@@ -80,8 +80,20 @@ class XmlFileOutput(Model):
     clear_on_exit: bool = False  # else the last values stay in the file
 
 
+class VmixApiOutput(Model):
+    """Values pushed into a vMix title over the TCP API (outputs/vmix_api.py)."""
+
+    enabled: bool = False
+    host: str = Field(default="127.0.0.1", max_length=255)
+    port: int = Field(default=8099, ge=1, le=65535)
+    input: str = Field(default="", max_length=200)  # title: number, name or key
+    suffix: str = Field(default=".Text", max_length=20)  # field id + suffix = title field
+    names: dict[str, str] = Field(default_factory=dict)  # explicit id -> title field; only these
+
+
 class OutputsConfig(Model):
     xml_file: XmlFileOutput = XmlFileOutput()
+    vmix_api: VmixApiOutput = VmixApiOutput()
     # Hold every value back by this long, so the graphic changes together with a delayed
     # picture (e.g. the scoreboard camera delayed in vMix). Pause and test data act at once.
     delay_ms: int = Field(default=0, ge=0, le=10_000)

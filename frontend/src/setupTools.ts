@@ -84,3 +84,22 @@ export function readiness(profile: Profile, live: LiveState | null): ReadyItem[]
     { key: "lock", ok: live?.locked === true, required: false },
   ];
 }
+
+/** vMix title field names: {Time: "Cas.Text"} <-> "Time=Cas.Text; …". */
+export function formatTitleNames(names: Record<string, string>): string {
+  return Object.entries(names)
+    .map(([k, v]) => `${k}=${v}`)
+    .join("; ");
+}
+
+/** "Time=Cas.Text; scoreh=Domaci.Text" -> {Time: "Cas.Text", scoreh: "Domaci.Text"}. */
+export function parseTitleNames(text: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const part of text.split(/[;\n]/)) {
+    const [k, ...rest] = part.split("=");
+    const v = rest.join("=").trim();
+    if (k.trim() && v) out[k.trim()] = v;
+  }
+  return out;
+}
+

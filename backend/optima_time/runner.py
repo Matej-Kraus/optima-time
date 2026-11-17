@@ -22,6 +22,7 @@ from optima_time.config.models import NewLine, Profile
 from optima_time.config.store import save_profile
 from optima_time.guard import history_frame
 from optima_time.outputs.base import OutputHub, OutputWorker
+from optima_time.outputs.vmix_api import VmixApiWorker
 from optima_time.outputs.xml_file import XmlFileWorker
 from optima_time.pipeline import FrameResult, Pipeline
 from optima_time.recorder import SampleRecorder
@@ -70,11 +71,17 @@ def make_source(profile: Profile) -> VideoSource | None:
 
 
 def make_workers(profile: Profile) -> list[OutputWorker]:
+    workers: list[OutputWorker] = []
     xml = profile.outputs.xml_file
-    if not (xml.enabled and xml.path):
-        return []
-    newline = "\r\n" if xml.newline is NewLine.CRLF else "\n"
-    return [XmlFileWorker(xml.path, newline)]
+    if xml.enabled and xml.path:
+        newline = "\r\n" if xml.newline is NewLine.CRLF else "\n"
+        workers.append(XmlFileWorker(xml.path, newline))
+    api = profile.outputs.vmix_api
+    if api.enabled and api.input.strip():
+        workers.append(
+            VmixApiWorker(api.host.strip(), api.port, api.input.strip(), api.suffix, api.names)
+        )
+    return workers
 
 
 class Runner:
@@ -317,7 +324,11 @@ class Runner:
         return {
             "mode": self.hub.mode.value,
             "workers": {
-                w.name: w.status.as_dict() | {"target": str(getattr(w, "path", ""))}
+                w.name: w.status.as_dict()
+                | {
+                    "target": str(getattr(w, "target", None) or getattr(w, "path", "")),
+                    "problems": dict(getattr(w, "problems", {})),
+                }
                 for w in self.hub.workers
             },
         }
