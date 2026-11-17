@@ -33,4 +33,19 @@ Nápady mimo aktuální milník. Priority určuje Matěj.
 
 ## Nápady po Milníku 5
 
-- **Ruční jas, kontrast a gama obrazu v profilu haly** (dotaz kolegy, 2026-11-14). Posuvníky v Nastavení (krok 1 nebo 5. Pokročilé) s živým náhledem narovnané tabule a výřezů, uložené v profilu, použité před čtením i před sejmutím kotev. Pozor: změna po sejmutí kotev zhorší jejich shodu (vzory sejmout znovu, nebo úpravu kotvám nedávat). Nezachrání přepálené číslice, to musí vyřešit expozice kamery. Teď se obraz upravuje automaticky (nejjasnější barevný kanál, normalizace výřezu v modelu, detekce změn odolná vůči jasu), proto rozhodnout až podle reálného záznamu z haly (issue #5): implementovat jen, když tmavý nebo bledý obraz prokazatelně způsobuje chyby čtení.
+- ~~Ruční jas, kontrast a gama obrazu v profilu haly~~ hotovo (D36). Původní poznámka: (dotaz kolegy, 2026-11-14). Posuvníky v Nastavení (krok 1 nebo 5. Pokročilé) s živým náhledem narovnané tabule a výřezů, uložené v profilu, použité před čtením i před sejmutím kotev. Pozor: změna po sejmutí kotev zhorší jejich shodu (vzory sejmout znovu, nebo úpravu kotvám nedávat). Nezachrání přepálené číslice, to musí vyřešit expozice kamery. Teď se obraz upravuje automaticky (nejjasnější barevný kanál, normalizace výřezu v modelu, detekce změn odolná vůči jasu), proto rozhodnout až podle reálného záznamu z haly (issue #5): implementovat jen, když tmavý nebo bledý obraz prokazatelně způsobuje chyby čtení.
+
+## Srovnání se Scoreboard OCR (jen veřejný web, 2026-11-17)
+
+Hotovo z jejich funkcí: úprava obrazu (D36), SRT/RTSP/RTMP vstup (D37), zpoždění (D38), testovací data, „ignorovat prázdné“ (prázdná hodnota), názvy period, presety (profily), automatický start s profilem, tichá instalace, druhá instance (`--port`).
+
+Chybí, podle užitku pro florbal s vMixem:
+- **Přímý výstup do vMix API** (TCP 8099 / HTTP SetText), rychlejší než XML Data Source. Ze zadání Fáze 2. Až po ověření s vMixem v hale.
+- **Odvozená pole a šablony výstupu** (jejich „scripted output“): spojit pole („0 : 2“), výchozí hodnota pro prázdné, text podle podmínky, jiný obrázek podle hodnoty (vMix SetImage), viditelnost prvku (trest běží → ukázat pozadí). Fáze 2.
+- **Indikátory / symboly**: obdélník svítí = 1, nesvítí = 0, víc obdélníků = počet (time-out, fauly). Jednoduché, náš kontrastní práh to skoro umí.
+- **Další výstupy**: TCP/UDP, WebSocket, CSV/TXT, CasparCG, OBS. Malé každý zvlášť, až bude potřeba.
+- **Snímání obrazovky** jako zdroj.
+- **Automatické nalezení tabule** (rohů).
+- Nepotřebujeme: časomíra střelby (shot clock), formát hh:mm:ss (atletika), korekce kurzívy, automatická inverze (náš model čte i kurzívu, inverze je ruční), licence a připojení k internetu.
+
+Máme navíc: kotvy proti animacím, potvrzování a věrohodnost hodnot, ruční držení a pauza, zámek nastavení, upozornění, seznam Připraveno k přenosu, kontrola názvů podle XML, diagnostika a vzorky, nástroje na vyhodnocení (eval, replay), přístup z tabletu s PINem, běh bez internetu.

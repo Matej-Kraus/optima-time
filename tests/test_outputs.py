@@ -156,3 +156,28 @@ def test_hub_pause_test_and_resume() -> None:
     hub.set_mode(OutputMode.LIVE)
     assert rec.flush() and rec.got[-1] == {"a": "3"}  # catches up at once
     hub.stop()
+
+
+def test_hub_delay_holds_values_back_in_order() -> None:
+    rec = Recorder()
+    hub = OutputHub([rec], delay_s=0.3)
+    hub.start()
+    t0 = time.monotonic()
+    hub.publish({"a": "1"})
+    time.sleep(0.05)
+    hub.publish({"a": "2"})
+    time.sleep(0.1)
+    assert rec.flush() and rec.got == []  # nothing yet: still within the delay
+    deadline = time.monotonic() + 3
+    while len(rec.got) < 2 and time.monotonic() < deadline:
+        time.sleep(0.02)
+    assert rec.got == [{"a": "1"}, {"a": "2"}]  # both, in order (no change skipped)
+    assert time.monotonic() - t0 >= 0.3
+    # pause acts at once; resuming catches up with what the delay has let through
+    hub.set_mode(OutputMode.PAUSED)
+    hub.publish({"a": "3"})
+    time.sleep(0.5)
+    assert rec.flush() and rec.got[-1] == {"a": "2"}
+    hub.set_mode(OutputMode.LIVE)
+    assert rec.flush() and rec.got[-1] == {"a": "3"}
+    hub.stop()

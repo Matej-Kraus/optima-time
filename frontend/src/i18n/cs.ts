@@ -169,7 +169,15 @@ export const cs = {
   sourcePanel: "1. Zdroj a rohy tabule",
   source: {
     type: "Zdroj obrazu",
-    types: { file: "Soubor (záznam, obrázek)", ndi: "NDI (např. vstup z vMixu)", device: "Capture zařízení / virtuální kamera" },
+    types: {
+      file: "Soubor (záznam, obrázek)",
+      ndi: "NDI (např. vstup z vMixu)",
+      device: "Capture zařízení / virtuální kamera",
+      stream: "Stream ze sítě (SRT, RTSP, RTMP, UDP)",
+    },
+    url: "Adresa streamu",
+    urlHelp:
+      "SRT z vMixu: srt://IP-PC-s-vMixem:9000?mode=caller (ve vMixu SRT výstup jako listener). IP kamera: rtsp://jméno:heslo@IP:554/cesta. RTSP přidává zpoždění, SRT a NDI jsou rychlejší.",
     path: "Cesta k souboru",
     ndiName: "Zdroj NDI",
     device: "Zařízení",
@@ -292,6 +300,9 @@ export const cs = {
   invalidId: "Neplatný název pole.",
   duplicateId: "Tento název už má jiné pole.",
   xmlPath: "Cesta k XML souboru",
+  delay: "Zpoždění výstupu (ms)",
+  delayHelp:
+    "0 = hned. Když je obraz tabule ve vMixu zpožděný (Advanced → Delay), nastav stejnou hodnotu, ať se grafika mění zároveň s obrazem. Pauza a testovací data platí hned.",
   xmlPathHelp: "Soubor, který vMix čte jako XML Data Source (XPath /root). Prázdné = nezapisovat.",
   httpUrl: "Stejná data na adrese",
   lastWrite: "Poslední zápis",

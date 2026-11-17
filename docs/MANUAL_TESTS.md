@@ -247,3 +247,10 @@ Bez `--emulate-lock`: zámky dělá Windows sám. Výsledek musí být `"result"
    Výsledek ukáže u každého pole počet neshod delších než 1 s a první z nich s časem.
 5. Pošli: výstup porovnání, oba JSONL soubory a diagnostický balíček. U každé neshody dohledáme, kdo měl pravdu.
 6. **Do ostrého provozu až po čistém stínovém zápase.**
+
+## SRT a RTSP vstup (D37)
+
+1. Ve vMixu u vstupu s tabulí zapni SRT výstup (Settings → Outputs / SRT, typ Listener, port např. 9000).
+2. V aplikaci Nastavení → 1 → Stream ze sítě, adresa `srt://IP-PC-s-vMixem:9000?mode=caller`.
+3. Do pár sekund se ukáže obraz. Porovnej zpoždění s NDI (stopky na tabuli × hodnota v XML).
+4. Volitelně IP kamera: `rtsp://jméno:heslo@IP:554/…`.

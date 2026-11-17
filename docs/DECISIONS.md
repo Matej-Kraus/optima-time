@@ -7,6 +7,15 @@ Formát: datum, co, proč, jaké byly alternativy. Novější nahoře. Položky 
 ### D34. Zámek nastavení hlídá server
 Zamčené nastavení odmítá změny profilu, kotev a přepnutí profilu přímo v API (HTTP 423), ne jen v UI. Platí tak i pro druhé okno nebo tablet. Ruční hodnoty, pauza, test výstupu a vzorky zůstávají povolené. Zámek se neukládá: po restartu je odemčeno (restart během zápasu je vzácný a odemčené nastavení nic nerozbije).
 
+### D38. Zpoždění výstupu v aplikaci
+`outputs.delay_ms` (0–10 s) drží každou změnu zpátky ve frontě a pouští je v pořadí (žádná se nepřeskočí). Pauza, testovací data a obnovení výstupu platí hned. Scoreboard OCR to řeší zpožděním vstupu ve vMixu. U nás jde obojí, ale zpoždění v aplikaci nepotřebuje zpožďovat obraz pro čtení a nestojí paměť vMixu.
+
+### D37. Stream ze sítě přes FFmpeg v OpenCV
+Zdroj `stream` (SRT, RTSP, RTMP, UDP, HTTP) otevírá OpenCV FFmpeg s volbami pro nízké zpoždění (bez vstupního bufferu, RTSP přes TCP) a s časovými limity. Volby se nastaví jen na dobu otevření, jinak by ovlivnily čtení souborů (našly testy). Ověřeno UDP (MPEG-TS) a HTTP. SRT je v OpenCV FFmpeg zakompilované, ale bez SRT vysílače na Macu neověřené, proto ruční test.
+
+### D36. Úprava obrazu po narovnání
+Jas, kontrast, gama (jedna tabulka LUT), doostření (unsharp mask), potlačení sítě (morfologické uzavření) a inverze se dělají na narovnané tabuli, ne na celém snímku. Je menší, takže je to levné, a výchozí neutrální nastavení nestojí nic. Kotvy se po změně sejmou znovu. Na prvním reálném záznamu nebyla úprava potřeba (0 podezřelých změn bez ní).
+
 ### D35. Upozornění mimo okno
 Zdroj a zápis XML po 3 s (krátké výpadky se samy spraví a nemají rušit), zaseknuté zpracování hned, ztráta kotev až po 60 s (animace gólu trvá obvykle 5–20 s). Každý problém jedno oznámení Windows z ikony v liště, systémový zvuk a řádek v událostech; konec problému jedno oznámení. Pauza a testovací data upozornění nespouští, jsou to volby operátora.
 

@@ -37,8 +37,9 @@ export interface GuardHistory {
 }
 
 export interface SourceConfig {
-  type: "file" | "ndi" | "device";
+  type: "file" | "ndi" | "device" | "stream";
   path: string;
+  url: string;
   loop: boolean;
   speed: number;
   ndi_name: string;
@@ -93,7 +94,7 @@ export interface Profile {
   preprocess: { blend_frames: number; blend_mode: "max" | "mean" };
   image: ImageConfig;
   detection: { enabled: boolean; threshold: number; max_age_ms: number };
-  outputs: { xml_file: { enabled: boolean; path: string; newline: string; clear_on_exit: boolean } };
+  outputs: { xml_file: { enabled: boolean; path: string; newline: string; clear_on_exit: boolean }; delay_ms: number };
 }
 
 export type ReadStatus = "valid" | "invalid" | "low_confidence" | "blank";

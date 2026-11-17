@@ -194,3 +194,14 @@ def test_alert_conditions_from_a_running_app(runner: Runner) -> None:
         "stuck": False,
         "guard": False,
     }
+
+
+def test_output_delay_from_the_profile(runner: Runner, tmp_path: Path) -> None:
+    c = client(runner, tmp_path)
+    p = c.get("/api/profile").json()
+    assert p["outputs"]["delay_ms"] == 0
+    p["outputs"]["delay_ms"] = 1500
+    assert c.put("/api/profile", json=p).status_code == 200
+    assert runner.hub.delay_s == 1.5
+    p["source"] |= {"type": "stream", "url": "udp://0.0.0.0:59999"}
+    assert c.put("/api/profile", json=p).json()["source"]["url"] == "udp://0.0.0.0:59999"

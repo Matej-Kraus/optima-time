@@ -29,6 +29,7 @@ from optima_time.sources.base import Frame, SourceState, VideoSource
 from optima_time.sources.device import DeviceSource
 from optima_time.sources.file import FileSource
 from optima_time.sources.ndi import NdiSource
+from optima_time.sources.stream import StreamSource
 from optima_time.state import BoardState
 from optima_time.supervisor import Supervisor
 
@@ -61,6 +62,8 @@ def make_source(profile: Profile) -> VideoSource | None:
             cfg.fourcc,
             cfg.deinterlace,
         )
+    if cfg.type == "stream":
+        return StreamSource(cfg.url, cfg.deinterlace) if cfg.url.strip() else None
     if not cfg.path:
         return None
     return FileSource(cfg.path, cfg.loop, cfg.speed, cfg.deinterlace)
@@ -87,7 +90,7 @@ class Runner:
         self._profile = profile
         self.pipeline = Pipeline(profile, threads=threads, keep_crops=True)
         self._lock = threading.Lock()
-        self.hub = OutputHub(make_workers(profile))
+        self.hub = OutputHub(make_workers(profile), profile.outputs.delay_ms / 1000)
         initial: dict[str, str] = {}
         for w in self.hub.workers:
             if isinstance(w, XmlFileWorker):
@@ -179,6 +182,7 @@ class Runner:
         self.hub.stop()
         mode = self.hub.mode
         self.hub.workers = make_workers(profile)
+        self.hub.delay_s = profile.outputs.delay_ms / 1000
         self.hub.start()
         self.hub.set_mode(mode)
         self.state.publish_all()

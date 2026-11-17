@@ -19,11 +19,13 @@ class Deinterlace(StrEnum):
 
 
 class SourceConfig(Model):
-    type: Literal["file", "ndi", "device"] = "file"
+    type: Literal["file", "ndi", "device", "stream"] = "file"
     # file / image
     path: str = ""
     loop: bool = True
     speed: float = Field(default=1.0, ge=0)  # 1 = real time, 0 = as fast as possible
+    # network stream (SRT, RTSP, RTMP, UDP, HTTP)
+    url: str = Field(default="", max_length=2000)
     # NDI
     ndi_name: str = ""  # e.g. "PC (vMix - KOM BOX)"
     # capture device (OpenCV index incl. backend offset; the name finds it again if it moves)
@@ -79,6 +81,9 @@ class XmlFileOutput(Model):
 
 class OutputsConfig(Model):
     xml_file: XmlFileOutput = XmlFileOutput()
+    # Hold every value back by this long, so the graphic changes together with a delayed
+    # picture (e.g. the scoreboard camera delayed in vMix). Pause and test data act at once.
+    delay_ms: int = Field(default=0, ge=0, le=10_000)
 
 
 class BlendMode(StrEnum):

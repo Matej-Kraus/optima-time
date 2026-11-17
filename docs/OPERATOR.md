@@ -43,6 +43,8 @@ Capture kartu s kamerou drží vMix, proto aplikace bere obraz z vMixu přes **N
 2. Nastav jeden z výstupů (Output 2/3/4) na vstup s tabulí (např. **KOM BOX**) a zapni u něj **NDI**. Případně použij volbu NDI pro jednotlivé vstupy, pokud ji tvoje verze má.
 
 > Záložní cesta: virtuální kamera vMixu (**External** výstup → zařízení „vMix Video External 2“).
+>
+> Další možnost: **Stream ze sítě** (SRT, RTSP, RTMP, UDP). Z vMixu SRT výstup (listener) a v aplikaci adresa `srt://IP-PC-s-vMixem:PORT?mode=caller`. Nebo IP kamera přes `rtsp://…`. RTSP přidává zpoždění, NDI a SRT jsou rychlejší.
 
 Nastavení je průvodce s pěti kroky. Kroky jsou nahoře, dají se přepínat i přímo, hotový krok má ✓. Dole vpravo je vždy **Pokračovat** na další krok.
 
@@ -56,11 +58,13 @@ Na záložce **Nastavení** v kroku **5. Profil a pokročilé** klikni **Uložit
 2. Do pár sekund se ukáže obraz a světlo **Zdroj** zezelená.
 3. Vidíš-li na číslech „hřebeny“ (vodorovné roztřepení při změně), nastav **Odstranění prokladu** na „Prolnutí řádků“.
 
-### 2. Rohy tabule
+### 2. Rohy tabule a úprava obrazu
 
 1. Přetáhni čtyři body **C1–C4** na **rohy tabule**: C1 levý horní, C2 pravý horní, C3 pravý dolní, C4 levý dolní. U každého je vidět jeho pozice v pixelech.
 2. Při tažení se ukáže lupa. Na přesné doladění vyber roh vpravo v **Aktivní bod** (C1–C4) a posouvej ho tlačítky **− / +** u X a Y, nebo **šipkami** (se **Shiftem** po 10 px).
-3. Vpravo dole je **narovnaná tabule**: musí být rovná a bez okolí. Pak **Pokračovat**.
+3. Vpravo je **narovnaná tabule**: musí být rovná a bez okolí.
+4. Pod ní je **Úprava obrazu**: jas, kontrast, gama, doostření, potlačení sítě před tabulí a inverze. Změna je hned vidět na narovnané tabuli, kotvy se po ní samy sejmou znovu. Obvykle není potřeba nic měnit. Přepálená čísla nezachrání, to se řeší expozicí kamery. **Výchozí hodnoty** vše vrátí.
+5. **Pokračovat**.
 
 ### 3. Pole a kotvy
 
@@ -102,9 +106,10 @@ Stejně se upravují i **pole**: kliknutím vybrat, tažením posunout, za rohy 
    2. **XPath:** `/root`, interval obnovy (Auto Refresh / Update every) **100 ms**.
    3. V titulku přiřaď polím titulku sloupce `Time`, `scoreh`, `scorea`, `period`, `penaltyh1` …
    4. Pole titulku napojené na Data Source se nesmí zároveň měnit jinak (ručně, jiným zdrojem).
-3. **Zkouška:** vpravo klikni **Zapsat testovací data** (je i na záložce Živě v **Rychlých zásazích**). Titulek ve vMixu ukáže náhodné hodnoty. Pak **Zpět na živé hodnoty**.
+3. **Zpoždění výstupu:** když je obraz tabule ve vMixu zpožděný (Advanced → Delay), zadej stejné zpoždění v ms, ať se grafika mění zároveň s obrazem. Jinak nech 0.
+4. **Zkouška:** vpravo klikni **Zapsat testovací data** (je i na záložce Živě v **Rychlých zásazích**). Titulek ve vMixu ukáže náhodné hodnoty. Pak **Zpět na živé hodnoty**.
 
-4. **Kontrola názvů:** v kartě **Kontrola názvů podle vMixu** klikni **Vybrat XML soubor…** a vyber XML, které vMix používá teď (třeba ze stávající aplikace). Aplikace ukáže, které názvy sedí, které se liší jen velikostí písmen (jedním klikem je přejmenuješ) a které chybí.
+5. **Kontrola názvů:** v kartě **Kontrola názvů podle vMixu** klikni **Vybrat XML soubor…** a vyber XML, které vMix používá teď (třeba ze stávající aplikace). Aplikace ukáže, které názvy sedí, které se liší jen velikostí písmen (jedním klikem je přejmenuješ) a které chybí.
 
 ### 5. Profil a pokročilé
 

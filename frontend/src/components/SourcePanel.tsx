@@ -42,7 +42,7 @@ export function SourcePanel({ profile, locked, onProfile }: Props) {
           disabled={locked}
           onChange={(e) => {
             set({ type: e.target.value as SourceConfig["type"] });
-            if (e.target.value !== "file") refresh();
+            if (e.target.value === "ndi" || e.target.value === "device") refresh();
           }}
         >
           {Object.entries(cs.source.types).map(([k, v]) => (
@@ -57,6 +57,19 @@ export function SourcePanel({ profile, locked, onProfile }: Props) {
         <label>
           {cs.source.path}
           <input defaultValue={src.path} disabled={locked} onBlur={(e) => e.target.value !== src.path && set({ path: e.target.value })} />
+        </label>
+      )}
+
+      {src.type === "stream" && (
+        <label>
+          {cs.source.url}
+          <input
+            defaultValue={src.url}
+            disabled={locked}
+            placeholder="srt://192.168.1.20:9000?mode=caller"
+            onBlur={(e) => e.target.value !== src.url && set({ url: e.target.value.trim() })}
+          />
+          <small>{cs.source.urlHelp}</small>
         </label>
       )}
 

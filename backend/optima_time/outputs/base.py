@@ -150,37 +150,88 @@ class OutputMode(StrEnum):
 
 
 class OutputHub:
-    """Routes values to the workers according to the mode."""
+    """Routes values to the workers according to the mode.
 
-    def __init__(self, workers: list[OutputWorker] | None = None) -> None:
+    With `delay_s` > 0 live values are held back that long (a small timer thread releases them
+    in order), so the graphic changes together with a delayed picture. The queue holds only
+    changes, at most DELAY_QUEUE of them. Pause, test data and resuming act at once.
+    """
+
+    DELAY_QUEUE = 5000
+
+    def __init__(self, workers: list[OutputWorker] | None = None, delay_s: float = 0.0) -> None:
         self.workers = workers or []
         self.mode = OutputMode.LIVE
-        self._live: dict[str, str] = {}
+        self.delay_s = max(0.0, delay_s)
+        self._live: dict[str, str] = {}  # the newest live values
+        self._released: dict[str, str] = {}  # the newest values whose delay has passed
+        self._queue: deque[tuple[float, dict[str, str], int | None]] = deque(
+            maxlen=self.DELAY_QUEUE
+        )
         self._lock = threading.Lock()
+        self._wake = threading.Condition(self._lock)
+        self._stop = threading.Event()
+        self._timer: threading.Thread | None = None
 
     def start(self) -> None:
         for w in self.workers:
             w.start()
+        if self.delay_s > 0 and self._timer is None:
+            self._stop.clear()
+            self._timer = threading.Thread(
+                target=self._release_loop, name="output-delay", daemon=True
+            )
+            self._timer.start()
 
     def stop(self, final: dict[str, str] | None = None) -> None:
+        self._stop.set()
+        with self._wake:
+            self._wake.notify_all()
+        if self._timer is not None:
+            self._timer.join(timeout=2)
+            self._timer = None
         for w in self.workers:
             w.stop(final)
 
     def publish(self, values: dict[str, str], arrived_ns: int | None = None) -> None:
         with self._lock:
             self._live = dict(values)
+            if self.delay_s > 0:
+                self._queue.append((time.monotonic() + self.delay_s, dict(values), arrived_ns))
+                self._wake.notify()
+                return
+            self._released = self._live
             if self.mode is not OutputMode.LIVE:
                 return
         for w in self.workers:
             w.submit(values, arrived_ns)
 
+    def _release_loop(self) -> None:
+        while not self._stop.is_set():
+            with self._wake:
+                while not self._queue and not self._stop.is_set():
+                    self._wake.wait(0.5)
+                if self._stop.is_set():
+                    return
+                due, values, arrived_ns = self._queue[0]
+                left = due - time.monotonic()
+                if left > 0:
+                    self._wake.wait(min(left, 0.5))
+                    continue
+                self._queue.popleft()
+                self._released = values
+                live = self.mode is OutputMode.LIVE
+            if live:
+                for w in self.workers:
+                    w.submit(values, arrived_ns)
+
     def set_mode(self, mode: OutputMode) -> None:
         with self._lock:
             self.mode = mode
-            live = dict(self._live)
-        if mode is OutputMode.LIVE:  # catch up at once
+            current = dict(self._released)
+        if mode is OutputMode.LIVE:  # catch up at once (with what the delay has let through)
             for w in self.workers:
-                w.submit(live)
+                w.submit(current)
 
     def write_test(self, values: dict[str, str]) -> None:
         with self._lock:
