@@ -18,6 +18,7 @@ import { Magnifier } from "../components/Magnifier";
 import { OutputPanel } from "../components/OutputPanel";
 import { Overlay } from "../components/Overlay";
 import { ProfilesPanel } from "../components/ProfilesPanel";
+import { ImagePanel } from "../components/ImagePanel";
 import { LockButton, ReadyList, XmlCheck } from "../components/SetupChecks";
 import { SourcePanel } from "../components/SourcePanel";
 import { useElementSize, useStreamKey } from "../hooks";
@@ -496,6 +497,13 @@ export function SetupView({ profile, live, tick, save, setProfile, reloadProfile
                 <h2 className="panel-title">{cs.setup.canvasBoard}</h2>
               </div>
               <Overlay src={hasFrame ? api.previewUrl("rectified", streamKey) : null} emptyText={cs.noFrame} onImageError={reconnect} />
+            </section>
+            <section className="card">
+              <div className="card-head">
+                <h2 className="panel-title">{cs.image.title}</h2>
+              </div>
+              <ImagePanel key={profile.name} profile={profile} save={save} onNotice={setNotice} />
+              {notice && <p className="notice section-gap">{notice}</p>}
             </section>
             {next}
           </div>

@@ -32,3 +32,9 @@ Thumbs.db
 samples/synth/
 samples/bench/
 build/
+
+# real recordings: the 2 GB originals stay local; replay output is regenerated
+test_time/
+samples/real/out/
+samples/real/replay/
+samples/real/replay.log

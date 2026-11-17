@@ -21,7 +21,7 @@ from optima_time.config.models import Profile
 from optima_time.fields.formats import ClockValue, NumberValue
 from optima_time.geometry import Rectifier, crop
 from optima_time.guard import GuardResult, GuardState, LayoutGuard
-from optima_time.preprocess import FrameBlender, contrast, difference, signature
+from optima_time.preprocess import FrameBlender, ImageAdjust, contrast, difference, signature
 from optima_time.recognizers.base import Crop, Reading, Recognizer
 from optima_time.sources.base import Frame
 
@@ -94,6 +94,7 @@ class Pipeline:
         self._last_valid: dict[str, Value] = {}
         self._guard = LayoutGuard(profile.guard)
         self._blend = FrameBlender(profile.preprocess.blend_frames, profile.preprocess.blend_mode)
+        self._adjust = ImageAdjust(profile.image)
         self._sig: dict[str, npt.NDArray[np.float32]] = {}  # signature at the last OCR read
         self._last_read: dict[str, FieldRead] = {}
         self._read_at: dict[str, float] = {}  # time (s) of the last OCR read
@@ -115,6 +116,8 @@ class Pipeline:
             if profile.preprocess != self._profile.preprocess:
                 pre = profile.preprocess
                 self._blend = FrameBlender(pre.blend_frames, pre.blend_mode)
+            if profile.image != self._profile.image:
+                self._adjust = ImageAdjust(profile.image)
             self._profile = profile
             ids = {f.id for f in profile.fields}
             self._last_valid = {k: v for k, v in self._last_valid.items() if k in ids}
@@ -145,7 +148,7 @@ class Pipeline:
         t0 = time.perf_counter_ns()
         profile = self.profile
         h, w = frame.image.shape[:2]
-        rectified = self._blend(self.rectifier_for((w, h)).warp(frame.image))
+        rectified = self._adjust(self._blend(self.rectifier_for((w, h)).warp(frame.image)))
         self.last_rectified = rectified
         with self._lock:
             guard = self._guard.check(rectified)

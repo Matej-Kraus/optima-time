@@ -11,7 +11,7 @@ import cv2
 import numpy as np
 import numpy.typing as npt
 
-from optima_time.config.models import BlendMode, Deinterlace
+from optima_time.config.models import BlendMode, Deinterlace, ImageConfig
 
 Image = npt.NDArray[np.uint8]
 
@@ -115,3 +115,43 @@ class FrameBlender:
         for img in self._recent:
             acc += img
         return np.asarray(acc / len(self._recent) + 0.5, np.uint8)
+
+
+def adjust_lut(cfg: ImageConfig) -> npt.NDArray[np.uint8]:
+    """One 256-entry table for gamma, contrast (around mid-gray), brightness and invert."""
+    v = np.arange(256, dtype=np.float64) / 255.0
+    v = np.power(v, 1.0 / cfg.gamma)
+    v = (v - 0.5) * cfg.contrast + 0.5 + cfg.brightness / 200.0
+    v = np.clip(v, 0.0, 1.0)
+    if cfg.invert:
+        v = 1.0 - v
+    return np.round(v * 255.0).astype(np.uint8)
+
+
+class ImageAdjust:
+    """Applies ImageConfig to the rectified board. Neutral settings return the image untouched
+    (no copy, no cost)."""
+
+    def __init__(self, cfg: ImageConfig) -> None:
+        self.cfg = cfg
+        self.neutral = cfg.neutral()
+        self._lut = adjust_lut(cfg)
+        self._lut_identity = bool(np.array_equal(self._lut, np.arange(256, dtype=np.uint8)))
+        n = cfg.net_removal
+        self._kernel = (
+            cv2.getStructuringElement(cv2.MORPH_RECT, (2 * n + 1, 2 * n + 1)) if n else None
+        )
+
+    def __call__(self, image: Image) -> Image:
+        if self.neutral:
+            return image
+        out = image
+        if self._kernel is not None:  # closing: thin dark lines (a net) over bright digits vanish
+            out = np.asarray(cv2.morphologyEx(out, cv2.MORPH_CLOSE, self._kernel), np.uint8)
+        if not self._lut_identity:
+            out = np.asarray(cv2.LUT(out, self._lut), np.uint8)
+        if self.cfg.sharpen > 0:
+            blur = cv2.GaussianBlur(out, (0, 0), 1.5)
+            a = self.cfg.sharpen
+            out = np.asarray(cv2.addWeighted(out, 1.0 + a, blur, -a, 0), np.uint8)
+        return out

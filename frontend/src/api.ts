@@ -20,6 +20,17 @@ export interface FieldConfig {
   [key: string]: unknown; // type-specific options are kept as the backend sends them
 }
 
+export interface ImageConfig {
+  brightness: number;
+  contrast: number;
+  gamma: number;
+  sharpen: number;
+  net_removal: number;
+  invert: boolean;
+}
+
+export const NEUTRAL_IMAGE: ImageConfig = { brightness: 0, contrast: 1, gamma: 1, sharpen: 0, net_removal: 0, invert: false };
+
 export interface GuardHistory {
   threshold: number;
   points: { ago: number; score: number | null; state: string }[];
@@ -80,6 +91,7 @@ export interface Profile {
   fields: FieldConfig[];
   guard: { anchors: Anchor[]; threshold: number; recover_frames: number; search_margin: number };
   preprocess: { blend_frames: number; blend_mode: "max" | "mean" };
+  image: ImageConfig;
   detection: { enabled: boolean; threshold: number; max_age_ms: number };
   outputs: { xml_file: { enabled: boolean; path: string; newline: string; clear_on_exit: boolean } };
 }

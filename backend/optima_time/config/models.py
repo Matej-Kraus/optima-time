@@ -94,6 +94,22 @@ class PreprocessConfig(Model):
     blend_mode: BlendMode = BlendMode.MAX
 
 
+class ImageConfig(Model):
+    """Picture adjustments of the straightened board, before the guard and the reading
+    (like the controls of a camera). All neutral by default. They can't bring back what the
+    camera blew out to white: get the exposure right on the camera first."""
+
+    brightness: int = Field(default=0, ge=-100, le=100)  # -100..100 (% of half the range)
+    contrast: float = Field(default=1.0, ge=0.2, le=3.0)  # 1 = unchanged
+    gamma: float = Field(default=1.0, ge=0.3, le=3.0)  # >1 brightens dark tones
+    sharpen: float = Field(default=0.0, ge=0.0, le=3.0)  # unsharp mask strength
+    net_removal: int = Field(default=0, ge=0, le=6)  # px: fills thin dark lines (a net)
+    invert: bool = False  # dark digits on a light board
+
+    def neutral(self) -> bool:
+        return self == ImageConfig()
+
+
 class DetectionConfig(Model):
     """Read a field only when its crop changed (SPEC 10.5)."""
 
@@ -109,6 +125,7 @@ class Profile(Model):
     geometry: GeometryConfig = GeometryConfig()
     fields: list[FieldConfig] = Field(default_factory=list)
     preprocess: PreprocessConfig = PreprocessConfig()
+    image: ImageConfig = ImageConfig()
     guard: GuardConfig = GuardConfig()
     detection: DetectionConfig = DetectionConfig()
     outputs: OutputsConfig = OutputsConfig()

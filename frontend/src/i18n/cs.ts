@@ -12,6 +12,18 @@ export const cs = {
     resumeOutput: "Obnovit výstup",
     backToLive: "Zpět na živé",
   },
+  image: {
+    title: "Úprava obrazu",
+    hint: "Jako nastavení kamery, ale až v aplikaci. Změna je hned vidět na narovnané tabuli. Přepálená čísla nezachrání: nejdřív nastav expozici na kameře.",
+    brightness: "Jas",
+    contrast: "Kontrast",
+    gamma: "Gama (zesvětlí tmavé části)",
+    sharpen: "Doostření",
+    netRemoval: "Potlačení sítě před tabulí (px)",
+    invert: "Invertovat (tmavá čísla na světlé tabuli)",
+    reset: "Výchozí hodnoty",
+    anchorsRecaptured: "Kotvy sejmuty znovu podle upraveného obrazu.",
+  },
   template: {
     floorball: "Přidat pole: florbal",
     added: (ids: string[]) =>

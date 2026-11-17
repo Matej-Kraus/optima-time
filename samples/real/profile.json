@@ -1,0 +1,287 @@
+{
+  "schema_version": 1,
+  "name": "casomira-test",
+  "source": {
+    "type": "file",
+    "path": "/Users/mates/Optima_time/samples/real/casomira-1.mp4",
+    "loop": true,
+    "speed": 1.0,
+    "ndi_name": "",
+    "device_index": -1,
+    "device_name": "",
+    "width": 0,
+    "height": 0,
+    "fps": 0.0,
+    "fourcc": "",
+    "deinterlace": "none"
+  },
+  "geometry": {
+    "corners": [
+      [
+        0.146875,
+        0.12314814814814815
+      ],
+      [
+        0.8729166666666667,
+        0.1388888888888889
+      ],
+      [
+        0.8708333333333333,
+        0.9305555555555556
+      ],
+      [
+        0.14583333333333334,
+        0.9212962962962963
+      ]
+    ],
+    "rotate": 0,
+    "max_width": 1280
+  },
+  "fields": [
+    {
+      "id": "Time",
+      "label": "Čas",
+      "roi": {
+        "x": 0.33,
+        "y": 0.05,
+        "w": 0.34,
+        "h": 0.2
+      },
+      "enabled": true,
+      "engine": {
+        "name": "ppocr",
+        "model": "tiny",
+        "min_width": 160
+      },
+      "margin": 0.15,
+      "min_confidence": 0.5,
+      "min_contrast": 40.0,
+      "blank": "hold",
+      "blank_value": "",
+      "blank_delay_ms": 400,
+      "align": "none",
+      "align_width": 0,
+      "type": "clock",
+      "tenths": false,
+      "max_minutes": 999,
+      "style": "as_is",
+      "direction": "auto",
+      "max_step_ms": 1000,
+      "fast_min_confidence": 0.8,
+      "unexpected_reads": 3,
+      "unexpected_ms": 400,
+      "appear_reads": 2
+    },
+    {
+      "id": "period",
+      "label": "Třetina",
+      "roi": {
+        "x": 0.44,
+        "y": 0.39,
+        "w": 0.12000000000000005,
+        "h": 0.16000000000000003
+      },
+      "enabled": true,
+      "engine": {
+        "name": "ppocr",
+        "model": "tiny",
+        "min_width": 160
+      },
+      "margin": 0.15,
+      "min_confidence": 0.5,
+      "min_contrast": 40.0,
+      "blank": "hold",
+      "blank_value": "",
+      "blank_delay_ms": 400,
+      "align": "none",
+      "align_width": 0,
+      "type": "period",
+      "min_value": 1,
+      "max_value": 4,
+      "names": {},
+      "increment_reads": 3,
+      "unexpected_ms": 3000,
+      "initial_reads": 3
+    },
+    {
+      "id": "scoreh",
+      "label": "Góly domácí",
+      "roi": {
+        "x": 0.01,
+        "y": 0.72,
+        "w": 0.19999999999999998,
+        "h": 0.22999999999999998
+      },
+      "enabled": true,
+      "engine": {
+        "name": "ppocr",
+        "model": "tiny",
+        "min_width": 160
+      },
+      "margin": 0.15,
+      "min_confidence": 0.5,
+      "min_contrast": 40.0,
+      "blank": "hold",
+      "blank_value": "",
+      "blank_delay_ms": 400,
+      "align": "none",
+      "align_width": 0,
+      "type": "number",
+      "min_digits": 1,
+      "max_digits": 2,
+      "style": "strip_zeros",
+      "increment_reads": 2,
+      "unexpected_ms": 2000,
+      "initial_reads": 3
+    },
+    {
+      "id": "scorea",
+      "label": "Góly hosté",
+      "roi": {
+        "x": 0.79,
+        "y": 0.72,
+        "w": 0.20499999999999996,
+        "h": 0.22999999999999998
+      },
+      "enabled": true,
+      "engine": {
+        "name": "ppocr",
+        "model": "tiny",
+        "min_width": 160
+      },
+      "margin": 0.15,
+      "min_confidence": 0.5,
+      "min_contrast": 40.0,
+      "blank": "hold",
+      "blank_value": "",
+      "blank_delay_ms": 400,
+      "align": "none",
+      "align_width": 0,
+      "type": "number",
+      "min_digits": 1,
+      "max_digits": 2,
+      "style": "strip_zeros",
+      "increment_reads": 2,
+      "unexpected_ms": 2000,
+      "initial_reads": 3
+    },
+    {
+      "id": "penaltyh1",
+      "label": "Trest domácí 1",
+      "roi": {
+        "x": 0.33,
+        "y": 0.8,
+        "w": 0.15999999999999998,
+        "h": 0.09999999999999998
+      },
+      "enabled": true,
+      "engine": {
+        "name": "ppocr",
+        "model": "tiny",
+        "min_width": 160
+      },
+      "margin": 0.15,
+      "min_confidence": 0.5,
+      "min_contrast": 40.0,
+      "blank": "clear",
+      "blank_value": "",
+      "blank_delay_ms": 400,
+      "align": "none",
+      "align_width": 0,
+      "type": "clock",
+      "tenths": false,
+      "max_minutes": 999,
+      "style": "as_is",
+      "direction": "auto",
+      "max_step_ms": 1000,
+      "fast_min_confidence": 0.8,
+      "unexpected_reads": 3,
+      "unexpected_ms": 400,
+      "appear_reads": 2
+    },
+    {
+      "id": "penaltya1",
+      "label": "Trest hosté 1",
+      "roi": {
+        "x": 0.505,
+        "y": 0.8,
+        "w": 0.17500000000000004,
+        "h": 0.09999999999999998
+      },
+      "enabled": true,
+      "engine": {
+        "name": "ppocr",
+        "model": "tiny",
+        "min_width": 160
+      },
+      "margin": 0.15,
+      "min_confidence": 0.5,
+      "min_contrast": 40.0,
+      "blank": "clear",
+      "blank_value": "",
+      "blank_delay_ms": 400,
+      "align": "none",
+      "align_width": 0,
+      "type": "clock",
+      "tenths": false,
+      "max_minutes": 999,
+      "style": "as_is",
+      "direction": "auto",
+      "max_step_ms": 1000,
+      "fast_min_confidence": 0.8,
+      "unexpected_reads": 3,
+      "unexpected_ms": 400,
+      "appear_reads": 2
+    }
+  ],
+  "preprocess": {
+    "blend_frames": 1,
+    "blend_mode": "max"
+  },
+  "image": {
+    "brightness": 0,
+    "contrast": 1.0,
+    "gamma": 1.0,
+    "sharpen": 0.0,
+    "net_removal": 0,
+    "invert": false
+  },
+  "guard": {
+    "anchors": [
+      {
+        "roi": {
+          "x": 0.8262499999999999,
+          "y": 0.53502538071066,
+          "w": 0.17375000000000007,
+          "h": 0.15837563451776637
+        },
+        "template": "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"
+      },
+      {
+        "roi": {
+          "x": 0.40499999999999997,
+          "y": 0.2568527918781726,
+          "w": 0.18687500000000007,
+          "h": 0.10558375634517769
+        },
+        "template": "iVBORw0KGgoAAAANSUhEUgAAAEAAAAAWCAAAAABV1cXoAAAD+0lEQVQ4ET3BaVNTdxwF4HP+9yZkRUxBDFBBkE0QFYJYbKftjDrtR+4LpxUt1alV6hasArKUJQQC2ch2f6fRdvo8nCdlRhLC/0iCMAEkCAmQhH9JgCMgCSQzdDIjCaGN+IRtgBkIEhAASWgjIAkkIAkkM6RMoMMnJCGBICkZSLSJpEwCiTYTCKgNIDOgJDiPaKMjTIJIQEZHCGDIRzMIBBKAJLRJMgDMgARIz6GNdDCZCQQgOAfBRXsTJ0f1wAAQagMok0kAM6TneXSegwQ6UhYEIgkZ6CSGe68ns2tnJhCQBQKcLAjMBDJD54fj55Nh16yU0Jn0idbpWTTuw6qntUi0XvG6xm/webbod8U9NcqnZwHj51qFSiMwEczQ8yP9N4fDauQ/1MYueWJ142hwwMlK69upvsPtxNhYT2snux6bGYDVD97tVMMjk5UX27VWYCQz9PzI5L2h8lnY/5ifSBeqqm42b/YWKpHk/suu0Y3Ny2Mous7qq+atnnwt5q89O+i6PXfyYKXYagYgM/S82PT92Ntc9zQO+vA6Z81KekFv8l3XIn9Grnw8nXSvdvyJ8f3cSOv5ce/10NO/+haHz54+3m00AwPn6bzYzF3v+UHfXDjX67J5qxXTC8gWzo27V/Eruxr8sJx3o9+F9nqOl/ZTi1feZIevuVDu52y1FRg4T+fHZ374YquSSu0eTVzIl+1kPfxVd6EVsbXV/rFcKPXsSckN3Uvluo4e7SXmptc3pwZP4t7S8nFTBt6i8xMzP6aPajha9Ra7/z4JStudd1L5cOrwt52r4weh878/KbmRe125VGFpL5mZ3DiZSxc7Ov74aaNhEhfo/OTM3Y63+drR8dD33sp+q16/fKf10k3HVjbGJ7bt0tqvh6Gpb4L9/tLjg56FvvfeVRyHUscPXpQCMy7QhZLXvz17uNVscPp+JJsPGuXe2ZNH5ZnZ8tvu4bXCZPjdbmQ8vXY67WeLF4bLmxeTr7c6JgffPNxvBcYF0k9OLVaWtgILTd4fKNVU2zobKizn+2+nt9j7fnNwMlrzw3sr7ut0pelXVusjp8u7oYmF018+NgPjLcKPDIzWV48Nfv+NASfVd447y++L8ctfVhvRvb3E8GAiOFzbSUz1Oatsbycu5tfL7B5Fdq9pYgb0/Fg8KDdFL3E+6iCr1l2r0vSiMQWo1128MxqUSo1wMuqpVqx3hOvVQKE4i5WWwFnQeaQA0Qt5DpIgSIZPxM9ggqNzCgIBkAmUtQKAswQdQUBwvkeZBFBtAAiAbRJAOsgkCBIEtYHMAHAEKME5Um0AJYEEAcE5ygSAEAQJAmAiCHAeAAlAAh0F4TMJjiAkOEeZ4T+CBFAmtuEfv/xKqJhijK4AAAAASUVORK5CYII="
+      }
+    ],
+    "threshold": 0.8,
+    "recover_frames": 5,
+    "search_margin": 0.3
+  },
+  "detection": {
+    "enabled": true,
+    "threshold": 0.15,
+    "max_age_ms": 1000
+  },
+  "outputs": {
+    "xml_file": {
+      "enabled": true,
+      "path": "/Users/mates/Optima_time/samples/real/out/tabule.xml",
+      "newline": "crlf",
+      "clear_on_exit": false
+    }
+  }
+}

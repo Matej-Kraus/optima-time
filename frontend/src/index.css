@@ -1724,3 +1724,23 @@ pre {
   font-size: 11px;
   padding: 1px 6px;
 }
+
+.image-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.image-panel .slider span {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text);
+}
+
+.image-panel input[type="range"] {
+  width: 100%;
+  padding: 0;
+  accent-color: var(--accent-cyan);
+  background: transparent;
+  border: none;
+}
