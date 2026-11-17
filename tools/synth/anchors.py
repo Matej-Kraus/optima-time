@@ -26,7 +26,9 @@ def add_anchors(folder: Path) -> None:
         assert frame is not None, "empty recording"
     geo = profile.geometry
     h, w = frame.image.shape[:2]
-    rectified = Rectifier.create(geo.corners, (w, h), geo.rotate, geo.max_width).warp(frame.image)
+    rectified = Rectifier.create(geo.corners, (w, h), geo.rotate, geo.max_width, geo.aspect).warp(
+        frame.image
+    )
     anchors = []
     for x, y, bw, bh in LABELS.values():
         roi = Roi(x=x / COLS, y=y / ROWS, w=bw / COLS, h=bh / ROWS)

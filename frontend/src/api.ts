@@ -103,7 +103,7 @@ export interface Profile {
   schema_version: number;
   name: string;
   source: SourceConfig;
-  geometry: { corners: Point[]; rotate: number; max_width: number };
+  geometry: { corners: Point[]; rotate: number; max_width: number; aspect: number };
   fields: FieldConfig[];
   derived: DerivedField[];
   guard: { anchors: Anchor[]; threshold: number; recover_frames: number; search_margin: number };

@@ -253,14 +253,20 @@ def create_app(runner: Runner, static_dir: Path | None = None, pin: str | None =
         events = list(runner.state.events)[-max(1, min(limit, 300)) :]
         return _json([asdict(e) for e in reversed(events)])
 
+    def view_image(snap, view: str):
+        """The picture for a preview. The source view shows the image adjustments too (they
+        act like camera settings), so the operator sees their effect on the whole video."""
+        if view == "rectified":
+            return snap.rectified
+        if snap.frame is None:
+            return None
+        return runner.pipeline.adjust(snap.frame.image)
+
     @app.get("/api/frame.jpg")
     def get_frame(
         view: Literal["source", "rectified"] = "source", max_width: int = 960
     ) -> Response:
-        snap = runner.snapshot()
-        image = (
-            snap.rectified if view == "rectified" else (snap.frame.image if snap.frame else None)
-        )
+        image = view_image(runner.snapshot(), view)
         if image is None:
             raise HTTPException(404, "no frame yet")
         h, w = image.shape[:2]
@@ -427,11 +433,7 @@ def create_app(runner: Runner, static_dir: Path | None = None, pin: str | None =
             while True:
                 snap = runner.snapshot()
                 seq = snap.result.seq if snap.result else -1
-                image = (
-                    snap.rectified
-                    if view == "rectified"
-                    else (snap.frame.image if snap.frame else None)
-                )
+                image = view_image(snap, view) if seq != last_seq else None
                 if image is not None and seq != last_seq:
                     last_seq = seq
                     h, w = image.shape[:2]

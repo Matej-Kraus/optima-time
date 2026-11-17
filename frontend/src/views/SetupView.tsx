@@ -37,6 +37,15 @@ interface Drag {
   orig: Roi;
 }
 
+const ASPECTS = [
+  { value: 0, label: cs.setup.aspectAuto },
+  { value: 1.78, label: "16 : 9" },
+  { value: 1.6, label: "16 : 10" },
+  { value: 2, label: "2 : 1" },
+  { value: 3, label: "3 : 1" },
+  { value: 1.33, label: "4 : 3" },
+];
+
 const DEFAULTS: Record<FieldType, Partial<FieldConfig>> = {
   clock: { tenths: false, style: "as_is" },
   number: { style: "strip_zeros" },
@@ -430,6 +439,13 @@ export function SetupView({ profile, live, tick, save, setProfile, reloadProfile
               </div>
               <SourcePanel profile={profile} locked={false} onProfile={save} />
             </section>
+            <section className="card">
+              <div className="card-head">
+                <h2 className="panel-title">{cs.image.title}</h2>
+              </div>
+              <ImagePanel key={profile.name} profile={profile} save={save} onNotice={setNotice} />
+              {notice && <p className="notice section-gap">{notice}</p>}
+            </section>
             {next}
           </div>
         </div>
@@ -478,6 +494,39 @@ export function SetupView({ profile, live, tick, save, setProfile, reloadProfile
                   </div>
                 ))}
               </div>
+              <label className="section-gap">
+                {cs.setup.aspect}
+                <div className="row">
+                  <select
+                    value={ASPECTS.some((a) => a.value === (profile.geometry.aspect ?? 0)) ? String(profile.geometry.aspect ?? 0) : "custom"}
+                    onChange={(e) => {
+                      if (e.target.value === "custom") return;
+                      save({ ...profile, geometry: { ...profile.geometry, aspect: Number(e.target.value) } });
+                    }}
+                  >
+                    {ASPECTS.map((a) => (
+                      <option key={a.value} value={String(a.value)}>
+                        {a.label}
+                      </option>
+                    ))}
+                    <option value="custom">{cs.setup.aspectCustom}</option>
+                  </select>
+                  <input
+                    key={profile.geometry.aspect ?? 0}
+                    type="number"
+                    min={0}
+                    max={10}
+                    step={0.01}
+                    defaultValue={profile.geometry.aspect ?? 0}
+                    aria-label={cs.setup.aspect}
+                    onBlur={(e) => {
+                      const v = Math.max(0, Math.min(10, Number(e.target.value) || 0));
+                      if (v !== (profile.geometry.aspect ?? 0)) save({ ...profile, geometry: { ...profile.geometry, aspect: v } });
+                    }}
+                  />
+                </div>
+                <small>{cs.setup.aspectHint}</small>
+              </label>
               <div className="canvas-tools">
                 <button
                   onClick={() => {

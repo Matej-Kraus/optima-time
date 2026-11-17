@@ -101,3 +101,18 @@ def test_crop_is_a_copy() -> None:
     c = crop(img, Roi(x=0.1, y=0.1, w=0.2, h=0.2))
     c[:] = 255
     assert img.max() == 0
+
+
+def test_aspect_corrects_a_board_seen_from_the_side() -> None:
+    import numpy as np
+
+    from optima_time.geometry import rectified_size
+
+    # a 16:10 board seen from the left: the far (right) edge is shorter, the width shrinks
+    side = np.array([(170, 50), (820, 200), (820, 545), (170, 690)], dtype=np.float64)
+    w, h = rectified_size(side, 4096)
+    assert w / h < 1.45  # squeezed when left automatic (the real board is 1.6)
+    w, h = rectified_size(side, 4096, aspect=1.6)
+    assert abs(w / h - 1.6) < 0.01 and h >= 490  # the longer side keeps its resolution
+    w, h = rectified_size(side, 640, aspect=1.6)
+    assert w == 640

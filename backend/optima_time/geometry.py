@@ -18,14 +18,25 @@ Image = npt.NDArray[np.uint8]
 Point = tuple[float, float]
 
 
-def rectified_size(corners_px: npt.NDArray[np.float64], max_width: int) -> tuple[int, int]:
+def rectified_size(
+    corners_px: npt.NDArray[np.float64], max_width: int, aspect: float = 0.0
+) -> tuple[int, int]:
     """Width and height of the rectified board (before rotation): mean opposite edge lengths,
-    scaled down to max_width, never up (upscaling adds no detail)."""
+    scaled down to max_width, never up (upscaling adds no detail).
+
+    aspect > 0 (the real board's width / height) corrects a board seen at an angle: from the
+    side it looks narrower than it is, and the digits would come out squeezed. The longer side
+    is kept and the other one is set from the aspect, so nothing loses resolution."""
     tl, tr, br, bl = corners_px
-    width = (np.linalg.norm(tr - tl) + np.linalg.norm(br - bl)) / 2
-    height = (np.linalg.norm(bl - tl) + np.linalg.norm(br - tr)) / 2
+    width = float(np.linalg.norm(tr - tl) + np.linalg.norm(br - bl)) / 2
+    height = float(np.linalg.norm(bl - tl) + np.linalg.norm(br - tr)) / 2
     if width < 2 or height < 2:
         raise ValueError("corners are too close together")
+    if aspect > 0:
+        if width / height < aspect:
+            width = height * aspect
+        else:
+            height = width / aspect
     scale = min(1.0, max_width / width)
     return max(2, round(width * scale)), max(2, round(height * scale))
 
@@ -60,10 +71,11 @@ class Rectifier:
         frame_size: tuple[int, int],
         rotate: int = 0,
         max_width: int = 1280,
+        aspect: float = 0.0,
     ) -> Rectifier:
         fw, fh = frame_size
         src = np.array([(x * fw, y * fh) for x, y in corners_rel], dtype=np.float64)
-        w, h = rectified_size(src, max_width if rotate in (0, 180) else 10**9)
+        w, h = rectified_size(src, max_width if rotate in (0, 180) else 10**9, aspect)
         dst = np.array([(0, 0), (w, 0), (w, h), (0, h)], dtype=np.float64)
         dst, (rw, rh) = _rotate_points(dst, w, h, rotate)
         if rotate in (90, 270) and rw > max_width:  # limit the final width

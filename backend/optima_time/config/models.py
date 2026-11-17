@@ -47,6 +47,9 @@ class GeometryConfig(Model):
     )
     rotate: Literal[0, 90, 180, 270] = 0
     max_width: int = Field(default=1280, ge=64, le=4096)
+    # the board's real width / height; 0 = as the corners show it. Set it when the camera
+    # sees the board at an angle, so the straightened board isn't squeezed.
+    aspect: float = Field(default=0.0, ge=0.0, le=10.0)
 
     @model_validator(mode="after")
     def _relative(self) -> GeometryConfig:

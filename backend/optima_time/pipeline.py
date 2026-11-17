@@ -131,6 +131,12 @@ class Pipeline:
             self._last_valid = {k: v for k, v in self._last_valid.items() if k in ids}
             self._forget()
 
+    def adjust(self, image: npt.NDArray[np.uint8]) -> npt.NDArray[np.uint8]:
+        """The profile's image adjustments on any picture (for the source preview)."""
+        with self._lock:
+            adjust = self._adjust
+        return adjust(image)
+
     def _forget(self) -> None:
         """Drop change-detection memory: every field is read fresh on the next frame."""
         self._sig.clear()
@@ -146,7 +152,9 @@ class Pipeline:
         with self._lock:
             rect, geo = self._rectifier, self._profile.geometry
             if rect is None or rect.frame_size != frame_size:
-                rect = Rectifier.create(geo.corners, frame_size, geo.rotate, geo.max_width)
+                rect = Rectifier.create(
+                    geo.corners, frame_size, geo.rotate, geo.max_width, geo.aspect
+                )
                 self._rectifier = rect
             return rect
 

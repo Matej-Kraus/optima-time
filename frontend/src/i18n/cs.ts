@@ -47,7 +47,7 @@ export const cs = {
   },
   image: {
     title: "Úprava obrazu",
-    hint: "Jako nastavení kamery, ale až v aplikaci. Změna je hned vidět na narovnané tabuli. Přepálená čísla nezachrání: nejdřív nastav expozici na kameře.",
+    hint: "Jako nastavení kamery, ale až v aplikaci. Změna je hned vidět na videu i na narovnané tabuli. Přepálená čísla nezachrání: nejdřív nastav expozici na kameře.",
     brightness: "Jas",
     contrast: "Kontrast",
     gamma: "Gama (zesvětlí tmavé části)",
@@ -135,6 +135,11 @@ export const cs = {
     activePoint: "Aktivní bod",
     corners: ["Levý horní", "Pravý horní", "Pravý dolní", "Levý dolní"],
     resetCorners: "Reset rohů",
+    aspect: "Poměr stran tabule (šířka : výška)",
+    aspectAuto: "Automaticky podle rohů",
+    aspectCustom: "Vlastní",
+    aspectHint:
+      "Rohy můžou tvořit libovolný čtyřúhelník, tabule z boku se narovná sama. Při hodně ostrém úhlu vyjde narovnaná tabule užší, než je. Pak zvol skutečný poměr (změř ji, nebo spočítej z fotky zepředu).",
     fieldsAnchors: "Pole a kotvy",
     canvasSource: "Obraz ze zdroje",
     canvasBoard: "Narovnaná tabule",
