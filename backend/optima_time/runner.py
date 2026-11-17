@@ -176,7 +176,7 @@ class Runner:
         if source is not None:
             source.close()
         clear = self.profile.outputs.xml_file.clear_on_exit
-        self.hub.stop(dict.fromkeys(self.state.values(), "") if clear else None)
+        self.hub.stop(dict.fromkeys(self.state.output_values(), "") if clear else None)
 
     def _restart_outputs(self, profile: Profile) -> None:
         self.hub.stop()

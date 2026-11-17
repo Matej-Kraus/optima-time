@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FIELD_ID_PATTERN, nextFieldId, rectFromPoints, type FieldConfig } from "./api";
+import { ApiError, errorText, FIELD_ID_PATTERN, nextFieldId, rectFromPoints, type FieldConfig } from "./api";
 
 describe("rectFromPoints", () => {
   it("normalizes any drag direction", () => {
@@ -22,5 +22,13 @@ describe("field ids", () => {
   it("picks the next free id", () => {
     const fields = [{ id: "field1" }, { id: "field3" }] as FieldConfig[];
     expect(nextFieldId(fields)).toBe("field2");
+  });
+});
+
+describe("error texts", () => {
+  it("turns validation details into readable lines", () => {
+    const e = new ApiError("HTTP 422", [{ loc: ["body"], msg: "Value error, odvozené pole 'x': šablona používá neexistující pole: nope" }]);
+    expect(errorText(e)).toBe("odvozené pole 'x': šablona používá neexistující pole: nope");
+    expect(errorText(new ApiError("HTTP 423", "Nastavení je zamčené."))).toBe("Nastavení je zamčené.");
   });
 });

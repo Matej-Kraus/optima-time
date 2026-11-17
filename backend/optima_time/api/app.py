@@ -62,6 +62,7 @@ from optima_time.runner import Runner
 from optima_time.sources.device import list_devices
 from optima_time.sources.live import SourceUnavailable
 from optima_time.sources.ndi import list_ndi_sources
+from optima_time.state import derive
 
 NO_CACHE = {"Cache-Control": "no-store, no-cache, must-revalidate", "Pragma": "no-cache"}
 
@@ -146,14 +147,14 @@ def create_app(runner: Runner, static_dir: Path | None = None, pin: str | None =
     @app.get("/data/values.xml")
     def data_xml() -> Response:
         return Response(
-            content=build_xml(runner.state.values()),
+            content=build_xml(runner.hub.sent),
             media_type="application/xml; charset=utf-8",
             headers=NO_CACHE,
         )
 
     @app.get("/data/values.json")
     def data_json() -> Response:
-        return _json(runner.state.values())
+        return _json(runner.hub.sent)
 
     # --- profile
 
@@ -179,7 +180,8 @@ def create_app(runner: Runner, static_dir: Path | None = None, pin: str | None =
         try:
             profile = Profile.model_validate(body)
         except ValidationError as error:
-            raise HTTPException(422, detail=error.errors(include_url=False)) from error
+            detail = error.errors(include_url=False, include_context=False)
+            raise HTTPException(422, detail=detail) from error
         runner.update_profile(profile)
         return profile.model_dump(mode="json")
 
@@ -217,6 +219,9 @@ def create_app(runner: Runner, static_dir: Path | None = None, pin: str | None =
             "process": runner.process_status(),
             "rectified_size": [rect.shape[1], rect.shape[0]] if rect is not None else None,
             "fields": fields,
+            "derived": {
+                k: v for k, v in runner.state.output_values().items() if k not in published
+            },
         }
         return _json(body)
 
@@ -313,10 +318,11 @@ def create_app(runner: Runner, static_dir: Path | None = None, pin: str | None =
         elif action == "live":
             hub.set_mode(OutputMode.LIVE)
         elif action == "test":
-            hub.write_test(random_test_values(runner.profile))
+            test = random_test_values(runner.profile)
+            hub.write_test(test | derive(runner.state.derived, test))
             runner.last_test_wall = time.time()
         else:
-            hub.write_test(dict.fromkeys(runner.state.values(), ""))
+            hub.write_test(dict.fromkeys(runner.state.output_values(), ""))
         return _json(runner.outputs_status())
 
     # --- profiles (SPEC 13.3)

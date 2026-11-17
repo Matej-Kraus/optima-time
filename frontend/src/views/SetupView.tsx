@@ -18,6 +18,7 @@ import { Magnifier } from "../components/Magnifier";
 import { OutputPanel } from "../components/OutputPanel";
 import { Overlay } from "../components/Overlay";
 import { ProfilesPanel } from "../components/ProfilesPanel";
+import { DerivedPanel } from "../components/DerivedPanel";
 import { ImagePanel } from "../components/ImagePanel";
 import { LockButton, ReadyList, XmlCheck } from "../components/SetupChecks";
 import { SourcePanel } from "../components/SourcePanel";
@@ -675,6 +676,12 @@ export function SetupView({ profile, live, tick, save, setProfile, reloadProfile
             </div>
             <OutputPanel key={profile.outputs.xml_file.path} profile={profile} locked={false} onProfile={save} />
           </section>
+          <section className="card">
+            <div className="card-head">
+              <h2 className="panel-title">{cs.derived.title}</h2>
+            </div>
+            <DerivedPanel profile={profile} live={live} locked={false} onProfile={save} />
+          </section>
           <div className="side-col">
             <section className="card">
               <div className="card-head">
@@ -693,7 +700,13 @@ export function SetupView({ profile, live, tick, save, setProfile, reloadProfile
               <div className="card-head">
                 <h2 className="panel-title">{cs.xmlCheck.title}</h2>
               </div>
-              <XmlCheck ids={profile.fields.map((f) => f.id)} onRename={(from, to) => updateField(from, { id: to })} />
+              <XmlCheck
+                ids={[...profile.fields.map((f) => f.id), ...(profile.derived ?? []).map((d) => d.id)]}
+                onRename={(from, to) => {
+                  if (profile.fields.some((f) => f.id === from)) updateField(from, { id: to });
+                  else save({ ...profile, derived: profile.derived.map((d) => (d.id === from ? { ...d, id: to } : d)) });
+                }}
+              />
             </section>
             {next}
           </div>

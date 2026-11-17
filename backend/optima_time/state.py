@@ -20,6 +20,7 @@ from pathlib import Path
 
 from optima_time.config.models import Profile
 from optima_time.fields.confirm import Event, FieldLogic, FieldStatus
+from optima_time.fields.template import Template
 from optima_time.guard import GuardResult, GuardState
 from optima_time.outputs.base import OutputHub
 from optima_time.pipeline import FrameResult
@@ -35,6 +36,17 @@ class LoggedEvent:
     field: str = ""
     text: str = ""
     detail: str = ""
+
+
+def derive(templates: dict[str, Template], values: dict[str, str]) -> dict[str, str]:
+    """Derived fields from field values; a template that fails yields "" (never stale text)."""
+    out = {}
+    for did, t in templates.items():
+        try:
+            out[did] = t.render(values)
+        except Exception:  # a bad filter argument slipped through: empty, not a crash
+            out[did] = ""
+    return out
 
 
 def group(field_id: str) -> str:
@@ -75,6 +87,7 @@ class BoardState:
 
     def _apply(self, profile: Profile) -> None:
         with self._lock:
+            self.derived = {d.id: Template(d.template) for d in profile.derived if d.enabled}
             enabled = {f.id: f for f in profile.fields if f.enabled}
             for fid in list(self.logic):
                 if fid not in enabled:
@@ -90,6 +103,12 @@ class BoardState:
     def values(self) -> dict[str, str]:
         with self._lock:
             return {fid: lg.text for fid, lg in self.logic.items()}
+
+    def output_values(self) -> dict[str, str]:
+        """What goes out: the fields plus the derived fields computed from them."""
+        with self._lock:
+            values = {fid: lg.text for fid, lg in self.logic.items()}
+            return values | derive(self.derived, values)
 
     def fields(self) -> dict[str, dict]:
         with self._lock:
@@ -189,7 +208,7 @@ class BoardState:
     # --- internals
 
     def _publish(self, arrived_ns: int | None) -> None:
-        self.hub.publish(self.values(), arrived_ns)
+        self.hub.publish(self.output_values(), arrived_ns)
 
     def _guard(self, guard: GuardResult) -> None:
         if guard.state is not self.guard_state:

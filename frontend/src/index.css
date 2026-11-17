@@ -1744,3 +1744,38 @@ pre {
   background: transparent;
   border: none;
 }
+
+.derived-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.derived-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.derived-list li {
+  display: grid;
+  grid-template-columns: 18px 150px minmax(0, 1fr) minmax(70px, auto) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.derived-list .result {
+  color: var(--accent-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.derived-panel .examples button {
+  text-transform: none;
+  letter-spacing: 0;
+}

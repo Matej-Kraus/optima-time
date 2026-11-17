@@ -205,3 +205,22 @@ def test_output_delay_from_the_profile(runner: Runner, tmp_path: Path) -> None:
     assert runner.hub.delay_s == 1.5
     p["source"] |= {"type": "stream", "url": "udp://0.0.0.0:59999"}
     assert c.put("/api/profile", json=p).json()["source"]["url"] == "udp://0.0.0.0:59999"
+
+
+def test_derived_fields_and_http_feed_follow_the_output(runner: Runner, tmp_path: Path) -> None:
+    c = client(runner, tmp_path)
+    wait(lambda: runner.state.values().get("scoreh") == "7")
+    p = c.get("/api/profile").json()
+    p["derived"] = [{"id": "skore", "template": "{scoreh} góly"}]
+    assert c.put("/api/profile", json=p).status_code == 200
+    wait(lambda: c.get("/api/state").json()["derived"].get("skore") == "7 góly")
+    assert parse_xml(c.get("/data/values.xml").content)["skore"] == "7 góly"
+    bad = p | {"derived": [{"id": "x", "template": "{nope}"}]}
+    assert c.put("/api/profile", json=bad).status_code == 422
+    # the HTTP feed shows what vMix gets: test data, not the live value
+    c.post("/api/output/test")
+    assert c.get("/data/values.json").json()["skore"].endswith(" góly")
+    c.post("/api/output/test-clear")
+    assert c.get("/data/values.json").json() == {"scoreh": "", "skore": ""}
+    c.post("/api/output/live")
+    assert c.get("/data/values.json").json()["skore"] == "7 góly"

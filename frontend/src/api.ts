@@ -20,6 +20,12 @@ export interface FieldConfig {
   [key: string]: unknown; // type-specific options are kept as the backend sends them
 }
 
+export interface DerivedField {
+  id: string;
+  template: string;
+  enabled: boolean;
+}
+
 export interface ImageConfig {
   brightness: number;
   contrast: number;
@@ -90,6 +96,7 @@ export interface Profile {
   source: SourceConfig;
   geometry: { corners: Point[]; rotate: number; max_width: number };
   fields: FieldConfig[];
+  derived: DerivedField[];
   guard: { anchors: Anchor[]; threshold: number; recover_frames: number; search_margin: number };
   preprocess: { blend_frames: number; blend_mode: "max" | "mean" };
   image: ImageConfig;
@@ -146,6 +153,7 @@ export interface LiveState {
   fields: Record<string, FieldState>;
   locked?: boolean;
   last_test_wall?: number | null;
+  derived?: Record<string, string>;
   process?: {
     cpu_percent: number;
     cpu_count: number;
@@ -257,6 +265,19 @@ export function nextFieldId(fields: FieldConfig[], base = "field"): string {
 }
 
 export function errorText(e: unknown): string {
-  if (e instanceof ApiError) return typeof e.detail === "string" ? e.detail : JSON.stringify(e.detail);
+  if (e instanceof ApiError) {
+    if (typeof e.detail === "string") return e.detail;
+    if (Array.isArray(e.detail)) {
+      // pydantic: [{loc, msg}] -> readable lines
+      return e.detail
+        .map((d: { msg?: string; loc?: unknown[] }) => {
+          const msg = String(d.msg ?? "").replace(/^Value error, /, "");
+          const where = (d.loc ?? []).filter((x) => x !== "body").join(".");
+          return where ? `${where}: ${msg}` : msg;
+        })
+        .join("; ");
+    }
+    return JSON.stringify(e.detail);
+  }
   return String(e);
 }

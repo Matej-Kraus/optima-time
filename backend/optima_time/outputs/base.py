@@ -165,6 +165,7 @@ class OutputHub:
         self.delay_s = max(0.0, delay_s)
         self._live: dict[str, str] = {}  # the newest live values
         self._released: dict[str, str] = {}  # the newest values whose delay has passed
+        self.sent: dict[str, str] = {}  # what the workers got last (also served over HTTP)
         self._queue: deque[tuple[float, dict[str, str], int | None]] = deque(
             maxlen=self.DELAY_QUEUE
         )
@@ -203,6 +204,7 @@ class OutputHub:
             self._released = self._live
             if self.mode is not OutputMode.LIVE:
                 return
+            self.sent = dict(values)
         for w in self.workers:
             w.submit(values, arrived_ns)
 
@@ -221,6 +223,8 @@ class OutputHub:
                 self._queue.popleft()
                 self._released = values
                 live = self.mode is OutputMode.LIVE
+                if live:
+                    self.sent = dict(values)
             if live:
                 for w in self.workers:
                     w.submit(values, arrived_ns)
@@ -229,6 +233,8 @@ class OutputHub:
         with self._lock:
             self.mode = mode
             current = dict(self._released)
+            if mode is OutputMode.LIVE:
+                self.sent = dict(current)
         if mode is OutputMode.LIVE:  # catch up at once (with what the delay has let through)
             for w in self.workers:
                 w.submit(current)
@@ -236,5 +242,6 @@ class OutputHub:
     def write_test(self, values: dict[str, str]) -> None:
         with self._lock:
             self.mode = OutputMode.TEST
+            self.sent = dict(values)
         for w in self.workers:
             w.submit(values)

@@ -7,7 +7,8 @@ from typing import Literal
 
 from pydantic import Field, model_validator
 
-from optima_time.fields.models import FieldConfig, Model, Roi, check_unique_ids
+from optima_time.fields.models import FIELD_ID_PATTERN, FieldConfig, Model, Roi, check_unique_ids
+from optima_time.fields.template import TemplateError, check_template
 
 SCHEMA_VERSION = 1
 
@@ -123,12 +124,22 @@ class DetectionConfig(Model):
     max_age_ms: int = Field(default=1000, ge=100, le=10_000)  # read at least this often
 
 
+class DerivedField(Model):
+    """An extra output value made from published fields by a template (fields/template.py),
+    e.g. "{scoreh} : {scorea}". Written to the XML like a field."""
+
+    id: str = Field(pattern=FIELD_ID_PATTERN, max_length=64)
+    template: str = Field(default="", max_length=2000)
+    enabled: bool = True
+
+
 class Profile(Model):
     schema_version: Literal[1] = SCHEMA_VERSION
     name: str = "profil"
     source: SourceConfig = SourceConfig()
     geometry: GeometryConfig = GeometryConfig()
     fields: list[FieldConfig] = Field(default_factory=list)
+    derived: list[DerivedField] = Field(default_factory=list)
     preprocess: PreprocessConfig = PreprocessConfig()
     image: ImageConfig = ImageConfig()
     guard: GuardConfig = GuardConfig()
@@ -138,4 +149,13 @@ class Profile(Model):
     @model_validator(mode="after")
     def _unique(self) -> Profile:
         check_unique_ids(self.fields)
+        known = {f.id for f in self.fields}
+        for d in self.derived:
+            if d.id in known:
+                raise ValueError(f"odvozené pole {d.id!r}: tento název už má jiné pole")
+            try:
+                check_template(d.template, {f.id for f in self.fields})
+            except TemplateError as error:
+                raise ValueError(f"odvozené pole {d.id!r}: {error}") from error
+            known.add(d.id)
         return self
