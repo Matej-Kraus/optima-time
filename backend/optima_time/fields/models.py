@@ -165,10 +165,38 @@ class PeriodField(FieldBase):
         return self.aligned(render_period(value, self.spec()))
 
 
-FieldConfig = Annotated[ClockField | NumberField | PeriodField, Field(discriminator="type")]
+class IndicatorField(FieldBase):
+    """A lamp or symbol on the board (timeout, possession, fouls): lit or not, no digits.
+    The brightest part of the crop (90th percentile of max-channel gray) against `lit_level`.
+    A change is published after `reads` equal reads in a row, both ways."""
+
+    type: Literal["indicator"] = "indicator"
+    lit_level: int = Field(default=110, ge=1, le=255)
+    on_text: str = Field(default="1", max_length=200)
+    off_text: str = Field(default="0", max_length=200)
+    reads: int = Field(default=3, ge=1, le=50)
+
+    def spec(self) -> tuple[str, str]:
+        return (self.on_text, self.off_text)
+
+    def allowed_chars(self) -> str:
+        return ""
+
+    def parse(self, text: str, last: ClockValue | NumberValue | None) -> NumberValue | None:
+        if text in ("1", "0"):
+            return NumberValue(int(text), text)
+        return None
+
+    def render(self, value: ClockValue | NumberValue) -> str:
+        assert isinstance(value, NumberValue)
+        return self.aligned(self.on_text if value.value else self.off_text)
 
 
-def check_unique_ids(fields: list[ClockField | NumberField | PeriodField]) -> None:
+AnyFieldConfig = ClockField | NumberField | PeriodField | IndicatorField
+FieldConfig = Annotated[AnyFieldConfig, Field(discriminator="type")]
+
+
+def check_unique_ids(fields: list[AnyFieldConfig]) -> None:
     seen: set[str] = set()
     for f in fields:
         if f.id in seen:

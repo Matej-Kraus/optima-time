@@ -53,7 +53,7 @@ from optima_time.config import profiles
 from optima_time.config.models import AnchorConfig, Profile
 from optima_time.config.store import save_profile
 from optima_time.diagnostics import build_zip
-from optima_time.fields.models import ClockField, NumberField, PeriodField, Roi
+from optima_time.fields.models import ClockField, IndicatorField, NumberField, PeriodField, Roi
 from optima_time.guard import capture_template, history_frame, suggest_anchors
 from optima_time.outputs.base import OutputMode
 from optima_time.outputs.xml import build_xml
@@ -95,6 +95,8 @@ def random_test_values(profile: Profile, rng: random.Random | None = None) -> di
             text = f"{rng.randint(0, 19):02d}:{rng.randint(0, 59):02d}"
         elif isinstance(f, PeriodField):
             text = str(rng.randint(f.min_value, f.max_value))
+        elif isinstance(f, IndicatorField):
+            text = str(rng.randint(0, 1))
         else:
             assert isinstance(f, NumberField)
             text = str(rng.randint(0, 15))

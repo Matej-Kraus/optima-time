@@ -67,15 +67,32 @@ export function FieldEditor({ field, idError, onChange, onType, onDelete }: Prop
           />
         </label>
       )}
+      {field.type === "indicator" && (
+        <>
+          <p className="hint">{cs.indicator.hint}</p>
+          <label>
+            {cs.indicator.onText}
+            <input defaultValue={String(field.on_text ?? "1")} onBlur={(e) => onChange({ on_text: e.target.value })} />
+          </label>
+          <label>
+            {cs.indicator.offText}
+            <input defaultValue={String(field.off_text ?? "0")} onBlur={(e) => onChange({ off_text: e.target.value })} />
+          </label>
+          <NumberInput label={cs.indicator.litLevel} value={field.lit_level ?? 110} step={5} onChange={(v) => onChange({ lit_level: v })} />
+          <NumberInput label={cs.indicator.reads} value={field.reads ?? 3} step={1} onChange={(v) => onChange({ reads: v })} />
+        </>
+      )}
       {field.type === "number" && (
         <Select label={cs.style} value={String(field.style)} options={cs.numberStyles} onChange={(v) => onChange({ style: v })} />
       )}
-      <Select
-        label={cs.blank}
-        value={String(field.blank ?? "hold")}
-        options={cs.blankPolicies}
-        onChange={(v) => onChange({ blank: v })}
-      />
+      {field.type !== "indicator" && (
+        <Select
+          label={cs.blank}
+          value={String(field.blank ?? "hold")}
+          options={cs.blankPolicies}
+          onChange={(v) => onChange({ blank: v })}
+        />
+      )}
       <label className="check">
         <input type="checkbox" checked={field.enabled} onChange={(e) => onChange({ enabled: e.target.checked })} />
         {cs.enabled}

@@ -40,6 +40,7 @@ const DEFAULTS: Record<FieldType, Partial<FieldConfig>> = {
   clock: { tenths: false, style: "as_is" },
   number: { style: "strip_zeros" },
   period: {},
+  indicator: { on_text: "1", off_text: "0" },
 };
 
 interface Props {

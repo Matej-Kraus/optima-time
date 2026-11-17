@@ -9,7 +9,7 @@ export interface Roi {
   h: number;
 }
 
-export type FieldType = "clock" | "number" | "period";
+export type FieldType = "clock" | "number" | "period" | "indicator";
 
 export interface FieldConfig {
   type: FieldType;

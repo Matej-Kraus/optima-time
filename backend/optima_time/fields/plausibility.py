@@ -19,10 +19,16 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from optima_time.fields.formats import ClockValue, NumberValue
-from optima_time.fields.models import ClockField, Direction, NumberField, PeriodField
+from optima_time.fields.models import (
+    ClockField,
+    Direction,
+    IndicatorField,
+    NumberField,
+    PeriodField,
+)
 
 Value = ClockValue | NumberValue
-AnyField = ClockField | NumberField | PeriodField
+AnyField = ClockField | NumberField | PeriodField | IndicatorField
 
 
 class ChangeKind(StrEnum):
@@ -110,6 +116,10 @@ def classify(
             ):
                 return ChangeKind.EXPECTED, Requirement(2, 0)  # moved up from the next slot
         return ChangeKind.UNEXPECTED, slow
+
+    if isinstance(field, IndicatorField):  # on/off: the same few reads both ways
+        req = Requirement(field.reads, 0)
+        return (ChangeKind.EXPECTED if ever_published else ChangeKind.INITIAL), req
 
     # number and period
     assert isinstance(value, NumberValue)

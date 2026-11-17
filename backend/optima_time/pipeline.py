@@ -19,9 +19,17 @@ import numpy.typing as npt
 
 from optima_time.config.models import Profile
 from optima_time.fields.formats import ClockValue, NumberValue
+from optima_time.fields.models import IndicatorField
 from optima_time.geometry import Rectifier, crop
 from optima_time.guard import GuardResult, GuardState, LayoutGuard
-from optima_time.preprocess import FrameBlender, ImageAdjust, contrast, difference, signature
+from optima_time.preprocess import (
+    FrameBlender,
+    ImageAdjust,
+    contrast,
+    difference,
+    lit_level,
+    signature,
+)
 from optima_time.recognizers.base import Crop, Reading, Recognizer
 from optima_time.sources.base import Frame
 
@@ -189,6 +197,13 @@ class Pipeline:
                 results[f.id] = replace(last, contrast=c, crop=kept, cached=True)
                 continue
             fresh[f.id] = sig
+            if isinstance(f, IndicatorField):  # no OCR: lit or not
+                on = int(lit_level(image) >= f.lit_level)
+                value = NumberValue(on, str(on))
+                results[f.id] = FieldRead(
+                    f.id, ReadStatus.VALID, c, value=value, text=f.render(value), crop=kept
+                )
+                continue
             if c < f.min_contrast:  # gate: unlit / blown out / covered
                 results[f.id] = FieldRead(f.id, ReadStatus.BLANK, c, crop=kept)
                 continue

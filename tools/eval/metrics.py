@@ -22,10 +22,13 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from optima_time.fields.models import BlankPolicy, ClockField, NumberField, PeriodField
+from optima_time.fields.models import (
+    AnyFieldConfig,
+    BlankPolicy,
+)
 from optima_time.pipeline import ReadStatus
 
-AnyField = ClockField | NumberField | PeriodField
+AnyField = AnyFieldConfig
 STALE_WINDOW_S = 1.0
 
 

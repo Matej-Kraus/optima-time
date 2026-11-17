@@ -52,6 +52,16 @@ def contrast(image: Image) -> float:
     return float(int(part[hi_i]) - int(part[lo_i]))
 
 
+def lit_level(image: Image) -> float:
+    """How bright the lit part of a crop is: 90th percentile of max-channel gray (0-255),
+    on a crop shrunk like for the contrast gate. For indicator fields."""
+    h, w = image.shape[:2]
+    image = shrink(image, math.ceil(max(h, w) / CONTRAST_MAX_SIDE))
+    gray = gray_max(image).ravel()
+    k = int(0.90 * (gray.size - 1))
+    return float(np.partition(gray, k)[k])
+
+
 SIGNATURE_HEIGHT = 24
 
 

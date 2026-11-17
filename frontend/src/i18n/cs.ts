@@ -287,7 +287,15 @@ export const cs = {
   label: "Popis",
   type: "Typ",
   enabled: "Zapnuto",
-  types: { clock: "Čas", number: "Číslo (skóre)", period: "Třetina" },
+  types: { clock: "Čas", number: "Číslo (skóre)", period: "Třetina", indicator: "Indikátor (svítí / nesvítí)" },
+  indicator: {
+    hint: "Kontrolka nebo symbol na tabuli (time-out, oddechový čas…). Nečte číslice, jen jestli výřez svítí.",
+    onText: "Text, když svítí",
+    offText: "Text, když nesvítí",
+    litLevel: "Práh jasu (0–255)",
+    reads: "Potvrdit po … stejných snímcích",
+    now: "Teď naměřený jas",
+  },
   tenths: "Desetiny v poslední minutě",
   style: "Tvar výstupu",
   clockStyles: {
