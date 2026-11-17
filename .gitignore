@@ -38,3 +38,4 @@ test_time/
 samples/real/out/
 samples/real/replay/
 samples/real/replay.log
+samples/real/side/
