@@ -34,11 +34,27 @@ export interface VmixCommand {
 export interface VmixApiConfig {
   enabled: boolean;
   host: string;
+  web_port: number;
   port: number;
   input: string;
   suffix: string;
   names: Record<string, string>;
   commands: VmixCommand[];
+}
+
+export interface VmixTitle {
+  ref: string;
+  number: string;
+  title: string;
+  kind: string;
+  selectors: string[];
+  fields: string[];
+}
+
+export interface VmixDiscovery {
+  titles: VmixTitle[];
+  title_count: number;
+  field_count: number;
 }
 
 export interface DerivedField {
@@ -244,6 +260,10 @@ export const api = {
   sampleStatus: () => fetch("/api/samples/status").then((r) => json<RecorderStatus>(r)),
   previewUrl: (view: "source" | "rectified", key = 0) => `/api/preview.mjpg?view=${view}&fps=8&max_width=960&k=${key}`,
   getSources: () => fetch("/api/sources").then((r) => json<SourcesList>(r)),
+  discoverVmix: (host: string, port: number) => {
+    const query = new URLSearchParams({ host, port: String(port) });
+    return fetch(`/api/vmix/discover?${query}`).then((r) => json<VmixDiscovery>(r));
+  },
   getEvents: (limit = 50) => fetch(`/api/events?limit=${limit}`).then((r) => json<LoggedEvent[]>(r)),
   getXml: () => fetch("/data/values.xml").then((r) => r.text()),
   hold: (id: string, text: string) => post(`/api/fields/${encodeURIComponent(id)}/hold`, { text }).then(json),

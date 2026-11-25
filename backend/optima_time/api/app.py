@@ -6,6 +6,7 @@ GET  /api/profile                 the profile
 PUT  /api/profile                 validate, save, apply
 GET  /api/state                   source, processing, guard, outputs, readings, published values
 GET  /api/sources                 NDI sources on the network, capture devices on this PC
+GET  /api/vmix/discover           titles and fields from the read-only vMix Web API
 GET  /api/profiles; POST /api/profiles/load|save-as|import; GET /api/profiles/export
 POST /api/samples/record {"seconds": N}; GET /api/samples/status
 GET  /api/diagnostics.zip
@@ -56,6 +57,7 @@ from optima_time.diagnostics import build_zip
 from optima_time.fields.models import ClockField, IndicatorField, NumberField, PeriodField, Roi
 from optima_time.guard import capture_template, history_frame, suggest_anchors
 from optima_time.outputs.base import OutputMode
+from optima_time.outputs.vmix_discovery import VmixDiscoveryError, fetch_titles
 from optima_time.outputs.xml import build_xml
 from optima_time.preprocess import gray_max
 from optima_time.runner import Runner
@@ -239,6 +241,22 @@ def create_app(runner: Runner, static_dir: Path | None = None, pin: str | None =
             ndi, ndi_error = None, str(error)
         devices = [d.as_dict() for d in list_devices()]
         return _json({"ndi": ndi, "ndi_error": ndi_error, "devices": devices})
+
+    @app.get("/api/vmix/discover")
+    def discover_vmix(host: str = "127.0.0.1", port: int = 8088) -> Response:
+        """Read title inputs and their text fields; this never changes vMix."""
+        try:
+            titles = fetch_titles(host, port)
+        except VmixDiscoveryError as error:
+            raise HTTPException(502, detail=str(error)) from error
+        fields = {field for title in titles for field in title.fields}
+        return _json(
+            {
+                "titles": [title.as_dict() for title in titles],
+                "title_count": len(titles),
+                "field_count": len(fields),
+            }
+        )
 
     @app.get("/api/guard/history")
     def guard_history() -> Response:
