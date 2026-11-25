@@ -1,0 +1,339 @@
+{
+ "video": "samples/real/eval/match.mp4",
+ "model": "tiny",
+ "min_width": 160,
+ "threads": 2,
+ "publishing": "app logic",
+ "ocr_reads": 6285,
+ "ocr_read_share_%": 2.89,
+ "guard_lost_frames": 0,
+ "machine": "Darwin arm64",
+ "frames": 36300,
+ "timing": {
+  "frame_ms_median": 10.9,
+  "frame_ms_p95": 32.06,
+  "ocr_ms_median": 0.0
+ },
+ "wrong_published_total": 1,
+ "fields": [
+  {
+   "field": "Time",
+   "crop_accuracy_%": 99.95,
+   "lit_crops": 36300,
+   "wrong_value": 15,
+   "invalid": 2,
+   "low_conf": 0,
+   "blank": 0,
+   "skipped_by_guard": 0,
+   "unlit_crops": 0,
+   "unlit_read_as_value": 0,
+   "changes": 1198,
+   "captured_%": 100.0,
+   "delay_ms_median": 0.0,
+   "delay_ms_p95": 0.0,
+   "wrong_published": 1,
+   "wrong_published_frames": 1
+  },
+  {
+   "field": "period",
+   "crop_accuracy_%": 100.0,
+   "lit_crops": 36300,
+   "wrong_value": 0,
+   "invalid": 0,
+   "low_conf": 0,
+   "blank": 0,
+   "skipped_by_guard": 0,
+   "unlit_crops": 0,
+   "unlit_read_as_value": 0,
+   "changes": 0,
+   "captured_%": null,
+   "delay_ms_median": null,
+   "delay_ms_p95": null,
+   "wrong_published": 0,
+   "wrong_published_frames": 0
+  },
+  {
+   "field": "scoreh",
+   "crop_accuracy_%": 100.0,
+   "lit_crops": 36300,
+   "wrong_value": 0,
+   "invalid": 0,
+   "low_conf": 0,
+   "blank": 0,
+   "skipped_by_guard": 0,
+   "unlit_crops": 0,
+   "unlit_read_as_value": 0,
+   "changes": 0,
+   "captured_%": null,
+   "delay_ms_median": null,
+   "delay_ms_p95": null,
+   "wrong_published": 0,
+   "wrong_published_frames": 0
+  },
+  {
+   "field": "scorea",
+   "crop_accuracy_%": 100.0,
+   "lit_crops": 36300,
+   "wrong_value": 0,
+   "invalid": 0,
+   "low_conf": 0,
+   "blank": 0,
+   "skipped_by_guard": 0,
+   "unlit_crops": 0,
+   "unlit_read_as_value": 0,
+   "changes": 2,
+   "captured_%": 100.0,
+   "delay_ms_median": 40.0,
+   "delay_ms_p95": 40.0,
+   "wrong_published": 0,
+   "wrong_published_frames": 0
+  },
+  {
+   "field": "penaltyh1",
+   "crop_accuracy_%": null,
+   "lit_crops": 0,
+   "wrong_value": 0,
+   "invalid": 0,
+   "low_conf": 0,
+   "blank": 0,
+   "skipped_by_guard": 0,
+   "unlit_crops": 36290,
+   "unlit_read_as_value": 0,
+   "changes": 0,
+   "captured_%": null,
+   "delay_ms_median": null,
+   "delay_ms_p95": null,
+   "wrong_published": 0,
+   "wrong_published_frames": 0
+  },
+  {
+   "field": "penaltya1",
+   "crop_accuracy_%": 99.73,
+   "lit_crops": 4077,
+   "wrong_value": 1,
+   "invalid": 0,
+   "low_conf": 0,
+   "blank": 10,
+   "skipped_by_guard": 0,
+   "unlit_crops": 32213,
+   "unlit_read_as_value": 0,
+   "changes": 121,
+   "captured_%": 100.0,
+   "delay_ms_median": 0.0,
+   "delay_ms_p95": 0.0,
+   "wrong_published": 0,
+   "wrong_published_frames": 0
+  }
+ ],
+ "examples": {
+  "Time": [
+   {
+    "frame": 4386,
+    "truth": "02:15",
+    "status": "valid",
+    "read": "02:16",
+    "conf": 0.913
+   },
+   {
+    "frame": 4386,
+    "published_wrong": "(1360, False)",
+    "expected": "(1350, False)"
+   },
+   {
+    "frame": 6959,
+    "truth": "03:39",
+    "status": "invalid",
+    "read": "03:80",
+    "conf": 0.882
+   },
+   {
+    "frame": 7459,
+    "truth": "03:59",
+    "status": "invalid",
+    "read": "03:60",
+    "conf": 0.843
+   },
+   {
+    "frame": 7709,
+    "truth": "04:09",
+    "status": "valid",
+    "read": "04:00",
+    "conf": 0.997
+   },
+   {
+    "frame": 27334,
+    "truth": "14:56",
+    "status": "valid",
+    "read": "14:58",
+    "conf": 0.956
+   },
+   {
+    "frame": 27659,
+    "truth": "15:09",
+    "status": "valid",
+    "read": "15:00",
+    "conf": 0.989
+   },
+   {
+    "frame": 27834,
+    "truth": "15:16",
+    "status": "valid",
+    "read": "15:18",
+    "conf": 0.911
+   },
+   {
+    "frame": 36290,
+    "truth": "19:59",
+    "status": "valid",
+    "read": "10:00",
+    "conf": 0.962
+   },
+   {
+    "frame": 36291,
+    "truth": "19:59",
+    "status": "valid",
+    "read": "10:00",
+    "conf": 0.96
+   },
+   {
+    "frame": 36292,
+    "truth": "19:59",
+    "status": "valid",
+    "read": "10:00",
+    "conf": 0.959
+   },
+   {
+    "frame": 36293,
+    "truth": "19:59",
+    "status": "valid",
+    "read": "09:59",
+    "conf": 1.0
+   },
+   {
+    "frame": 36294,
+    "truth": "19:59",
+    "status": "valid",
+    "read": "09:59",
+    "conf": 1.0
+   },
+   {
+    "frame": 36295,
+    "truth": "19:59",
+    "status": "valid",
+    "read": "09:59",
+    "conf": 1.0
+   },
+   {
+    "frame": 36296,
+    "truth": "19:59",
+    "status": "valid",
+    "read": "09:59",
+    "conf": 1.0
+   },
+   {
+    "frame": 36297,
+    "truth": "19:59",
+    "status": "valid",
+    "read": "09:59",
+    "conf": 1.0
+   },
+   {
+    "frame": 36298,
+    "truth": "19:59",
+    "status": "valid",
+    "read": "09:59",
+    "conf": 1.0
+   },
+   {
+    "frame": 36299,
+    "truth": "19:59",
+    "status": "valid",
+    "read": "09:59",
+    "conf": 1.0
+   }
+  ],
+  "period": [],
+  "scoreh": [],
+  "scorea": [],
+  "penaltyh1": [],
+  "penaltya1": [
+   {
+    "frame": 20458,
+    "truth": "01:09",
+    "status": "valid",
+    "read": "01:00",
+    "conf": 0.88
+   },
+   {
+    "frame": 22425,
+    "truth": "00:01",
+    "status": "blank",
+    "read": "",
+    "conf": 0.0
+   },
+   {
+    "frame": 22426,
+    "truth": "00:01",
+    "status": "blank",
+    "read": "",
+    "conf": 0.0
+   },
+   {
+    "frame": 22427,
+    "truth": "00:01",
+    "status": "blank",
+    "read": "",
+    "conf": 0.0
+   },
+   {
+    "frame": 22428,
+    "truth": "00:01",
+    "status": "blank",
+    "read": "",
+    "conf": 0.0
+   },
+   {
+    "frame": 22429,
+    "truth": "00:01",
+    "status": "blank",
+    "read": "",
+    "conf": 0.0
+   },
+   {
+    "frame": 22430,
+    "truth": "00:01",
+    "status": "blank",
+    "read": "",
+    "conf": 0.0
+   },
+   {
+    "frame": 22431,
+    "truth": "00:01",
+    "status": "blank",
+    "read": "",
+    "conf": 0.0
+   },
+   {
+    "frame": 22432,
+    "truth": "00:01",
+    "status": "blank",
+    "read": "",
+    "conf": 0.0
+   },
+   {
+    "frame": 22433,
+    "truth": "00:01",
+    "status": "blank",
+    "read": "",
+    "conf": 0.0
+   },
+   {
+    "frame": 22434,
+    "truth": "00:01",
+    "status": "blank",
+    "read": "",
+    "conf": 0.0
+   }
+  ]
+ }
+}
