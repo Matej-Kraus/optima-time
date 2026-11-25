@@ -53,6 +53,14 @@ export function FieldEditor({ field, idError, onChange, onType, onDelete }: Prop
             options={cs.directions}
             onChange={(v) => onChange({ direction: v })}
           />
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={Boolean(field.zero_is_blank)}
+              onChange={(e) => onChange({ zero_is_blank: e.target.checked })}
+            />
+            {cs.zeroIsBlank}
+          </label>
         </>
       )}
       {field.type === "period" && (

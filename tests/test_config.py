@@ -5,7 +5,7 @@ import pytest
 from pydantic import ValidationError
 
 from optima_time.config.models import Profile
-from optima_time.config.store import load_profile, save_profile
+from optima_time.config.store import load_profile, parse_profile, save_profile
 from optima_time.fields.formats import ClockStyle
 from optima_time.fields.models import BlankPolicy, ClockField, NumberField, PeriodField, Roi
 
@@ -47,6 +47,37 @@ def test_field_id_must_be_xml_name(bad_id: str) -> None:
 def test_field_ids_unique() -> None:
     with pytest.raises(ValidationError):
         Profile(fields=[NumberField(id="a", roi=ROI), NumberField(id="a", roi=ROI)])
+
+
+def test_xml_output_names_are_valid_known_and_unique() -> None:
+    data = sample_profile().model_dump(mode="json")
+    data["outputs"]["xml_file"]["names"] = {"Time": "Clock", "scoreh": "HomeScore"}
+    assert Profile.model_validate(data).outputs.xml_file.names["Time"] == "Clock"
+
+    data["outputs"]["xml_file"]["names"] = {"missing": "Clock"}
+    with pytest.raises(ValidationError, match="neexistující pole"):
+        Profile.model_validate(data)
+
+    data["outputs"]["xml_file"]["names"] = {"Time": "scoreh"}
+    with pytest.raises(ValidationError, match="jedinečné"):
+        Profile.model_validate(data)
+
+    data["outputs"]["xml_file"]["names"] = {"Time": "not an xml name"}
+    with pytest.raises(ValidationError):
+        Profile.model_validate(data)
+
+
+def test_version_one_profile_migrates_without_changing_behaviour() -> None:
+    data = sample_profile().model_dump(mode="json")
+    data["schema_version"] = 1
+    data["outputs"]["xml_file"].pop("names")
+    for field in data["fields"]:
+        field.pop("zero_is_blank", None)
+    profile = parse_profile(data)
+    assert profile.schema_version == 2
+    assert profile.outputs.xml_file.names == {}
+    penalty = next(f for f in profile.fields if f.id == "penaltyh1")
+    assert isinstance(penalty, ClockField) and not penalty.zero_is_blank
 
 
 def test_roi_must_stay_inside() -> None:

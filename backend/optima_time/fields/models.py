@@ -88,6 +88,9 @@ class FieldBase(Model):
 class ClockField(FieldBase):
     type: Literal["clock"] = "clock"
     tenths: bool = False
+    # Penalty clocks can disappear at the end instead of publishing 0:00. This is separate
+    # from blank_delay_ms: a valid zero is already unambiguous and may clear immediately.
+    zero_is_blank: bool = False
     max_minutes: int = Field(default=999, ge=1, le=999)
     style: ClockStyle = ClockStyle.AS_IS
     direction: Direction = Direction.AUTO

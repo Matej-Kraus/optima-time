@@ -14,6 +14,17 @@ from xml.sax.saxutils import escape
 DECLARATION = '<?xml version="1.0" encoding="utf-8"?>'
 
 
+def map_names(values: dict[str, str], names: dict[str, str]) -> dict[str, str]:
+    """Map internal ids to XML element names. Profile validation prevents collisions."""
+    return {names.get(field_id, field_id): value for field_id, value in values.items()}
+
+
+def unmap_names(values: dict[str, str], names: dict[str, str]) -> dict[str, str]:
+    """Map values read from an existing XML file back to internal ids."""
+    reverse = {external: internal for internal, external in names.items()}
+    return {reverse.get(name, name): value for name, value in values.items()}
+
+
 def build_xml(values: dict[str, str], newline: str = "\r\n") -> bytes:
     lines = [DECLARATION, "<root>"]
     for name in sorted(values):

@@ -85,11 +85,11 @@ export const cs = {
   },
   xmlCheck: {
     title: "Kontrola názvů podle vMixu",
-    hint: "Vyber XML soubor, který vMix teď používá (např. ze stávající aplikace). Názvy polí musí přesně sedět, včetně velkých a malých písmen.",
+    hint: "Vyber XML soubor, který vMix teď používá. Výstupní názvy musí přesně sedět, včetně velkých a malých písmen; interní názvy polí přitom zůstanou beze změny.",
     choose: "Vybrat XML soubor…",
     ok: "Sedí",
     caseOnly: "Liší se jen velikostí písmen (vMix je nespáruje)",
-    rename: (to: string) => `Přejmenovat na ${to}`,
+    rename: (to: string) => `Mapovat výstup na ${to}`,
     missing: "V XML z vMixu, ale tady chybí pole",
     extra: "Tady navíc (vMix je v tom XML nemá)",
     none: "V souboru nejsou žádné hodnoty.",
@@ -303,6 +303,7 @@ export const cs = {
   minContrast: "Min. kontrast (0–255)",
   margin: "Okraj výřezu (× výška pole)",
   blankDelay: "Zpoždění prázdné hodnoty (ms)",
+  zeroIsBlank: "Hodnota 0:00 okamžitě vyprázdní výstup",
   maxDigits: "Max. počet číslic",
   maxPeriod: "Nejvyšší perioda",
   cornerKeys: "Vybraný roh posuneš šipkami (se Shiftem po 10 px).",
@@ -364,6 +365,9 @@ export const cs = {
   invalidId: "Neplatný název pole.",
   duplicateId: "Tento název už má jiné pole.",
   xmlPath: "Cesta k XML souboru",
+  xmlNames: "Názvy prvků v XML",
+  xmlNamesHelp:
+    "Volitelné mapování interního pole na název pro vMix, např. Time=Clock; scoreh=HomeScore. Neuvedená pole si ponechají své jméno.",
   delay: "Zpoždění výstupu (ms)",
   delayHelp:
     "0 = hned. Když je obraz tabule ve vMixu zpožděný (Advanced → Delay), nastav stejnou hodnotu, ať se grafika mění zároveň s obrazem. Pauza a testovací data platí hned.",

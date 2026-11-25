@@ -143,6 +143,39 @@ def test_penalty_appears_after_two_reads_and_clears_after_delay() -> None:
     assert f.read("1:59") == "1:59"  # tick
 
 
+def test_penalty_zero_can_clear_immediately_without_changing_old_profiles() -> None:
+    old = penalty()
+    old.reads("0:01", 11)
+    assert old.read("0:00") == "0:00"
+
+    f = Feeder(
+        ClockField(
+            id="penaltyh1",
+            roi=ROI,
+            blank=BlankPolicy.CLEAR,
+            blank_delay_ms=2000,
+            zero_is_blank=True,
+        )
+    )
+    f.reads("0:01", 11)
+    assert f.read("0:00") == ""
+
+
+def test_new_penalty_template_delay_keeps_short_blank() -> None:
+    f = Feeder(
+        ClockField(
+            id="penaltyh1",
+            roi=ROI,
+            blank=BlankPolicy.CLEAR,
+            blank_delay_ms=2000,
+            zero_is_blank=True,
+        )
+    )
+    f.reads("1:00", 11)
+    assert f.reads(None, 45) == "1:00"  # 1.76 s since the first blank
+    assert f.reads(None, 7) == ""  # at least 2 s
+
+
 def test_hold_policy_keeps_value_when_blank() -> None:
     f = started_clock("05:00")
     assert f.reads(None, 50) == "05:00"

@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import Field, model_validator
 
 from optima_time.fields.models import FIELD_ID_PATTERN, FieldConfig, Model, Roi, check_unique_ids
 from optima_time.fields.template import TemplateError, check_template
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 
 class Deinterlace(StrEnum):
@@ -76,11 +76,16 @@ class NewLine(StrEnum):
     LF = "lf"
 
 
+XmlName = Annotated[str, Field(pattern=FIELD_ID_PATTERN, max_length=64)]
+
+
 class XmlFileOutput(Model):
     enabled: bool = True
     path: str = ""
     newline: NewLine = NewLine.CRLF
     clear_on_exit: bool = False  # else the last values stay in the file
+    # Internal field/derived id -> XML element name. Empty means identity (old profiles).
+    names: dict[XmlName, XmlName] = Field(default_factory=dict)
 
 
 class VmixAction(StrEnum):
@@ -172,7 +177,7 @@ class DerivedField(Model):
 
 
 class Profile(Model):
-    schema_version: Literal[1] = SCHEMA_VERSION
+    schema_version: Literal[2] = SCHEMA_VERSION
     name: str = "profil"
     source: SourceConfig = SourceConfig()
     geometry: GeometryConfig = GeometryConfig()
@@ -196,6 +201,14 @@ class Profile(Model):
             except TemplateError as error:
                 raise ValueError(f"odvozené pole {d.id!r}: {error}") from error
             known.add(d.id)
+        xml_names = self.outputs.xml_file.names
+        unknown = set(xml_names) - known
+        if unknown:
+            names = ", ".join(sorted(unknown))
+            raise ValueError(f"mapování XML: neexistující pole {names}")
+        effective = [xml_names.get(name, name) for name in known]
+        if len(effective) != len(set(effective)):
+            raise ValueError("mapování XML: názvy výstupních prvků musí být jedinečné")
         for c in self.outputs.vmix_api.commands:
             if c.value not in known:
                 raise ValueError(f"příkaz pro vMix ({c.target}): neexistující pole {c.value!r}")

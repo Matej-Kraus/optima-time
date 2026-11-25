@@ -13,7 +13,9 @@ describe("floorball template", () => {
   });
   it("has the usual ids and penalties clear when empty", () => {
     expect(FLOORBALL.map((f) => f.id)).toEqual(["Time", "period", "scoreh", "scorea", "penaltyh1", "penaltyh2", "penaltya1", "penaltya2"]);
-    expect(FLOORBALL.filter((f) => f.blank === "clear")).toHaveLength(4);
+    const penalties = FLOORBALL.filter((f) => f.blank === "clear");
+    expect(penalties).toHaveLength(4);
+    expect(penalties.every((f) => f.blank_delay_ms === 2000 && f.zero_is_blank === true)).toBe(true);
   });
 });
 

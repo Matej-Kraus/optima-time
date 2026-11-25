@@ -51,7 +51,7 @@ from pydantic import ValidationError
 from optima_time import __version__
 from optima_time.config import profiles
 from optima_time.config.models import AnchorConfig, Profile
-from optima_time.config.store import save_profile
+from optima_time.config.store import parse_profile, save_profile
 from optima_time.diagnostics import build_zip
 from optima_time.fields.models import ClockField, IndicatorField, NumberField, PeriodField, Roi
 from optima_time.guard import capture_template, history_frame, suggest_anchors
@@ -149,14 +149,14 @@ def create_app(runner: Runner, static_dir: Path | None = None, pin: str | None =
     @app.get("/data/values.xml")
     def data_xml() -> Response:
         return Response(
-            content=build_xml(runner.hub.sent),
+            content=build_xml(runner.data_values()),
             media_type="application/xml; charset=utf-8",
             headers=NO_CACHE,
         )
 
     @app.get("/data/values.json")
     def data_json() -> Response:
-        return _json(runner.hub.sent)
+        return _json(runner.data_values())
 
     # --- profile
 
@@ -180,10 +180,12 @@ def create_app(runner: Runner, static_dir: Path | None = None, pin: str | None =
     def put_profile(body: dict[str, Any]) -> dict[str, Any]:
         unlocked()
         try:
-            profile = Profile.model_validate(body)
+            profile = parse_profile(body)
         except ValidationError as error:
             detail = error.errors(include_url=False, include_context=False)
             raise HTTPException(422, detail=detail) from error
+        except ValueError as error:
+            raise HTTPException(422, detail=str(error)) from error
         runner.update_profile(profile)
         return profile.model_dump(mode="json")
 
@@ -387,7 +389,7 @@ def create_app(runner: Runner, static_dir: Path | None = None, pin: str | None =
     ) -> Response:
         unlocked()
         try:
-            parsed = Profile.model_validate(profile)
+            parsed = parse_profile(profile)
             path = profiles.profiles_dir() / f"{profiles.safe_name(name)}.json"
         except (ValidationError, ValueError) as error:
             raise HTTPException(422, str(error)) from error
