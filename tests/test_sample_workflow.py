@@ -8,12 +8,12 @@ import sys
 import time
 from pathlib import Path
 
-import cv2
 import pytest
 
 from optima_time.config.models import Profile, SourceConfig
 from optima_time.fields.formats import ClockStyle
 from optima_time.fields.models import BlankPolicy, ClockField, NumberField, Roi
+from optima_time.imageio import write_image
 from optima_time.recognizers.ppocr import models_dir
 from optima_time.runner import Runner
 from tools.synth.board import BOXES, COLS, ROWS, Camera, CameraStyle, LedStyle, led_board
@@ -32,7 +32,7 @@ def roi(name: str) -> Roi:
 def test_record_label_evaluate(tmp_path: Path) -> None:
     style, led = CameraStyle(), LedStyle()
     board = led_board({"Time": "07:45", "scoreh": "4", "penaltyh1": ""}, led)
-    cv2.imwrite(str(tmp_path / "hall.png"), Camera(style, board.shape[:2], seed=1).shoot(board, 0))
+    write_image(str(tmp_path / "hall.png"), Camera(style, board.shape[:2], seed=1).shoot(board, 0))
     profile = Profile(
         source=SourceConfig(path=str(tmp_path / "hall.png")),
         geometry={"corners": [list(c) for c in style.corners]},  # type: ignore[arg-type]

@@ -16,6 +16,7 @@ from optima_time.config import profiles
 from optima_time.config.models import Profile, SourceConfig
 from optima_time.config.store import load_profile, save_profile
 from optima_time.fields.models import NumberField, Roi
+from optima_time.imageio import write_image
 from optima_time.recognizers.base import Reading
 from optima_time.runner import Runner
 
@@ -37,7 +38,7 @@ def home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 def runner(tmp_path: Path, home: Path):
     image = np.zeros((90, 160, 3), np.uint8)
     cv2.putText(image, "7", (60, 70), cv2.FONT_HERSHEY_SIMPLEX, 2.2, (255, 230, 20), 6)
-    cv2.imwrite(str(tmp_path / "b.png"), image)
+    write_image(str(tmp_path / "b.png"), image)
     profile = Profile(
         name="hala",
         source=SourceConfig(path=str(tmp_path / "b.png")),

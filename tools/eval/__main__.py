@@ -18,10 +18,9 @@ import statistics
 import time
 from pathlib import Path
 
-import cv2
-
 from optima_time.config.models import Deinterlace
 from optima_time.config.store import load_profile
+from optima_time.imageio import write_image
 from optima_time.pipeline import Pipeline
 from optima_time.sources.file import FileSource
 from optima_time.state import BoardState
@@ -115,7 +114,7 @@ def main() -> int:
                         read = reading.text if reading else "gate"
                         name = f"{index:06d}_{fid}_truth-{text or 'blank'}_read-{read or 'none'}"
                         args.dump_errors.mkdir(parents=True, exist_ok=True)
-                        cv2.imwrite(str(args.dump_errors / f"{name.replace(':', '-')}.png"), r.crop)
+                        write_image(str(args.dump_errors / f"{name.replace(':', '-')}.png"), r.crop)
                         dumped += 1
             if index % 500 == 0:
                 print(f"  frame {index}  ({time.monotonic() - started:.0f} s)")

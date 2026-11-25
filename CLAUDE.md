@@ -77,4 +77,5 @@ OPTIMA_TIME_NDI_TEST=1 uv run pytest tests/test_ndi.py   # NDI end to end (local
 
 - GitHub (public): `Matej-Kraus/optima-time`. Releases (`gh release`) carry the Windows installer and zip. Every push runs tests on Windows and macOS and builds the Windows zip + installer (`gh run download` to get them).
 - Windows specifics found by CI: console output must be UTF-8 (`cli.utf8_console`); a file being replaced can't be opened for a moment (DECISIONS D29), so tests read XML with retries (`tests/xmlread.py`).
+- `cv2.imread` / `cv2.imwrite` fail on non-ASCII paths on Windows (e.g. `C:\Users\Matěj\...`): read and write image files only through `optima_time.imageio` (`read_image`, `write_image`). `cv2.VideoCapture` / `VideoWriter` handle such paths.
 - Timing-based tests must tolerate slow CI machines (assert behaviour, not exact counts).

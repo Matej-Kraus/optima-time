@@ -23,10 +23,9 @@ import time
 from collections import Counter
 from pathlib import Path
 
-import cv2
-
 from optima_time.config.store import load_profile
 from optima_time.fields.models import ClockField, NumberField, PeriodField
+from optima_time.imageio import write_image
 from optima_time.pipeline import Pipeline
 from optima_time.sources.file import FileSource
 from optima_time.state import BoardState
@@ -135,7 +134,7 @@ def main() -> int:
                     r = result.fields.get(fid)
                     if r is not None and r.crop is not None:
                         name = f"{index:06d}_{fid}_{old}_to_{value}".replace(":", "-")
-                        cv2.imwrite(str(args.out / "suspects" / f"{name}.png"), r.crop)
+                        write_image(str(args.out / "suspects" / f"{name}.png"), r.crop)
             if frames % 2500 == 0:
                 print(f"  {t / 60:5.1f} min  ({time.monotonic() - started:.0f} s)", flush=True)
     log.close()

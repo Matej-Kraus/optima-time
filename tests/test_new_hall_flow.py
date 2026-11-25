@@ -5,13 +5,13 @@ XML file. Uses the real PP-OCR model (skipped without models) on a rendered boar
 import time
 from pathlib import Path
 
-import cv2
 import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 
 from optima_time.api.app import create_app
 from optima_time.config.models import Profile
+from optima_time.imageio import write_image
 from optima_time.recognizers.ppocr import models_dir
 from optima_time.runner import Runner
 from tests.xmlread import read_values
@@ -52,7 +52,7 @@ def test_new_hall_setup_through_the_api(tmp_path: Path) -> None:
     led, style = LedStyle(), CameraStyle()
     board = led_board(BOARD, led)
     frame = Camera(style, board.shape[:2], seed=3).shoot(board, 1)
-    cv2.imwrite(str(tmp_path / "hall.png"), frame)
+    write_image(str(tmp_path / "hall.png"), frame)
 
     runner = Runner(Profile(name="nova-hala"), tmp_path / "nova-hala.json")
     runner.start()

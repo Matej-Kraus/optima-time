@@ -10,6 +10,7 @@ from optima_time.api.app import create_app, random_test_values
 from optima_time.config.models import OutputsConfig, Profile, SourceConfig, XmlFileOutput
 from optima_time.config.store import load_profile
 from optima_time.fields.models import ClockField, NumberField, PeriodField, Roi
+from optima_time.imageio import write_image
 from optima_time.outputs.xml import parse_xml
 from optima_time.recognizers.base import Reading
 from optima_time.runner import Runner
@@ -28,7 +29,7 @@ def runner(tmp_path: Path):
     image = np.zeros((90, 160, 3), np.uint8)
     cv2.putText(image, "7", (60, 70), cv2.FONT_HERSHEY_SIMPLEX, 2.2, (255, 230, 20), 6)
     img_path = tmp_path / "board.png"
-    cv2.imwrite(str(img_path), image)
+    write_image(str(img_path), image)
     profile = Profile(
         name="t",
         source=SourceConfig(path=str(img_path), speed=1.0),

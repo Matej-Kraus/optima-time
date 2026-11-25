@@ -5,6 +5,7 @@ import cv2
 import numpy as np
 import pytest
 
+from optima_time.imageio import read_image, write_image
 from optima_time.sources.base import SourceState
 from optima_time.sources.file import FileSource
 
@@ -64,11 +65,29 @@ def test_realtime_mode_latest_wins(video: Path) -> None:
 
 def test_image_source(tmp_path: Path) -> None:
     path = tmp_path / "board.png"
-    cv2.imwrite(str(path), np.full((30, 40, 3), 77, np.uint8))
+    write_image(str(path), np.full((30, 40, 3), 77, np.uint8))
     with FileSource(path, speed=0) as src:
         f1, f2 = src.read_latest(), src.read_latest()
         assert f1 is not None and f2 is not None
         assert f2.seq == f1.seq + 1 and f1.image.shape == (30, 40, 3)
+
+
+def test_image_source_non_ascii_path(tmp_path: Path) -> None:
+    # cv2.imread / imwrite fail on such paths on Windows (e.g. C:\Users\Matěj\...)
+    folder = tmp_path / "Matěj žluťoučký"
+    folder.mkdir()
+    path = folder / "tabule.png"
+    assert write_image(path, np.full((30, 40, 3), 77, np.uint8))
+    with FileSource(path, speed=0) as src:
+        frame = src.read_latest()
+        assert frame is not None and frame.image.shape == (30, 40, 3)
+        assert int(frame.image[0, 0, 0]) == 77
+
+
+def test_read_image_missing_or_not_an_image(tmp_path: Path) -> None:
+    assert read_image(tmp_path / "nope.png") is None
+    (tmp_path / "bad.png").write_bytes(b"not an image")
+    assert read_image(tmp_path / "bad.png") is None
 
 
 def test_missing_file(tmp_path: Path) -> None:

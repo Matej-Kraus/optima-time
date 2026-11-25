@@ -17,6 +17,7 @@ import numpy as np
 import numpy.typing as npt
 
 from optima_time.config.models import Deinterlace
+from optima_time.imageio import read_image
 from optima_time.preprocess import deinterlace
 from optima_time.sources.base import Frame, SourceState, VideoSource
 
@@ -56,10 +57,10 @@ class FileSource(VideoSource):
             self.state, self.error = SourceState.LOST, f"file not found: {self.path}"
             raise FileNotFoundError(self.path)
         if self.is_image:
-            image = cv2.imread(str(self.path), cv2.IMREAD_COLOR)
+            image = read_image(self.path)
             if image is None:
                 raise ValueError(f"can't read image {self.path}")
-            self._image = np.asarray(image, np.uint8)
+            self._image = image
             h, w = self._image.shape[:2]
             self.info.width, self.info.height, self.info.fps = w, h, IMAGE_FPS
         else:
