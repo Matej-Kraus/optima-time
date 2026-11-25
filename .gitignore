@@ -36,9 +36,15 @@ samples/synth/
 samples/bench/
 build/
 
-# real recordings: the 2 GB originals stay local; replay output is regenerated
+# real recordings: the 2 GB originals stay local; replay/eval output is regenerated
 test_time/
 samples/real/out/
 samples/real/replay/
 samples/real/replay.log
 samples/real/side/
+samples/real/eval/
+samples/real/baseline/
+samples/real/crops/
+samples/real/review.html
+samples/real/truth.draft.jsonl
+samples/real/*.log

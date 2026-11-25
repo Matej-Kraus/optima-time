@@ -1,0 +1,13 @@
+/Users/mates/Optima_time/samples/real/casomira-1.mp4  profile samples/real/eval/profile.json
+frames 36300 (24.2 min at 25 fps), processing median 11.3 ms, p95 32.6 ms
+layout guard lost: 0 frames (0.0 %)
+
+published changes per field:
+  Time         1200   last '19:59'
+  period          1   last '1'
+  scoreh          1   last '0'
+  scorea          3   last '2'
+  penaltyh1       0   last ''
+  penaltya1     121   last ''
+
+suspicious changes: 0

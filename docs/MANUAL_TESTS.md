@@ -17,6 +17,8 @@ Testy, které nejde udělat bez reálného vMixu, NDI nebo produkčního PC.
 | 9 | M2-A 30 minut vMix + titulek | 40 min | vMix |
 | 10 | M5-B stínový provoz | zápas | přenos |
 
+Kompaktní checklist pro produkční PC: [`docs/WINDOWS_VALIDATION.md`](WINDOWS_VALIDATION.md).
+
 Výsledky pošli, podle nich upravím, co je potřeba. Co není v tabulce, je ověřené automaticky (`uv run pytest`, `tools/eval`, `tools/bench`).
 
 Ke každému testu níže: postup, co sledovat, co zapsat a poslat zpátky.
