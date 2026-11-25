@@ -20,10 +20,9 @@ import html
 import json
 from pathlib import Path
 
-import cv2
-
 from optima_time.config.store import load_profile
 from optima_time.fields.models import BlankPolicy
+from optima_time.imageio import write_image
 from optima_time.pipeline import Pipeline, ReadStatus
 from optima_time.sources.file import FileSource
 
@@ -84,7 +83,7 @@ def main() -> int:
                     candidate.pop(fid, None)
                     name = f"{first:06d}_{fid}.png"
                     if r.crop is not None:
-                        cv2.imwrite(str(crops_dir / name), r.crop)
+                        write_image(str(crops_dir / name), r.crop)
                     changes.append(
                         {
                             "frame": first,
