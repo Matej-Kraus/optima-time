@@ -2,7 +2,7 @@
 
 Projekt **optima-time**. Python balíček `optima_time`, příkaz `optima-time`, konfigurace v `%APPDATA%\OptimaTime\`. Zadání je v `docs/SPEC.md` (v1.2).
 
-Stav: Milníky 0 (13. 11.) a 1–5 (14. 11. 2026) jsou hotové, viz `docs/M0_REPORT.md` až `M5_REPORT.md`. Zbývají ruční testy podle pořadí v `MANUAL_TESTS.md` a úpravy podle reálných dat. Reálná data a ruční testy dodá Matěj na konci; milníky 3–5 pokračují bez nich.
+Stav k 25. 11. 2026: Milníky 0 (13. 11.) a 1–5 (14. 11.) jsou hotové, viz `docs/M0_REPORT.md` až `M5_REPORT.md`. První reálný záznam je vyhodnocený (`REAL_TEST_1.md`, 17. 11.). Z Fáze 2 je hotová úprava obrazu, síťové streamy, zpoždění výstupu, odvozená pole, indikátory a přímý výstup do vMixu včetně obrázků, viditelnosti a barev (D36–D43). Verze 0.2.0 je na GitHubu jako Release s instalátorem. Zbývají ruční testy s vMixem a v hale podle pořadí v `MANUAL_TESTS.md` (issues #1–8) a úpravy podle reálných dat. Plán níže je původní plán Milníků 0 a 1.
 
 ## 1. Shrnutí odpovědí
 

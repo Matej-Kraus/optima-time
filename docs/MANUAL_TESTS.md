@@ -263,3 +263,4 @@ Bez `--emulate-lock`: zámky dělá Windows sám. Výsledek musí být `"result"
 4. Přejmenuj ve vMixu jedno pole: aplikace ho ukáže jako odmítnuté, ostatní běží dál.
 5. Zavři vMix: stav „Nespojeno“, upozornění „Výstup do vMixu selhává“. Po spuštění vMixu se samo spojí a pošle všechny hodnoty.
 6. Porovnej zpoždění s XML Data Source (stopky na tabuli × titulek).
+7. Příkazy (D42): v titulku obrázek pozadí trestu `PozadiH`. Nastavení → 4 → Obrázky, viditelnost a barvy: `penaltyh1` → Viditelnost obrázku → `PozadiH.Source`. Pozadí je vidět jen při trestu domácích (Živě → Zapsat testovací data, nebo nahrávka s trestem). Stejně vyzkoušej Obrázek (hodnota z odvozeného pole s cestou přes `map`) a Barvu textu (`#FF0000`). Názvy prvků (`.Source`, `.Text`) ověř ve vMixu v titulku (Title Editor) a zapiš, pokud se liší.

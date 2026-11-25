@@ -41,8 +41,8 @@ Hotovo z jejich funkcí: úprava obrazu (D36), SRT/RTSP/RTMP vstup (D37), zpožd
 
 Chybí, podle užitku pro florbal s vMixem:
 - ~~Přímý výstup do vMix API~~ hotovo (D41), ověřit se skutečným vMixem.
-- ~~Odvozená pole a šablony výstupu~~ hotovo (D39), viditelnost a obrázky přes `if`/`map` do XML. Zbývá: přímé SetImage / SetTextVisible přes vMix API. Původně: (jejich „scripted output“): spojit pole („0 : 2“), výchozí hodnota pro prázdné, text podle podmínky, jiný obrázek podle hodnoty (vMix SetImage), viditelnost prvku (trest běží → ukázat pozadí). Fáze 2.
-- ~~Indikátory~~ hotovo (D40), jeden obdélník = jeden indikátor; počet (fauly) přes víc indikátorů a odvozené pole zatím nejde sečíst.
+- ~~Odvozená pole a šablony výstupu~~ hotovo (D39), viditelnost a obrázky přes `if`/`map` do XML. ~~Zbývá: přímé SetImage / SetTextVisible přes vMix API~~ hotovo (D42). Původně: (jejich „scripted output“): spojit pole („0 : 2“), výchozí hodnota pro prázdné, text podle podmínky, jiný obrázek podle hodnoty (vMix SetImage), viditelnost prvku (trest běží → ukázat pozadí). Fáze 2.
+- ~~Indikátory~~ hotovo (D40), jeden obdélník = jeden indikátor; ~~počet (fauly) přes víc indikátorů a odvozené pole zatím nejde sečíst~~ hotovo (`{sum:…}`, `{count:…}`, D43).
 - **Další výstupy**: TCP/UDP, WebSocket, CSV/TXT, CasparCG, OBS. Malé každý zvlášť, až bude potřeba.
 - **Snímání obrazovky** jako zdroj.
 - **Automatické nalezení tabule** (rohů).

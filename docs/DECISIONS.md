@@ -2,6 +2,17 @@
 
 Formát: datum, co, proč, jaké byly alternativy. Novější nahoře. Položky označené **předpoklad** platí, dokud je Matěj nepotvrdí nebo nevyvrátí.
 
+## 2026-11-25
+
+### D42. Obrázky, viditelnost a barvy přes vMix API
+Výstup do vMixu umí kromě textu i příkazy: hodnota (pole nebo odvozené pole) řídí jeden prvek titulku funkcí `SetImage`, `SetTextVisibleOn/Off`, `SetImageVisibleOn/Off`, `SetTextColour` nebo `SetColor` (názvy ověřené 25. 11. 2026 v Shortcut Function Reference vMixu 28). Prvek je vidět, když hodnota není prázdná ani `0`, takže jde navázat přímo na trest (prázdný = neběží), na indikátor (1/0) i na odvozené pole s `if`. Příkaz může mířit na jiný titulek než ostatní hodnoty. Posílá se jen změna, chyba vMixu se ukáže u příkazu jako u pole (D41). V profilu se kontroluje, že hodnota existuje. XML Data Source obrázky a viditelnost neumí přímo, tam zůstává cesta přes `map`/`if` do sloupce. Ověřeno proti napodobenému vMixu, skutečný vMix je ruční test.
+
+### D43. Šablony: `count` a `sum` přes víc polí
+`{count:penaltyh1,penaltyh2}` = kolik hodnot „běží“ (neprázdné a ne `0`), `{sum:foul1,foul2,foul3}` = součet celých čísel (prázdné nebo nečíselné = 0). Za nimi můžou následovat filtry (`{count:…|map:0=;*=PP}`). Řeší počet faulů z několika indikátorů a počet trestů (přesilovka) bez dalšího typu pole. Pořád platí D39: počítá se jen z potvrzených hodnot.
+
+### D44. Repozitář je veřejný
+Repozitář na GitHubu je veřejný od založení (14. 11.). Dokumenty ho mylně uváděly jako soukromý. Matěj 25. 11. rozhodl, že veřejný zůstane. Velké nahrávky a modely do gitu nepatří (`.gitignore`), v repozitáři je jen profil reálné haly (`samples/real/profile.json`). Instalátor a ZIP jsou ke stažení v Releases.
+
 ## 2026-11-14 – Doplnění po Milníku 5
 
 ### D34. Zámek nastavení hlídá server

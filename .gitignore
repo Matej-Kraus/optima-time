@@ -26,6 +26,9 @@ samples/**/*.mov
 samples/**/*.mkv
 samples/**/*.ts
 
+# design exports (Stitch zips); the redesign is already in frontend/
+front/
+
 # OS
 .DS_Store
 Thumbs.db

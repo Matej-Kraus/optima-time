@@ -75,6 +75,6 @@ OPTIMA_TIME_NDI_TEST=1 uv run pytest tests/test_ndi.py   # NDI end to end (local
 
 ## CI and Windows
 
-- GitHub (private): `Matej-Kraus/optima-time`. Every push runs tests on Windows and macOS and builds the Windows zip + installer (`gh run download` to get them).
+- GitHub (public): `Matej-Kraus/optima-time`. Releases (`gh release`) carry the Windows installer and zip. Every push runs tests on Windows and macOS and builds the Windows zip + installer (`gh run download` to get them).
 - Windows specifics found by CI: console output must be UTF-8 (`cli.utf8_console`); a file being replaced can't be opened for a moment (DECISIONS D29), so tests read XML with retries (`tests/xmlread.py`).
 - Timing-based tests must tolerate slow CI machines (assert behaviour, not exact counts).

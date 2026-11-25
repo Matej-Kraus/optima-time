@@ -24,7 +24,7 @@ Celkem 179 testů v Pythonu (+1 volitelný NDI), 12 ve frontendu. Ruff, pyright,
 
 ## 2b. Ověřeno na Windows (GitHub Actions, windows-latest)
 
-Repozitář je na GitHubu (soukromý, `Matej-Kraus/optima-time`) a každé nahrání spustí testy na Windows a macOS, sestaví ZIP a instalátor a nainstalovanou aplikaci zkontroluje.
+Repozitář je na GitHubu (veřejný, `Matej-Kraus/optima-time`) a každé nahrání spustí testy na Windows a macOS, sestaví ZIP a instalátor a nainstalovanou aplikaci zkontroluje.
 
 | Co | Výsledek |
 |---|---|
