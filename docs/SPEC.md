@@ -1,23 +1,29 @@
-# Zadání pro Claude Code: vlastní OCR světelné tabule pro vMix
+# Specifikace Optima Time: OCR světelné tabule pro vMix
 
-Pracovní název projektu: **tabule-ocr** (klidně přejmenuj). Verze zadání 1.2 z 13. 11. 2026. Vychází z rešerše veřejné dokumentace (odkazy v sekci 18) a z fotek stávajícího provozu.
+Verze zadání **1.3 z 25. 11. 2026**. Projekt čte florbalovou světelnou tabuli:
+**čas, skóre, třetinu a tresty**. Hlavní výstup je XML soubor ve stejném tvaru,
+jaký vMix čte už dnes; HTTP feed je jeho síťová varianta a TCP API vMixu je
+volitelný rychlý výstup.
 
-Rozsah: **čas, skóre, třetina a tresty**. Hlavní výstup je **XML soubor** ve stejném tvaru, jaký vMix čte už dnes. Přímé API vMixu zůstává jako záložní cesta ve Fázi 2.
+Milníky 0–5 a část Fáze 2 jsou implementované. Tento dokument je produktová
+specifikace a akceptační smlouva, ne návod k založení nového projektu. Aktuální
+stav je v `docs/PLAN.md`, rozhodnutí v `docs/DECISIONS.md`, ruční produkční
+ověření v `docs/MANUAL_TESTS.md` a operátorský postup v `docs/OPERATOR.md`.
 
-## 0. Jak s tímhle souborem pracovat (pro Matěje)
+## 0. Rozsah aktualizace 1.3
 
-1. Založ prázdný repozitář a ulož tento soubor jako `docs/SPEC.md`.
-2. Do `samples/` dej, co máš: fotky a ideálně záznam tabule (otázka 6 v sekci 17) a kopii XML souboru, který vMix čte dnes.
-3. Spusť Claude Code v kořeni repozitáře a vlož:
+Dodatečný referenční balík ze ScoreSight a veřejné dokumentace Scoreboard OCR
+byl porovnán s hotovou aplikací. Rozhodnutí, co zachovat, selektivně doplnit
+nebo odložit, jsou v `docs/REFERENCE_REVIEW.md`.
 
-```text
-Přečti si docs/SPEC.md. Je to kompletní zadání projektu. Zatím nepiš žádný kód.
-1) Polož mi otázky ze sekce 17 a cokoli dalšího, co ti chybí.
-2) Po mých odpovědích sepiš docs/PLAN.md pro Milník 0 a 1 (sekce 16) a počkej na schválení.
-Mluv se mnou česky.
-```
-
-Všechno od sekce 1 dál je psané pro Claude Code.
+- Aplikace zůstává zaměřená na **florbal**, ne hokej.
+- Existující interní id polí a profily se nepřejmenovávají. Rozdílné názvy ve
+  vMixu řeší mapování na výstupu.
+- Celý referenční balík ani paralelní balíček `scoreboard_io` se nevendorizují.
+- XML zůstává hlavní cestou; Web API vMixu na portu 8088 slouží k načtení
+  titulků a polí, TCP 8099 k volitelnému přímému výstupu.
+- Staré profily si zachovají chování. Nově vytvořené tresty se po dvou sekundách
+  prázdna vymažou a hodnota `0:00` je vymaže ihned.
 
 ---
 
@@ -358,9 +364,16 @@ Než začneš ladit, postav vyhodnocení (15.3): přesnost enginu na jednotlivý
 
 ### 11.1 Model pole
 
-`id` (ASCII bez mezer, nezačíná číslicí; je to název prvku v XML), `label` (libovolný text pro UI), `type`, oblast v narovnaném obraze, engine a jeho parametry, formát, politika prázdné hodnoty, pravidla potvrzení a věrohodnosti, transformace výstupu, příznak zapnuto.
+`id` (ASCII bez mezer, nezačíná číslicí; stabilní interní identifikátor), `label`
+(libovolný text pro UI), `type`, oblast v narovnaném obraze, engine a jeho
+parametry, formát, politika prázdné hodnoty, pravidla potvrzení a věrohodnosti,
+transformace výstupu, příznak zapnuto.
 
-`id` si volí uživatel a velikost písmen se zachovává. Výchozí profil používá názvy ze stávajícího XML, aby ve vMixu stačilo vyměnit soubor: `Time`, `penaltyh1`, `penaltya1` (případně `penaltyh2`, `penaltya2`). Nová pole pojmenuj ve stejném stylu: `scoreh`, `scorea`, `period`. Matěj je může přejmenovat.
+`id` si volí uživatel a velikost písmen se zachovává. Výchozí profil používá
+názvy ze stávajícího XML: `Time`, `penaltyh1`, `penaltya1` (případně
+`penaltyh2`, `penaltya2`), `scoreh`, `scorea`, `period`. Kvůli existujícím
+profilům se tato id nepřejmenovávají. Pokud cílové XML používá jiné názvy,
+profil mapuje interní id na název výstupního prvku (12.1).
 
 Typy v MVP: `clock` (čas zápasu i trestový čas), `number` (skóre), `period` (třetina). Ve Fázi 2: `symbol`, `manual`, `computed`.
 
@@ -399,7 +412,12 @@ Důvod: cena chyb je nesouměrná, viz priorita 1. Výchozí hodnoty níže jsou
 
 ### 11.5 Prázdná hodnota
 
-Po polích: `hold` (držet poslední platnou; výchozí pro čas, skóre, třetinu), `clear` (zapsat prázdno po krátkém zpoždění, řádově 300–500 ms; výchozí pro tresty), `value` (zapsat zadaný řetězec, například `0`).
+Po polích: `hold` (držet poslední platnou; výchozí pro čas, skóre, třetinu),
+`clear` (zapsat prázdno po nastavitelném zpoždění; výchozí pro tresty), `value`
+(zapsat zadaný řetězec, například `0`). Existující profily zachovávají uložené
+zpoždění. Nová florbalová šablona používá u trestů 2 s: krátké zakrytí nesmí
+trest skrýt, ale skončený trest musí zmizet. Trestové hodiny mají samostatnou
+volbu „nula znamená prázdno“; ve výchozí šabloně `0:00` vymaže výstup ihned.
 
 ### 11.6 Ruční přepsání (hold)
 
@@ -425,7 +443,12 @@ Tvar souboru (cesta je v profilu):
 </root>
 ```
 
-- Tvar kopíruje stávající soubor (sekce 5): kořen `<root>`, název prvku je `id` pole, prázdná hodnota je prázdný prvek (`<penaltya1/>`).
+- Tvar kopíruje stávající soubor (sekce 5): kořen `<root>`, výchozí název prvku
+  je `id` pole a prázdná hodnota je prázdný prvek (`<penaltya1/>`).
+- Profil může mapovat interní id na jiný platný a jedinečný název XML prvku.
+  Prázdná mapa znamená identitu a zachovává všechny staré profily. Stejná mapa
+  se používá pro soubor, `/data/values.xml` i `/data/values.json`; při startu se
+  existující XML mapuje zpět na interní id.
 - Fotka stávajícího souboru je z prohlížeče, který neukazuje XML deklaraci, kódování ani konce řádků. Přesný tvar (deklarace, kódování, BOM, konce řádků) proto převezmi ze skutečného souboru v `samples/`. Dokud ho nemáš, piš UTF-8 s deklarací jako v příkladu.
 - V souboru jsou **vždy všechna zapnutá pole** ve stálém (abecedním) pořadí, i prázdná, aby vMixu nemizely sloupce. Hodnoty escapuj, kódování UTF-8.
 - Stávající prvky `Time`, `penaltyh1`, `penaltya1` musí zůstat beze změny názvu. vMix by měl sloupce párovat podle názvu, takže nové prvky (`scoreh`, `scorea`, `period`) stávající mapování nerozbijí; ověř to v Milníku 0.
@@ -453,11 +476,16 @@ Tvar souboru (cesta je v profilu):
 
 Backend servíruje totéž XML na `http://127.0.0.1:<port>/data/values.xml` a pro ladění i `/data/values.json`. Odpovědi se nesmí kešovat. XML Data Source ve vMixu umí číst i webovou adresu, takže je to záloha pro případ, že by čtení souboru zlobilo (zamykání, antivir, síťový disk). V Milníku 0 obě cesty porovnej na reálném vMixu a výchozí zvol podle výsledku.
 
-### 12.3 Záložní a pozdější výstupy (Fáze 2)
+### 12.3 Přímé API vMixu a načtení polí
 
-**Přímé API vMixu.** Obejde soubory i interval čtení. Podklady pro implementaci:
+Přímý TCP výstup je implementovaná volitelná cesta vedle XML. Obejde soubory i
+interval čtení. Web API na portu 8088 se používá read-only pro načtení titulků a
+jejich textových polí, aby operátor nemusel ručně opisovat názvy:
 
-- Načtení titulků: `GET http://<host>:8088/api` vrací XML. Každý `<input>` má atributy `key` (GUID), `number`, `type`, `title` a podřízené prvky `<text index name>`.
+- Načtení titulků: `GET http://<host>:8088/api/` vrací XML. Každý `<input>` má
+  atributy `key` (GUID), `number`, `type`, `title` a podřízené prvky
+  `<text index name>`. Požadavek má krátký timeout, omezenou velikost odpovědi a
+  srozumitelně odlišuje špatný port, přihlášení, neplatné XML a nedostupný vMix.
 - Odesílání přes TCP API (pevný port 8099, zprávy UTF-8 ukončené `\r\n`):
 
 ```text
@@ -468,9 +496,12 @@ Backend servíruje totéž XML na `http://127.0.0.1:<port>/data/values.xml` a pr
 
 - Další požadavek pošli až po odpovědi na předchozí. Vstup adresuj přes `key`. U GT titulků má text příponu `.Text`, obrázek `.Source`. Hodnoty kóduj procenty, mezera je `%20`, nikdy `+`.
 - Další funkce: `SetImage`, `SetTextVisibleOn/Off`, `SetImageVisibleOn/Off`, `SetTextColour`, `PauseRender` a `ResumeRender`.
-- Web Controller musí být zapnutý. Zkoušej s výchozím zabezpečením vMixu; jeho vypnutí uveď jen jako krok při potížích.
+- Web Controller musí být zapnutý. Zkoušej s výchozím zabezpečením vMixu; jeho
+  vypnutí uveď jen jako krok při potížích. Discovery samo hodnoty neposílá.
 
-Dále: proud změn přes WebSocket nebo SSE a průhledná HTML stránka pro vstup Web Browser, obecný TCP/UDP výstup, zpoždění výstupu v milisekundách.
+Později podle potřeby: HTTP SetText jako další transport, proud změn přes
+WebSocket nebo SSE, průhledná HTML stránka pro vstup Web Browser a obecný
+TCP/UDP výstup.
 
 ## 13. Uživatelské rozhraní
 
@@ -490,7 +521,9 @@ Náhled posílej jako MJPEG (nejvýš 10–15 snímků za sekundu, zmenšený), 
 
 ### 13.2 Živý provoz
 
-- Velké hodnoty všech polí, u každého stav (✓ nová, = beze změny, ! zamítnuto, ∅ prázdné, ruka = hold).
+- Velké hodnoty všech polí, u každého stav (✓ nová, = beze změny, ! zamítnuto,
+  ∅ prázdné, ruka = hold) a stáří posledního platného čtení. Stav nesmí být
+  sdělen jen barvou.
 - Semafor: zdroj, zpracování (fps, latence), kotvy, zápis XML. Jakýkoli problém je červený pruh se srozumitelnou větou a návrhem, co udělat.
 - Ovládání: hold nebo přepsání pole, **Pauza výstupu**, **Vyprázdnit hodnoty**.
 - Log událostí (změny, zamítnutá čtení, chyby zápisu).

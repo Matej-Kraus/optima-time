@@ -4,6 +4,39 @@ Formát: datum, co, proč, jaké byly alternativy. Novější nahoře. Položky 
 
 ## 2026-11-25
 
+### D45. Referenční balík jen selektivně, produkt zůstává florbalový
+Nový balík obsahuje dokumentaci a screenshoty ScoreSight (MIT), veřejně
+pozorované chování Scoreboard OCR a pomocný balíček `scoreboard_io`. Optima
+Time už má vlastní a otestované capture, NDI, XML, output-worker, PP-OCR a TCP
+vrstvy, proto se celý balík nekopíruje: vznikly by dvě implementace stejných
+pravidel. Převzít se smí jen chybějící funkce a testovací scénáře s MIT
+hlavičkou a zápisem v `THIRD_PARTY.md`. UI je inspirace pro stavové informace,
+ne předloha vzhledu. Rozsah zůstává florbal; hokejové názvy z návrhu nejsou
+novým schématem produktu. Podrobnosti jsou v `REFERENCE_REVIEW.md`.
+
+### D46. Stabilní interní id, názvy XML mapuje výstup
+Existující profily a odvozené šablony používají `Time`, `scoreh`, `scorea`,
+`period`, `penaltyh1`… a nesmí se hromadně přejmenovat podle jiného titulku.
+XML výstup proto dostane volitelnou mapu interní id → název prvku. Prázdná mapa
+je identita. Mapa je stejná pro soubor i HTTP feed a při startu se použije
+obráceně na staré hodnoty ze souboru. Alternativa byla přejmenovat pole v
+profilu; zamítnuto, protože by rozbila šablony, holdy, logy a vMix mapování.
+
+### D47. Nové tresty: dvě sekundy prázdna, nula vymaže ihned
+Staré profily zachovají uložených 400 ms a dosavadní zacházení s `0:00`.
+Florbalová šablona pro nová pole nastaví `blank_delay_ms = 2000` a samostatnou
+volbu, že potvrzené `0:00` znamená okamžité prázdno. Zakrytí kratší než dvě
+sekundy tak trest neschová, ale skončený odpočet nezůstane v grafice. Volba je
+jen u hodin a je vypnutá ve starých profilech.
+
+### D48. XML je hlavní, Web API 8088 slouží k discovery
+Soubor/HTTP XML zůstává hlavní vMix Data Source a současný TCP 8099 zůstává
+volitelný push výstup. Přidá se read-only `GET /api/` přes Web Controller
+vMixu, aby UI načetlo titulky a jejich pole a operátor neopisoval názvy.
+Discovery má krátký timeout, limit odpovědi a rozliší špatný port, HTTP 401,
+neplatné XML a nedostupný vMix. HTTP SetText se nepřidává bez konkrétního
+provozního důvodu; duplikoval by již hotový TCP výstup.
+
 ### D42. Obrázky, viditelnost a barvy přes vMix API
 Výstup do vMixu umí kromě textu i příkazy: hodnota (pole nebo odvozené pole) řídí jeden prvek titulku funkcí `SetImage`, `SetTextVisibleOn/Off`, `SetImageVisibleOn/Off`, `SetTextColour` nebo `SetColor` (názvy ověřené 25. 11. 2026 v Shortcut Function Reference vMixu 28). Prvek je vidět, když hodnota není prázdná ani `0`, takže jde navázat přímo na trest (prázdný = neběží), na indikátor (1/0) i na odvozené pole s `if`. Příkaz může mířit na jiný titulek než ostatní hodnoty. Posílá se jen změna, chyba vMixu se ukáže u příkazu jako u pole (D41). V profilu se kontroluje, že hodnota existuje. XML Data Source obrázky a viditelnost neumí přímo, tam zůstává cesta přes `map`/`if` do sloupce. Ověřeno proti napodobenému vMixu, skutečný vMix je ruční test.
 

@@ -27,7 +27,9 @@
 
 ## Code reused from ScoreSight
 
-ScoreSight (https://github.com/royshil/scoresight) is MIT-licensed. Any file or function taken or adapted from it keeps this header and is listed here:
+ScoreSight (https://github.com/royshil/scoresight) is MIT-licensed. Its full licence is
+included in `LICENSES/ScoreSight-MIT.txt`. Any file or function taken or adapted from it keeps
+this header and is listed here:
 
 ```text
 Adapted from ScoreSight (https://github.com/royshil/scoresight), MIT License,

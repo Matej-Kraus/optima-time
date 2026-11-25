@@ -9,12 +9,13 @@ Testy, které nejde udělat bez reálného vMixu, NDI nebo produkčního PC.
 | 1 | Fotky a kopie XML do `samples/` | 5 min | přístup k produkčnímu PC |
 | 2 | M5-A instalace balíčku + self-test | 20 min | Windows PC |
 | 3 | M0-B / M2-B vMix čte soubor a HTTP, zámky Windows | 30 min | vMix |
-| 4 | M0-C / M3-A obraz z vMixu přes NDI, výkon vedle vMixu | 30 min | vMix + kamera na tabuli |
-| 5 | M0-A rychlost PP-OCR na produkčním PC | 5 min | produkční PC |
-| 6 | M4-A nová hala do 10 minut podle návodu | 15 min | hala, nebo záznam |
-| 7 | Reálný záznam 10–15 min → `tools.labeler` → oprava → `tools.eval` | 1 h | zápas nebo trénink |
-| 8 | M2-A 30 minut vMix + titulek | 40 min | vMix |
-| 9 | M5-B stínový provoz | zápas | přenos |
+| 4 | M0-D načtení titulků/polí a TCP výstup | 15 min | vMix |
+| 5 | M0-C / M3-A obraz z vMixu přes NDI, výkon vedle vMixu | 30 min | vMix + kamera na tabuli |
+| 6 | M0-A rychlost PP-OCR na produkčním PC | 5 min | produkční PC |
+| 7 | M4-A nová hala do 10 minut podle návodu | 15 min | hala, nebo záznam |
+| 8 | Reálný záznam 10–15 min → `tools.labeler` → oprava → `tools.eval` | 1 h | zápas nebo trénink |
+| 9 | M2-A 30 minut vMix + titulek | 40 min | vMix |
+| 10 | M5-B stínový provoz | zápas | přenos |
 
 Výsledky pošli, podle nich upravím, co je potřeba. Co není v tabulce, je ověřené automaticky (`uv run pytest`, `tools/eval`, `tools/bench`).
 
@@ -28,8 +29,8 @@ Názvy tlačítek ve vMixu se mezi verzemi mírně liší. Když něco vypadá j
 2. Zkopíruj repozitář na PC, třeba `C:\optima-time`. Stačí zip celé složky bez `.venv` a `node_modules`.
 3. V PowerShellu ve složce repozitáře spusť:
    ```powershell
-   uv sync --group spikes --group ndi
-   uv run python spikes/ppocr/fetch_models.py
+   uv sync --group spikes
+   uv run python scripts/fetch_models.py
    ```
 
 ---
@@ -84,6 +85,32 @@ Když budou v `samples/` fotky, pustí se pokus i nad nimi (`--samples samples/c
 ### Co bude výsledek
 
 Na základě B1 a B2 zvolím výchozí výstup (soubor, nebo HTTP) a zapíšu to do `DECISIONS.md`.
+
+---
+
+## M0-D: vMix Web API discovery a TCP výstup (asi 15 minut)
+
+**Proč:** ověřit, že aplikace přes port 8088 načte správný GT titulek a jeho
+pole, a že zvolené mapování funguje přes současný TCP výstup 8099.
+
+1. Ve vMixu zapni **Settings → Web Controller → Enabled**, výchozí port 8088.
+2. Otevři kopii produkčního titulku, nikdy ne ostrý titulek.
+3. V Optima Time otevři Nastavení → Výstup do vMix API. Host nech
+   `127.0.0.1`, Web API port 8088 a stiskni **Načíst titulky a pole**.
+4. Vyber kopii titulku. Ověř, že seznam nabízí všechna textová pole včetně
+   přípony `.Text` a že zobrazený input používá stabilní `key`, ne jen pořadové
+   číslo.
+5. Nech TCP port 8099, zapni výstup, použij **Testovací data** a zkontroluj
+   čas, skóre a jeden trest.
+6. Zkus záměrně port 8099 v políčku Web API: UI musí vysvětlit, že jde o TCP
+   port a doporučit 8088. Potom port vrať.
+7. Pokud vMix vrátí HTTP 401, zapiš přesné nastavení Web Controlleru; nevypínej
+   zabezpečení bez zaznamenání důvodu.
+8. Pošli screenshot vybraného titulku/polí, verzi vMixu a případnou chybovou
+   zprávu. Produkční IP adresy nebo hesla do repozitáře nepatří.
+
+Úspěch: titulky i pole se načtou, špatný port má srozumitelnou radu a všechna
+namapovaná testovací data se objeví ve zkopírovaném titulku.
 
 ---
 
@@ -209,7 +236,10 @@ Bez `--emulate-lock`: zámky dělá Windows sám. Výsledek musí být `"result"
 
 ## M5-A: instalace balíčku na Windows (asi 20 minut)
 
-0. **Nejjednodušší cesta:** instalátor `OptimaTime-Setup-0.1.0.exe` si stáhni z GitHubu (Actions → poslední zelený běh → Artifacts → OptimaTime-win64), nebo z Macu příkazem `gh run download -n OptimaTime-win64`. Spusť ho na produkčním PC (administrátor není potřeba) a pokračuj krokem 3. Kroky 1–2 jsou jen pro ruční sestavení.
+0. **Nejjednodušší cesta:** instalátor `OptimaTime-Setup-0.2.0.exe` si stáhni
+   z GitHub Releases nebo z posledního zeleného běhu Actions (artifact
+   `OptimaTime-win64`). Spusť ho na produkčním PC (administrátor není potřeba)
+   a pokračuj krokem 3. Kroky 1–2 jsou jen pro ruční sestavení.
 1. Na PC s Pythonem a Node.js (stačí jednou, sestavovat může jakékoli Windows PC):
    ```powershell
    powershell -ExecutionPolicy Bypass -File scripts\build_windows.ps1

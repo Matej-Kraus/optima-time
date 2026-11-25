@@ -1,8 +1,38 @@
-# PLAN – Milník 0 a 1
+# PLAN – vývoj a dokončení
 
-Projekt **optima-time**. Python balíček `optima_time`, příkaz `optima-time`, konfigurace v `%APPDATA%\OptimaTime\`. Zadání je v `docs/SPEC.md` (v1.2).
+Projekt **optima-time**. Python balíček `optima_time`, příkaz `optima-time`, konfigurace v `%APPDATA%\OptimaTime\`. Zadání je v `docs/SPEC.md` (v1.3).
 
-Stav k 25. 11. 2026: Milníky 0 (13. 11.) a 1–5 (14. 11.) jsou hotové, viz `docs/M0_REPORT.md` až `M5_REPORT.md`. První reálný záznam je vyhodnocený (`REAL_TEST_1.md`, 17. 11.). Z Fáze 2 je hotová úprava obrazu, síťové streamy, zpoždění výstupu, odvozená pole, indikátory a přímý výstup do vMixu včetně obrázků, viditelnosti a barev (D36–D43). Verze 0.2.0 je na GitHubu jako Release s instalátorem. Zbývají ruční testy s vMixem a v hale podle pořadí v `MANUAL_TESTS.md` (issues #1–8) a úpravy podle reálných dat. Plán níže je původní plán Milníků 0 a 1.
+Stav k 25. 11. 2026: Milníky 0 (13. 11.) a 1–5 (14. 11.) jsou hotové, viz `docs/M0_REPORT.md` až `M5_REPORT.md`. První reálný záznam je vyhodnocený (`REAL_TEST_1.md`, 17. 11.). Z Fáze 2 je hotová úprava obrazu, síťové streamy, zpoždění výstupu, odvozená pole, indikátory a přímý výstup do vMixu včetně obrázků, viditelnosti a barev (D36–D43). Verze 0.2.0 je na GitHubu jako Release s instalátorem.
+
+Zbývá dokončovací série pro verzi 0.3.0 a ruční testy s vMixem a v hale.
+Dodatečný referenční balík je vyhodnocený v `REFERENCE_REVIEW.md`; aplikace
+zůstává florbalová a nepřebírá paralelní `scoreboard_io`.
+
+## Dokončení 0.3.0 (25. 11. 2026)
+
+Pořadí je podle rizika. Každý bod je samostatná malá větev/PR:
+
+1. **Specifikace a licence:** sjednotit SPEC 1.3, rozhodnutí, backlog, ruční
+   testy a přiložit MIT licenci ScoreSight.
+2. **Reálná baseline:** z prvního záznamu vytvořit opravenou pravdu a porovnat
+   tiny/small bez změny prahů. Video se necommituje; profil, pravda a anonymní
+   report ano.
+3. **Kompatibilita výstupu:** volitelné mapování interních id na názvy XML,
+   stejné pro soubor i HTTP; staré profily se migrují beze změny chování.
+   Nové tresty: prázdno 2 s, `0:00` vymaže ihned.
+4. **vMix discovery:** přes Web API 8088 načíst titulky a pole, nabídnout je v
+   UI a ponechat současný TCP 8099 jako volitelný výstup.
+5. **Bezpečnost obsluhy:** stáří posledního platného čtení, jednoznačné stavové
+   značky, stav výstupů a potvrzení destruktivních akcí.
+6. **Windows/vMix validace:** instalátor, XML soubor i HTTP po 30 minut,
+   discovery/TCP, NDI, DirectShow, výkon tiny/small a stínový zápas. Přesný
+   postup je v `MANUAL_TESTS.md`.
+
+První lokální záznam pokrývá první třetinu, dva góly hostů a jeden trest hostů.
+Nekryje druhý/domácí trest, změnu třetiny ani poslední minutu s desetinami;
+pro finální akceptaci je nutný ještě jeden cílený záznam.
+
+Následující části jsou historický plán Milníků 0 a 1.
 
 ## 1. Shrnutí odpovědí
 

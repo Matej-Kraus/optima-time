@@ -23,6 +23,7 @@ Otevře se prohlížeč na http://127.0.0.1:8787. Kontrola instalace bez UI: `uv
 | [docs/OPERATOR.md](docs/OPERATOR.md) | obsluha | nastavení haly krok za krokem, provoz, hlášky |
 | [docs/MANUAL_TESTS.md](docs/MANUAL_TESTS.md) | Matěj | ruční testy s vMixem a na produkčním PC, v pořadí |
 | [docs/SPEC.md](docs/SPEC.md) | vývoj | zadání |
+| [docs/REFERENCE_REVIEW.md](docs/REFERENCE_REVIEW.md) | vývoj | co převzít a nepřevzít z referenčního balíku |
 | [docs/PLAN.md](docs/PLAN.md), `docs/M*_REPORT.md` | vývoj | plán a výsledky milníků |
 | [docs/DECISIONS.md](docs/DECISIONS.md) | vývoj | rozhodnutí a jejich důvody |
 | [CLAUDE.md](CLAUDE.md) | vývoj | příkazy, struktura, konvence |

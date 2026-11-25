@@ -24,7 +24,8 @@ packaging/             PyInstaller spec, launcher, Inno Setup installer (.iss), 
 .github/workflows/     CI: tests on Windows + macOS, Windows package + installer (artifact)
 spikes/                Milestone 0 one-off experiments — never imported by the product
 tests/                 pytest
-docs/                  SPEC, PLAN, DECISIONS, BACKLOG, MANUAL_TESTS, OPERATOR, M*_REPORT
+docs/                  SPEC, PLAN, DECISIONS, REFERENCE_REVIEW, BACKLOG, MANUAL_TESTS,
+                       OPERATOR, M*_REPORT
 samples/               photos, recordings, real XML from production (large videos are git-ignored)
 ```
 

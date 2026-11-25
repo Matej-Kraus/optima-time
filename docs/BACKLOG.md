@@ -4,11 +4,27 @@ Nápady mimo aktuální milník. Priority určuje Matěj.
 
 ## Fáze 2 (ze zadání, sekce 6)
 
-- Přímé API vMixu (TCP 8099) jako druhý výstup, obrázky a viditelnost v titulku.
-- Ruční pole (střely), symboly, odvozená pole se šablonami.
-- Výřez obrazovky a síťové streamy jako zdroje, stabilizace obrazu, zpoždění výstupu.
+- ~~Přímé API vMixu (TCP 8099) jako druhý výstup, obrázky a viditelnost v
+  titulku~~ hotovo (D41–D42). Zbývá načtení titulků a polí přes Web API 8088 a
+  ověření proti skutečnému vMixu.
+- Ruční pole (střely). ~~Symboly a odvozená pole se šablonami~~ hotovo
+  (D39–D40, D43).
+- Výřez obrazovky a stabilizace obrazu. ~~Síťové streamy a zpoždění výstupu~~
+  hotovo (D37–D38).
 - Glyph engine (jen pokud měření ukáže mezeru u PP-OCR).
 - Živé HTML overlaye, obecný TCP/UDP/WebSocket výstup, pravidla sportů, víc zdrojů v jedné instanci.
+
+## Dokončení 0.3.0
+
+- Mapování interních id polí na názvy XML elementů bez rozbití starých profilů.
+- Tresty: pro novou šablonu 2 s prázdna, volitelně okamžité vymazání při
+  `0:00`; staré profily beze změny.
+- vMix Web API 8088: načtení titulků a polí pro bezpečné mapování v UI.
+- Živý přehled: stáří posledního platného čtení, stavy i bez závislosti na
+  barvě, kompaktní stav výstupů.
+- Opravená pravda a tiny/small baseline nad prvním reálným záznamem.
+- Produkční testy Windows/vMix/NDI podle `MANUAL_TESTS.md`; druhý záznam se
+  změnou třetiny, oběma tresty a desetinami.
 
 ## Nápady z Milníku 0
 
@@ -24,7 +40,8 @@ Nápady mimo aktuální milník. Priority určuje Matěj.
 
 ## Nápady z Milníků 2–5
 
-- Instalátor (MSI/Inno Setup) se zástupcem na ploše a volitelným spuštěním s Windows. Teď je to ZIP.
+- ~~Instalátor Inno Setup se zástupcem na ploše a volitelným spuštěním s
+  Windows~~ hotovo (D31); ZIP zůstává jako alternativa.
 - Narovnávat jen oblasti polí a kotev místo celé tabule (`warpPerspective` je teď největší položka CPU pipeline, ~1,4 ms na snímek).
 - Hybrid tiny/small: small jen pro potvrzení neočekávané změny.
 - Kotvy: při zakrytí kotvy se zastaví čtení všech polí. Šlo by vyžadovat shodu většiny kotev místo všech (rozhodnout podle reálných dat).
