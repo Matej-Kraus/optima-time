@@ -1,5 +1,6 @@
 import { FIELD_ID_PATTERN, type LiveState, type Profile } from "../api";
 import { cs } from "../i18n/cs";
+import { templateFieldNames } from "../setupTools";
 
 interface Props {
   profile: Profile;
@@ -26,9 +27,7 @@ export function DerivedPanel({ profile, live, locked, onProfile }: Props) {
     onProfile({ ...structuredClone(profile), derived: [...derived, { id: name, template, enabled: true }] });
   };
   // offer only examples whose fields exist in this profile
-  const examples = cs.derived.examples.filter((ex) =>
-    [...ex.template.matchAll(/\{([A-Za-z_][\w.-]*)/g)].every((m) => fieldIds.has(m[1])),
-  );
+  const examples = cs.derived.examples.filter((ex) => templateFieldNames(ex.template).every((n) => fieldIds.has(n)));
 
   return (
     <div className="derived-panel">

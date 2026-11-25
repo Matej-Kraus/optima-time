@@ -22,7 +22,7 @@ from optima_time.config.models import NewLine, Profile
 from optima_time.config.store import save_profile
 from optima_time.guard import history_frame
 from optima_time.outputs.base import OutputHub, OutputWorker
-from optima_time.outputs.vmix_api import VmixApiWorker
+from optima_time.outputs.vmix_api import Command, VmixApiWorker
 from optima_time.outputs.xml_file import XmlFileWorker
 from optima_time.pipeline import FrameResult, Pipeline
 from optima_time.recorder import SampleRecorder
@@ -78,8 +78,15 @@ def make_workers(profile: Profile) -> list[OutputWorker]:
         workers.append(XmlFileWorker(xml.path, newline))
     api = profile.outputs.vmix_api
     if api.enabled and api.input.strip():
+        commands = [
+            Command(c.value, c.action.value, c.target.strip(), c.input.strip())
+            for c in api.commands
+            if c.enabled
+        ]
         workers.append(
-            VmixApiWorker(api.host.strip(), api.port, api.input.strip(), api.suffix, api.names)
+            VmixApiWorker(
+                api.host.strip(), api.port, api.input.strip(), api.suffix, api.names, commands
+            )
         )
     return workers
 

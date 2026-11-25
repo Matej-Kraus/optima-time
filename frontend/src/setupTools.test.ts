@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { FieldConfig, LiveState, Profile } from "./api";
-import { addTemplate, compareNames, FLOORBALL, formatTitleNames, parseTitleNames, readiness, xmlLeafNames } from "./setupTools";
+import { addTemplate, compareNames, FLOORBALL, formatTitleNames, parseTitleNames, readiness, templateFieldNames, xmlLeafNames } from "./setupTools";
 
 describe("floorball template", () => {
   it("adds only the missing fields, ignoring case", () => {
@@ -66,5 +66,14 @@ describe("vMix title names", () => {
     expect(parseTitleNames("Time=Cas.Text; scoreh = Domaci.Text;; bad")).toEqual({ Time: "Cas.Text", scoreh: "Domaci.Text" });
     expect(formatTitleNames({ Time: "Cas.Text" })).toBe("Time=Cas.Text");
     expect(parseTitleNames("")).toEqual({});
+  });
+});
+
+describe("templateFieldNames", () => {
+  it("lists plain fields and the fields of count / sum", () => {
+    expect(templateFieldNames("{scoreh} : {scorea}")).toEqual(["scoreh", "scorea"]);
+    expect(templateFieldNames("{count:penaltyh1, penaltyh2|map:0=}")).toEqual(["penaltyh1", "penaltyh2"]);
+    expect(templateFieldNames("{sum:foul1,foul2} {{lit}}")).toEqual(["foul1", "foul2"]);
+    expect(templateFieldNames("{period|map:1=a;*=b}")).toEqual(["period"]);
   });
 });

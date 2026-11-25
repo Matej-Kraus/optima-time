@@ -34,6 +34,22 @@ def test_filters() -> None:
     assert r("{scorea|upper}") == "10"
 
 
+def test_aggregates() -> None:
+    values = {"penaltyh1": "1:12", "penaltyh2": "", "foul1": "1", "foul2": "0", "foul3": "1"}
+    assert r("{count:penaltyh1,penaltyh2}", values) == "1"
+    assert r("{count:penaltyh1, penaltyh2}", {}) == "0"
+    assert r("{count:foul1,foul2,foul3}", values) == "2"  # "0" is off
+    assert r("{sum:foul1,foul2,foul3}", values) == "2"
+    assert r("{sum:scoreh,scorea,Time}") == "12"  # not a whole number counts 0
+    assert r("{count:penaltyh1,penaltyh2|map:0=;*=PP}", values) == "PP"
+    assert r("{sum:foul1|pad:2}", values) == "01"
+    assert Template("{count:a,b} {c}").names == {"a", "b", "c"}
+    with pytest.raises(TemplateError):
+        check_template("{count:scoreh,shots}", {"scoreh"})
+    with pytest.raises(TemplateError):
+        Template("{count:a,}")
+
+
 def test_errors() -> None:
     with pytest.raises(TemplateError):
         Template("{scoreh|nope}")

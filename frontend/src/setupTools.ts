@@ -103,3 +103,17 @@ export function parseTitleNames(text: string): Record<string, string> {
   return out;
 }
 
+
+const PLACEHOLDER = /\{([^{}|]*)/g;
+
+/** Field names a derived-field template uses: "{scoreh} {count:penaltyh1,penaltyh2|map:0=}"
+ * -> ["scoreh", "penaltyh1", "penaltyh2"]. "{{" is a literal brace, not a placeholder. */
+export function templateFieldNames(template: string): string[] {
+  const names: string[] = [];
+  for (const m of template.replaceAll("{{", "").matchAll(PLACEHOLDER)) {
+    const head = m[1].trim();
+    const agg = /^(count|sum):(.*)$/.exec(head);
+    for (const n of agg ? agg[2].split(",") : [head]) if (n.trim()) names.push(n.trim());
+  }
+  return names;
+}

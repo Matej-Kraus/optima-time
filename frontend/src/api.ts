@@ -20,6 +20,17 @@ export interface FieldConfig {
   [key: string]: unknown; // type-specific options are kept as the backend sends them
 }
 
+export type VmixAction = "text" | "image" | "text_visible" | "image_visible" | "text_colour" | "color";
+
+/** One value driving one element of a vMix title (image, visibility, colour). */
+export interface VmixCommand {
+  value: string;
+  action: VmixAction;
+  target: string;
+  input: string;
+  enabled: boolean;
+}
+
 export interface VmixApiConfig {
   enabled: boolean;
   host: string;
@@ -27,6 +38,7 @@ export interface VmixApiConfig {
   input: string;
   suffix: string;
   names: Record<string, string>;
+  commands: VmixCommand[];
 }
 
 export interface DerivedField {

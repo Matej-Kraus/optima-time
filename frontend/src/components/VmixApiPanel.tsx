@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { LiveState, Profile, VmixApiConfig } from "../api";
+import type { LiveState, Profile, VmixAction, VmixApiConfig, VmixCommand } from "../api";
 import { useNow } from "../hooks";
 import { cs } from "../i18n/cs";
 import { formatTitleNames, parseTitleNames } from "../setupTools";
@@ -11,7 +11,8 @@ interface Props {
   onProfile: (p: Profile) => void;
 }
 
-const DEFAULT: VmixApiConfig = { enabled: false, host: "127.0.0.1", port: 8099, input: "", suffix: ".Text", names: {} };
+const DEFAULT: VmixApiConfig = { enabled: false, host: "127.0.0.1", port: 8099, input: "", suffix: ".Text", names: {}, commands: [] };
+const ACTIONS = Object.keys(cs.vmixApi.actions) as VmixAction[];
 
 /** Push values straight into a vMix title over the TCP API, next to the XML file. */
 export function VmixApiPanel({ profile, live, locked, onProfile }: Props) {
@@ -28,6 +29,17 @@ export function VmixApiPanel({ profile, live, locked, onProfile }: Props) {
     onProfile(p);
   };
   const problems = Object.entries(status?.problems ?? {});
+  const commands = draft.commands ?? [];
+  const valueIds = [...profile.fields.map((f) => f.id), ...(profile.derived ?? []).map((d) => d.id)];
+  const setCommand = (i: number, patch: Partial<VmixCommand>) =>
+    save({ commands: commands.map((c, j) => (j === i ? { ...c, ...patch } : c)) });
+  const addCommand = () =>
+    save({
+      commands: [
+        ...commands,
+        { value: valueIds[0] ?? "", action: "image_visible", target: "Pozadi.Source", input: "", enabled: true },
+      ],
+    });
   return (
     <div className="vmix-panel">
       <p className="hint">{cs.vmixApi.hint}</p>
@@ -59,6 +71,63 @@ export function VmixApiPanel({ profile, live, locked, onProfile }: Props) {
         <input defaultValue={formatTitleNames(draft.names)} disabled={locked} onBlur={(e) => save({ names: parseTitleNames(e.target.value) })} />
         <small>{cs.vmixApi.namesHelp}</small>
       </label>
+      <div className="vmix-commands">
+        <strong>{cs.vmixApi.commandsTitle}</strong>
+        <p className="hint">{cs.vmixApi.commandsHint}</p>
+        {commands.length > 0 && (
+          <ul className="vmix-command-list">
+            {commands.map((c, i) => (
+              <li key={i}>
+                <input type="checkbox" checked={c.enabled} disabled={locked} aria-label={cs.enabled} onChange={(e) => setCommand(i, { enabled: e.target.checked })} />
+                <select value={c.value} disabled={locked} aria-label={cs.vmixApi.commandValue} onChange={(e) => setCommand(i, { value: e.target.value })}>
+                  {!valueIds.includes(c.value) && <option value={c.value}>{c.value}</option>}
+                  {valueIds.map((id) => (
+                    <option key={id} value={id}>
+                      {id}
+                    </option>
+                  ))}
+                </select>
+                <select value={c.action} disabled={locked} aria-label={cs.vmixApi.commandAction} onChange={(e) => setCommand(i, { action: e.target.value as VmixAction })}>
+                  {ACTIONS.map((a) => (
+                    <option key={a} value={a}>
+                      {cs.vmixApi.actions[a]}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  className="mono"
+                  defaultValue={c.target}
+                  disabled={locked}
+                  aria-label={cs.vmixApi.commandTarget}
+                  placeholder={cs.vmixApi.commandTarget}
+                  onBlur={(e) => e.target.value.trim() && e.target.value.trim() !== c.target && setCommand(i, { target: e.target.value.trim() })}
+                />
+                <input
+                  defaultValue={c.input}
+                  disabled={locked}
+                  aria-label={cs.vmixApi.commandInput}
+                  placeholder={cs.vmixApi.commandInput}
+                  onBlur={(e) => e.target.value.trim() !== c.input && setCommand(i, { input: e.target.value.trim() })}
+                />
+                <button
+                  className="ghost remove"
+                  disabled={locked}
+                  aria-label={cs.vmixApi.removeCommand}
+                  title={cs.vmixApi.removeCommand}
+                  onClick={() => save({ commands: commands.filter((_, j) => j !== i) })}
+                >
+                  ×
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="row">
+          <button disabled={locked || valueIds.length === 0} onClick={addCommand}>
+            {cs.vmixApi.addCommand}
+          </button>
+        </div>
+      </div>
       {draft.enabled && status && (
         <p className={status.ok ? "ready-ok" : "problem bad"}>
           {status.ok

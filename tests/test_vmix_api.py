@@ -3,8 +3,20 @@ import threading
 import time
 from urllib.parse import parse_qs
 
-from optima_time.config.models import OutputsConfig, Profile, VmixApiOutput, XmlFileOutput
-from optima_time.outputs.vmix_api import VmixApiWorker
+import pytest
+from pydantic import ValidationError
+
+from optima_time.config.models import (
+    DerivedField,
+    OutputsConfig,
+    Profile,
+    VmixAction,
+    VmixApiOutput,
+    VmixCommand,
+    XmlFileOutput,
+)
+from optima_time.fields.models import ClockField, IndicatorField, Roi
+from optima_time.outputs.vmix_api import Command, VmixApiWorker
 from optima_time.runner import make_workers
 
 
@@ -39,7 +51,8 @@ class FakeVmix:
                     line, buf = buf.split(b"\r\n", 1)
                     _, function, query = line.decode().split(" ", 2)
                     q = {k: v[0] for k, v in parse_qs(query, keep_blank_values=True).items()}
-                    assert function == "SetText"
+                    if function != "SetText":
+                        q["Function"] = function
                     if q["SelectedName"] in self.fields:
                         self.got.append(q)
                         conn.sendall(b"FUNCTION OK Completed\r\n")
@@ -117,3 +130,85 @@ def test_profile_makes_both_outputs() -> None:
     assert names == ["xml_file", "vmix_api"]
     off = OutputsConfig(vmix_api=VmixApiOutput(enabled=True, input=" "))
     assert make_workers(Profile(outputs=off)) == []
+
+
+def test_commands_drive_images_visibility_and_colour() -> None:
+    vmix = FakeVmix({"Time.Text", "PozadiH.Source", "Logo.Source", "Time.Colour"})
+    commands = [
+        Command("penaltyh1", "image_visible", "PozadiH.Source"),
+        Command("tym", "image", "Logo.Source", "Logo"),
+        Command("barva", "text_colour", "Time.Colour"),
+        Command("Time", "text_visible", "Nope.Text"),
+    ]
+    w = VmixApiWorker(
+        "127.0.0.1", vmix.port, "Skore", names={"Time": "Time.Text"}, commands=commands
+    )
+    w.start()
+    try:
+        values = {"Time": "1:00", "penaltyh1": "", "tym": "C:\\gfx\\a.png", "barva": "#FF0000"}
+        w.submit(values)
+        assert w.flush()
+        wait(lambda: len(vmix.got) == 4)
+        got = {g["SelectedName"]: g for g in vmix.got}
+        assert got["PozadiH.Source"] == {
+            "Function": "SetImageVisibleOff",
+            "Input": "Skore",
+            "SelectedName": "PozadiH.Source",
+        }
+        assert got["Logo.Source"]["Input"] == "Logo"  # a command can aim at another title
+        assert got["Logo.Source"]["Value"] == "C:\\gfx\\a.png"
+        assert got["Time.Colour"]["Function"] == "SetTextColour"
+        assert w.problems == {"Time → Nope.Text (text_visible)": "Field not found"}
+
+        vmix.got.clear()
+        w.submit(values | {"penaltyh1": "2:00"})  # the penalty starts: only the background
+        assert w.flush()
+        wait(lambda: len(vmix.got) == 1)
+        assert vmix.got[0]["Function"] == "SetImageVisibleOn"
+        w.submit(values | {"penaltyh1": "1:59"})  # still on: nothing to send
+        assert w.flush()
+        time.sleep(0.1)
+        assert len(vmix.got) == 1
+    finally:
+        w.stop()
+        vmix.close()
+
+
+def test_commands_skip_disabled_fields_and_reject_unknown_actions() -> None:
+    w = VmixApiWorker(
+        "127.0.0.1",
+        1,
+        "Skore",
+        names={"Time": "Cas"},
+        commands=[
+            Command("lamp", "image_visible", "Lamp.Source"),
+        ],
+    )
+    assert set(w.wanted({"Time": "1:00"})) == {"Time"}
+    with pytest.raises(ValueError):
+        VmixApiWorker("127.0.0.1", 1, "Skore", commands=[Command("Time", "blink", "X")])
+
+
+ROI = Roi(x=0, y=0, w=0.2, h=0.2)
+
+
+def test_profile_checks_command_values() -> None:
+    fields = [ClockField(id="Time", roi=ROI), IndicatorField(id="foul1", roi=ROI)]
+    derived = [DerivedField(id="fauly", template="{sum:foul1}")]
+    ok = VmixApiOutput(
+        enabled=True,
+        input="Skore",
+        commands=[
+            VmixCommand(value="fauly", action=VmixAction.TEXT, target="Fauly.Text"),
+            VmixCommand(
+                value="foul1", action=VmixAction.IMAGE_VISIBLE, target="F1.Source", enabled=False
+            ),
+        ],
+    )
+    profile = Profile(fields=fields, derived=derived, outputs=OutputsConfig(vmix_api=ok))
+    (worker,) = make_workers(profile)
+    assert isinstance(worker, VmixApiWorker)
+    assert worker.commands == [Command("fauly", "text", "Fauly.Text", "")]  # disabled one left out
+    bad = VmixApiOutput(commands=[VmixCommand(value="shots", target="Strely.Text")])
+    with pytest.raises(ValidationError, match="shots"):
+        Profile(fields=fields, outputs=OutputsConfig(vmix_api=bad))

@@ -83,6 +83,28 @@ class XmlFileOutput(Model):
     clear_on_exit: bool = False  # else the last values stay in the file
 
 
+class VmixAction(StrEnum):
+    """What a vMix command does with its value (vMix Shortcut Function Reference, Title)."""
+
+    TEXT = "text"  # SetText: the value as text
+    IMAGE = "image"  # SetImage: the value is a file path or URL ("" clears the image)
+    TEXT_VISIBLE = "text_visible"  # SetTextVisibleOn / Off: shown while the value is on
+    IMAGE_VISIBLE = "image_visible"  # SetImageVisibleOn / Off: shown while the value is on
+    TEXT_COLOUR = "text_colour"  # SetTextColour: the value is #RRGGBB
+    COLOR = "color"  # SetColor: the value is #AARRGGBB or #RRGGBB (shapes, backgrounds)
+
+
+class VmixCommand(Model):
+    """One field or derived field driving one element of a vMix title, e.g. the penalty
+    background shown only while a penalty runs: penaltyh1 -> image_visible -> PozadiH.Source."""
+
+    value: str = Field(pattern=FIELD_ID_PATTERN, max_length=64)  # field or derived field id
+    action: VmixAction = VmixAction.TEXT
+    target: str = Field(min_length=1, max_length=200)  # SelectedName in the title
+    input: str = Field(default="", max_length=200)  # another title; "" = the output's title
+    enabled: bool = True
+
+
 class VmixApiOutput(Model):
     """Values pushed into a vMix title over the TCP API (outputs/vmix_api.py)."""
 
@@ -92,6 +114,7 @@ class VmixApiOutput(Model):
     input: str = Field(default="", max_length=200)  # title: number, name or key
     suffix: str = Field(default=".Text", max_length=20)  # field id + suffix = title field
     names: dict[str, str] = Field(default_factory=dict)  # explicit id -> title field; only these
+    commands: list[VmixCommand] = Field(default_factory=list, max_length=100)  # images etc.
 
 
 class OutputsConfig(Model):
@@ -173,4 +196,7 @@ class Profile(Model):
             except TemplateError as error:
                 raise ValueError(f"odvozené pole {d.id!r}: {error}") from error
             known.add(d.id)
+        for c in self.outputs.vmix_api.commands:
+            if c.value not in known:
+                raise ValueError(f"příkaz pro vMix ({c.target}): neexistující pole {c.value!r}")
         return self

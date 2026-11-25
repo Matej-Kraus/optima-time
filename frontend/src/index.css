@@ -1793,3 +1793,36 @@ pre {
 .vmix-panel input[type="number"] {
   width: 90px;
 }
+
+.vmix-commands {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vmix-command-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vmix-command-list li {
+  display: grid;
+  grid-template-columns: 18px minmax(90px, 1fr) minmax(120px, 1.2fr) minmax(110px, 1.2fr) minmax(90px, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.vmix-command-list input,
+.vmix-command-list select {
+  min-width: 0;
+}
+
+.vmix-command-list .remove {
+  font-size: 18px;
+  line-height: 1;
+  padding: 4px 6px;
+}

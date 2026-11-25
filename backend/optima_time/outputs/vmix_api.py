@@ -8,6 +8,11 @@ everything is sent again. A field vMix refuses (a name the title doesn't have) i
 
   FUNCTION SetText Input=Skore&SelectedName=Time.Text&Value=12%3A02
 
+Commands drive other elements of a title from a value (vMix Shortcut Function Reference, Title):
+an image (SetImage), the visibility of a text or an image (SetTextVisibleOn/Off,
+SetImageVisibleOn/Off; shown while the value is on: not empty and not "0"), a text colour
+(SetTextColour) or a shape colour (SetColor). Like texts, each is sent only when it changes.
+
 Faster than the XML Data Source (vMix polls a file; here the change is pushed), and it doesn't
 replace it: the XML stays the fallback.
 """
@@ -18,6 +23,7 @@ import contextlib
 import logging
 import socket
 import time
+from typing import NamedTuple
 from urllib.parse import quote
 
 from optima_time.outputs.base import OutputWorker
@@ -27,6 +33,38 @@ log = logging.getLogger(__name__)
 CONNECT_TIMEOUT_S = 1.0
 ANSWER_TIMEOUT_S = 1.0
 RECONNECT_MIN_S, RECONNECT_MAX_S = 1.0, 10.0  # back off while vMix isn't running
+
+# action -> vMix function; visibility picks On / Off by the value
+FUNCTIONS = {
+    "text": "SetText",
+    "image": "SetImage",
+    "text_colour": "SetTextColour",
+    "color": "SetColor",
+}
+VISIBILITY = {"text_visible": "SetTextVisible", "image_visible": "SetImageVisible"}
+
+
+class Command(NamedTuple):
+    value: str  # field or derived field id
+    action: str  # a key of FUNCTIONS or VISIBILITY
+    target: str  # SelectedName in the title
+    input: str = ""  # "" = the output's title
+
+    def key(self) -> str:
+        """How a problem with this command shows up in the UI."""
+        return f"{self.value} → {self.target} ({self.action})"
+
+
+def is_on(value: str) -> bool:
+    return value not in ("", "0")
+
+
+def function(name: str, title_input: str, selected: str, value: str | None = None) -> bytes:
+    params = [("Input", title_input), ("SelectedName", selected)]
+    if value is not None:
+        params.append(("Value", value))
+    query = "&".join(f"{k}={quote(v, safe='')}" for k, v in params)
+    return f"FUNCTION {name} {query}\r\n".encode()
 
 
 class VmixApiWorker(OutputWorker):
@@ -39,16 +77,21 @@ class VmixApiWorker(OutputWorker):
         title_input: str,
         suffix: str = ".Text",
         names: dict[str, str] | None = None,
+        commands: list[Command] | None = None,
     ) -> None:
         super().__init__()
         self.host, self.port, self.input = host, port, title_input
         self.suffix = suffix
         self.names = dict(names or {})  # field id -> title field name; empty = all fields
+        self.commands = list(commands or [])
+        for c in self.commands:
+            if c.action not in FUNCTIONS and c.action not in VISIBILITY:
+                raise ValueError(f"unknown vMix action {c.action!r}")
         self.target = f"vMix {host}:{port}, vstup {title_input}"
         self.problems: dict[str, str] = {}  # field id -> vMix's error
         self._sock: socket.socket | None = None
         self._buffer = b""
-        self._sent: dict[str, str] = {}
+        self._sent: dict[str, bytes] = {}  # key -> the last command vMix got for it
         self._next_connect = 0.0
         self._backoff = RECONNECT_MIN_S
 
@@ -61,11 +104,26 @@ class VmixApiWorker(OutputWorker):
         name = self.selected_name(field_id)
         if name is None:
             return None
-        query = "&".join(
-            f"{k}={quote(v, safe='')}"
-            for k, v in (("Input", self.input), ("SelectedName", name), ("Value", value))
-        )
-        return f"FUNCTION SetText {query}\r\n".encode()
+        return function("SetText", self.input, name, value)
+
+    def wanted(self, values: dict[str, str]) -> dict[str, bytes]:
+        """Every command the values call for, by key (field id, or Command.key())."""
+        out: dict[str, bytes] = {}
+        for fid, value in values.items():
+            cmd = self.command(fid, value)
+            if cmd is not None:
+                out[fid] = cmd
+        for c in self.commands:
+            if c.value not in values:  # a disabled field: leave the element alone
+                continue
+            value = values[c.value]
+            title = c.input or self.input
+            if c.action in VISIBILITY:
+                suffix = "On" if is_on(value) else "Off"
+                out[c.key()] = function(VISIBILITY[c.action] + suffix, title, c.target)
+            else:
+                out[c.key()] = function(FUNCTIONS[c.action], title, c.target, value)
+        return out
 
     # --- connection
 
@@ -114,23 +172,19 @@ class VmixApiWorker(OutputWorker):
     # --- OutputWorker
 
     def write(self, values: dict[str, str]) -> None:
-        changed = {k: v for k, v in values.items() if self._sent.get(k) != v}
+        changed = {k: c for k, c in self.wanted(values).items() if self._sent.get(k) != c}
         if not changed:
             return
         sock = self._connect()
         try:
-            for fid, value in changed.items():
-                cmd = self.command(fid, value)
-                if cmd is None:
-                    self._sent[fid] = value
-                    continue
+            for key, cmd in changed.items():
                 sock.sendall(cmd)
                 answer = self._answer(sock)
                 if answer.startswith("FUNCTION OK"):
-                    self.problems.pop(fid, None)
+                    self.problems.pop(key, None)
                 else:  # e.g. "FUNCTION ER Input not found": report, don't retry this value
-                    self.problems[fid] = answer.removeprefix("FUNCTION ER").strip() or answer
-                self._sent[fid] = value
+                    self.problems[key] = answer.removeprefix("FUNCTION ER").strip() or answer
+                self._sent[key] = cmd
         except (OSError, TimeoutError, ConnectionError):
             self._drop()
             raise
