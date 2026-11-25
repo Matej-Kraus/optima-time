@@ -228,6 +228,11 @@ class OutputHub:
             if live:
                 for w in self.workers:
                     w.submit(values, arrived_ns)
+                # Wait until every worker has taken this update before releasing the
+                # next delayed one. Otherwise latest-wins would drop ordered ticks.
+                deadline = time.monotonic() + 1.0
+                while time.monotonic() < deadline and any(w.has_newer() for w in self.workers):
+                    time.sleep(0.001)
 
     def set_mode(self, mode: OutputMode) -> None:
         with self._lock:
