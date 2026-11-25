@@ -64,6 +64,7 @@ def test_state_frames_and_profile_roundtrip(runner: Runner, tmp_path: Path) -> N
     assert state["source"]["state"] == "ok"
     assert state["fields"]["scoreh"]["text"] == "7"
     assert state["fields"]["scoreh"]["read_status"] == "valid"
+    assert 0 <= state["fields"]["scoreh"]["age_ms"] < 1000
     assert "no-store" in c.get("/api/state").headers["cache-control"]
     for view in ("source", "rectified"):
         r = c.get(f"/api/frame.jpg?view={view}")

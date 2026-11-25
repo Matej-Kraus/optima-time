@@ -153,6 +153,7 @@ export interface FieldState {
   status: FieldStatus;
   held: boolean;
   pending: string | null;
+  age_ms: number | null;
   read_status: ReadStatus | null;
   read_text: string | null;
   raw: string | null;

@@ -110,7 +110,8 @@ class BoardState:
             values = {fid: lg.text for fid, lg in self.logic.items()}
             return values | derive(self.derived, values)
 
-    def fields(self) -> dict[str, dict]:
+    def fields(self, now_ns: int | None = None) -> dict[str, dict]:
+        now = time.monotonic_ns() if now_ns is None else now_ns
         with self._lock:
             return {
                 fid: {
@@ -118,6 +119,7 @@ class BoardState:
                     "status": lg.status.value,
                     "held": lg.held_text is not None,
                     "pending": lg.candidate.latest.board if lg.candidate else None,
+                    "age_ms": lg.age_ms(now),
                 }
                 for fid, lg in self.logic.items()
             }

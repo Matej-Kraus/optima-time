@@ -90,6 +90,12 @@ class FieldLogic:
         if getattr(field, "direction", Direction.AUTO) is not Direction.AUTO:
             self.direction = field.direction  # type: ignore[union-attr]
 
+    def age_ms(self, now_ns: int) -> int | None:
+        """Age of the last accepted/published reading, for the operator UI."""
+        if self._seen_ns is None:
+            return None
+        return max(0, (now_ns - self._seen_ns) // 1_000_000)
+
     # --- manual hold (SPEC 11.6)
 
     def hold(self, text: str) -> list[Event]:

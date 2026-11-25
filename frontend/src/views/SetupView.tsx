@@ -530,6 +530,7 @@ export function SetupView({ profile, live, tick, save, setProfile, reloadProfile
               <div className="canvas-tools">
                 <button
                   onClick={() => {
+                    if (!window.confirm(cs.confirmResetCorners)) return;
                     const n = structuredClone(profile);
                     n.geometry.corners = [
                       [0.1, 0.1],
@@ -649,6 +650,7 @@ export function SetupView({ profile, live, tick, save, setProfile, reloadProfile
                 <button
                   className="danger"
                   onClick={async () => {
+                    if (!window.confirm(cs.confirmDeleteAnchor(selAnchor + 1))) return;
                     try {
                       const i = selAnchor;
                       setSelAnchor(null);
@@ -706,6 +708,7 @@ export function SetupView({ profile, live, tick, save, setProfile, reloadProfile
                   onChange={(patch) => updateField(field.id, patch)}
                   onType={(t) => changeType(field, t)}
                   onDelete={() => {
+                    if (!window.confirm(cs.confirmDeleteField(field.id))) return;
                     const n = structuredClone(profile);
                     n.fields = n.fields.filter((x) => x.id !== field.id);
                     setSelected(null);
