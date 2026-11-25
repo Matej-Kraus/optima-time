@@ -758,10 +758,17 @@ export function SetupView({ profile, live, tick, save, setProfile, reloadProfile
                 <h2 className="panel-title">{cs.xmlCheck.title}</h2>
               </div>
               <XmlCheck
-                ids={[...profile.fields.map((f) => f.id), ...(profile.derived ?? []).map((d) => d.id)]}
+                ids={[...profile.fields.map((f) => f.id), ...(profile.derived ?? []).map((d) => d.id)].map(
+                  (id) => profile.outputs.xml_file.names?.[id] ?? id,
+                )}
                 onRename={(from, to) => {
-                  if (profile.fields.some((f) => f.id === from)) updateField(from, { id: to });
-                  else save({ ...profile, derived: profile.derived.map((d) => (d.id === from ? { ...d, id: to } : d)) });
+                  const valueIds = [...profile.fields.map((f) => f.id), ...(profile.derived ?? []).map((d) => d.id)];
+                  const internal = valueIds.find((id) => (profile.outputs.xml_file.names?.[id] ?? id) === from);
+                  if (!internal) return;
+                  const next = structuredClone(profile);
+                  next.outputs.xml_file.names = { ...(next.outputs.xml_file.names ?? {}), [internal]: to };
+                  if (internal === to) delete next.outputs.xml_file.names[internal];
+                  save(next);
                 }}
               />
             </section>

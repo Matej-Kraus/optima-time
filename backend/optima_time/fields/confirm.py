@@ -168,6 +168,13 @@ class FieldLogic:
             self.candidate = None
             self._seen_ns = now_ns
             self._learn_direction(c)
+            if (
+                getattr(self.field, "zero_is_blank", False)
+                and isinstance(c.latest, ClockValue)
+                and c.latest.tenths == 0
+            ):
+                self.status = FieldStatus.BLANK
+                return events + self._blank(now_ns, immediate=True)
             events += self._publish(c.latest, f"{c.kind.value}, {c.reads} reads")
             self.status = FieldStatus.NEW
         else:
@@ -185,11 +192,14 @@ class FieldLogic:
         self.text = new_text
         return [Event("changed", self.field.id, new_text, detail)]
 
-    def _blank(self, now_ns: int) -> list[Event]:
-        if self._blank_since_ns is None:
-            self._blank_since_ns = now_ns
-        if (now_ns - self._blank_since_ns) / 1e6 < self.field.blank_delay_ms:
-            return []
+    def _blank(self, now_ns: int, immediate: bool = False) -> list[Event]:
+        if immediate:
+            self._blank_since_ns = None
+        else:
+            if self._blank_since_ns is None:
+                self._blank_since_ns = now_ns
+            if (now_ns - self._blank_since_ns) / 1e6 < self.field.blank_delay_ms:
+                return []
         match self.field.blank:
             case BlankPolicy.HOLD:
                 return []

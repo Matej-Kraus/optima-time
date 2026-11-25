@@ -17,7 +17,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from optima_time.outputs.base import OutputWorker
-from optima_time.outputs.xml import build_xml, parse_xml
+from optima_time.outputs.xml import build_xml, map_names, parse_xml, unmap_names
 
 log = logging.getLogger(__name__)
 
@@ -33,17 +33,19 @@ class XmlFileWorker(OutputWorker):
         self,
         path: str | Path,
         newline: str = "\r\n",
+        names: dict[str, str] | None = None,
         replace: Callable[[str, str], None] = os.replace,
     ) -> None:
         super().__init__()
         self.path = Path(path)
         self.newline = newline
+        self.names = dict(names or {})
         self._replace = replace  # injectable for tests (simulate a locked target)
 
     def read_existing(self) -> dict[str, str]:
         """The values in the file now (to start from them instead of blanking the graphic)."""
         try:
-            return parse_xml(self.path.read_bytes())
+            return unmap_names(parse_xml(self.path.read_bytes()), self.names)
         except (OSError, ValueError, SyntaxError):
             return {}
 
@@ -57,7 +59,7 @@ class XmlFileWorker(OutputWorker):
             )
             try:
                 with os.fdopen(fd, "wb") as f:
-                    f.write(build_xml(values, self.newline))
+                    f.write(build_xml(map_names(values, self.names), self.newline))
                 replaced, retries = self._replace_with_retry(tmp, t0, retries)
             finally:
                 if os.path.exists(tmp):

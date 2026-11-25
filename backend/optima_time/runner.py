@@ -23,6 +23,7 @@ from optima_time.config.store import save_profile
 from optima_time.guard import history_frame
 from optima_time.outputs.base import OutputHub, OutputWorker
 from optima_time.outputs.vmix_api import Command, VmixApiWorker
+from optima_time.outputs.xml import map_names
 from optima_time.outputs.xml_file import XmlFileWorker
 from optima_time.pipeline import FrameResult, Pipeline
 from optima_time.recorder import SampleRecorder
@@ -75,7 +76,7 @@ def make_workers(profile: Profile) -> list[OutputWorker]:
     xml = profile.outputs.xml_file
     if xml.enabled and xml.path:
         newline = "\r\n" if xml.newline is NewLine.CRLF else "\n"
-        workers.append(XmlFileWorker(xml.path, newline))
+        workers.append(XmlFileWorker(xml.path, newline, xml.names))
     api = profile.outputs.vmix_api
     if api.enabled and api.input.strip():
         commands = [
@@ -339,3 +340,7 @@ class Runner:
                 for w in self.hub.workers
             },
         }
+
+    def data_values(self) -> dict[str, str]:
+        """Values exposed by the XML/JSON Data Source, with configured external names."""
+        return map_names(dict(self.hub.sent), self.profile.outputs.xml_file.names)

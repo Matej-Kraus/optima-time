@@ -100,6 +100,14 @@ def test_read_existing(tmp_path: Path) -> None:
     assert XmlFileWorker(tmp_path / "bad.xml").read_existing() == {}
 
 
+def test_xml_file_worker_maps_external_names_both_ways(tmp_path: Path) -> None:
+    path = tmp_path / "mapped.xml"
+    worker = XmlFileWorker(path, names={"Time": "Clock", "scoreh": "HomeScore"})
+    worker.write({"Time": "12:45", "scoreh": "2", "period": "1"})
+    assert parse_xml(path.read_bytes()) == {"Clock": "12:45", "HomeScore": "2", "period": "1"}
+    assert worker.read_existing() == {"Time": "12:45", "scoreh": "2", "period": "1"}
+
+
 class Recorder(OutputWorker):
     name = "rec"
 

@@ -76,6 +76,15 @@ def test_state_frames_and_profile_roundtrip(runner: Runner, tmp_path: Path) -> N
     assert c.put("/api/profile", json=profile).status_code == 422
 
 
+def test_profile_api_accepts_version_one(runner: Runner, tmp_path: Path) -> None:
+    c = client(runner, tmp_path)
+    profile = c.get("/api/profile").json()
+    profile["schema_version"] = 1
+    profile["outputs"]["xml_file"].pop("names")
+    response = c.put("/api/profile", json=profile)
+    assert response.status_code == 200 and response.json()["schema_version"] == 2
+
+
 def test_xml_file_and_http_data(runner: Runner, tmp_path: Path) -> None:
     c = client(runner, tmp_path)
     xml_path = tmp_path / "out" / "tabule.xml"
@@ -85,6 +94,17 @@ def test_xml_file_and_http_data(runner: Runner, tmp_path: Path) -> None:
     assert "no-store" in r.headers["cache-control"]
     assert c.get("/data/values.json").json() == {"scoreh": "7"}
     assert list((tmp_path / "logs").glob("events-*.jsonl"))
+
+
+def test_xml_mapping_is_shared_by_file_and_http(runner: Runner, tmp_path: Path) -> None:
+    c = client(runner, tmp_path)
+    profile = c.get("/api/profile").json()
+    profile["outputs"]["xml_file"]["names"] = {"scoreh": "HomeScore"}
+    assert c.put("/api/profile", json=profile).status_code == 200
+    xml_path = tmp_path / "out" / "tabule.xml"
+    wait(lambda: read_values(xml_path) == {"HomeScore": "7"})
+    assert parse_xml(c.get("/data/values.xml").content) == {"HomeScore": "7"}
+    assert c.get("/data/values.json").json() == {"HomeScore": "7"}
 
 
 def test_hold_pause_test_data(runner: Runner, tmp_path: Path) -> None:

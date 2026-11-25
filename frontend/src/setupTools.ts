@@ -9,10 +9,10 @@ export const FLOORBALL: FieldConfig[] = [
   { id: "period", label: "Třetina", type: "period", roi: { x: 0.45, y: 0.45, w: 0.1, h: 0.16 }, enabled: true },
   { id: "scoreh", label: "Góly domácí", type: "number", roi: { x: 0.04, y: 0.45, w: 0.24, h: 0.25 }, enabled: true, style: "strip_zeros" },
   { id: "scorea", label: "Góly hosté", type: "number", roi: { x: 0.72, y: 0.45, w: 0.24, h: 0.25 }, enabled: true, style: "strip_zeros" },
-  { id: "penaltyh1", label: "Trest domácí 1", type: "clock", roi: { x: 0.04, y: 0.73, w: 0.24, h: 0.12 }, enabled: true, blank: "clear", style: "as_is" },
-  { id: "penaltyh2", label: "Trest domácí 2", type: "clock", roi: { x: 0.04, y: 0.87, w: 0.24, h: 0.12 }, enabled: true, blank: "clear", style: "as_is" },
-  { id: "penaltya1", label: "Trest hosté 1", type: "clock", roi: { x: 0.72, y: 0.73, w: 0.24, h: 0.12 }, enabled: true, blank: "clear", style: "as_is" },
-  { id: "penaltya2", label: "Trest hosté 2", type: "clock", roi: { x: 0.72, y: 0.87, w: 0.24, h: 0.12 }, enabled: true, blank: "clear", style: "as_is" },
+  { id: "penaltyh1", label: "Trest domácí 1", type: "clock", roi: { x: 0.04, y: 0.73, w: 0.24, h: 0.12 }, enabled: true, blank: "clear", blank_delay_ms: 2000, zero_is_blank: true, style: "as_is" },
+  { id: "penaltyh2", label: "Trest domácí 2", type: "clock", roi: { x: 0.04, y: 0.87, w: 0.24, h: 0.12 }, enabled: true, blank: "clear", blank_delay_ms: 2000, zero_is_blank: true, style: "as_is" },
+  { id: "penaltya1", label: "Trest hosté 1", type: "clock", roi: { x: 0.72, y: 0.73, w: 0.24, h: 0.12 }, enabled: true, blank: "clear", blank_delay_ms: 2000, zero_is_blank: true, style: "as_is" },
+  { id: "penaltya2", label: "Trest hosté 2", type: "clock", roi: { x: 0.72, y: 0.87, w: 0.24, h: 0.12 }, enabled: true, blank: "clear", blank_delay_ms: 2000, zero_is_blank: true, style: "as_is" },
 ];
 
 /** Add the template's fields that the profile doesn't have yet (by id, ignoring case). */

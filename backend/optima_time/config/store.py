@@ -19,8 +19,18 @@ log = logging.getLogger(__name__)
 
 APP_DIR_ENV = "OPTIMA_TIME_HOME"
 
+
+def _v1_to_v2(data: dict[str, Any]) -> dict[str, Any]:
+    """Version 2 adds optional XML output names and zero_is_blank.
+
+    Both defaults deliberately preserve version 1 behaviour, so the migration only needs to
+    copy the input before migrate() advances schema_version.
+    """
+    return dict(data)
+
+
 # from_version -> function returning the data in version from_version + 1
-MIGRATIONS: dict[int, Callable[[dict[str, Any]], dict[str, Any]]] = {}
+MIGRATIONS: dict[int, Callable[[dict[str, Any]], dict[str, Any]]] = {1: _v1_to_v2}
 
 
 def app_dir() -> Path:

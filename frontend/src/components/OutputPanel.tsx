@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { api, type Profile } from "../api";
 import { usePoll } from "../hooks";
 import { cs } from "../i18n/cs";
+import { formatTitleNames, parseTitleNames } from "../setupTools";
 
 interface Props {
   profile: Profile;
@@ -29,6 +30,23 @@ export function OutputPanel({ profile, locked, onProfile }: Props) {
         {cs.xmlPath}
         <input value={path} disabled={locked} onChange={(e) => setPath(e.target.value)} onBlur={savePath} />
         <small>{cs.xmlPathHelp}</small>
+      </label>
+      <label>
+        {cs.xmlNames}
+        <input
+          defaultValue={formatTitleNames(xml.names ?? {})}
+          disabled={locked}
+          placeholder="Time=Clock; scoreh=HomeScore"
+          onBlur={(e) => {
+            const names = parseTitleNames(e.target.value);
+            for (const [field, name] of Object.entries(names)) if (field === name) delete names[field];
+            if (JSON.stringify(names) === JSON.stringify(xml.names ?? {})) return;
+            const next = structuredClone(profile);
+            next.outputs.xml_file.names = names;
+            onProfile(next);
+          }}
+        />
+        <small>{cs.xmlNamesHelp}</small>
       </label>
       <label>
         {cs.delay}

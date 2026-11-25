@@ -123,7 +123,7 @@ export interface Profile {
   image: ImageConfig;
   detection: { enabled: boolean; threshold: number; max_age_ms: number };
   outputs: {
-    xml_file: { enabled: boolean; path: string; newline: string; clear_on_exit: boolean };
+    xml_file: { enabled: boolean; path: string; newline: string; clear_on_exit: boolean; names: Record<string, string> };
     vmix_api: VmixApiConfig;
     delay_ms: number;
   };
