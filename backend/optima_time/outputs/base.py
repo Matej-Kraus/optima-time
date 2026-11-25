@@ -8,6 +8,7 @@ outputs: live values, nothing (paused: the graphic freezes), or test data.
 from __future__ import annotations
 
 import logging
+import math
 import threading
 import time
 from abc import ABC, abstractmethod
@@ -228,10 +229,15 @@ class OutputHub:
             if live:
                 for w in self.workers:
                     w.submit(values, arrived_ns)
-                # Wait until every worker has taken this update before releasing the
-                # next delayed one. Otherwise latest-wins would drop ordered ticks.
-                deadline = time.monotonic() + 1.0
-                while time.monotonic() < deadline and any(w.has_newer() for w in self.workers):
+                # Give the workers a moment to take this update before the next delayed one,
+                # so a quick burst keeps every tick in order. Never past the next one's due
+                # time: a slow worker (vMix not answering) must not hold back the others or
+                # let the queue grow; then latest wins, as everywhere else.
+                while any(w.has_newer() for w in self.workers) and not self._stop.is_set():
+                    with self._wake:
+                        next_due = self._queue[0][0] if self._queue else math.inf
+                    if time.monotonic() >= next_due:
+                        break
                     time.sleep(0.001)
 
     def set_mode(self, mode: OutputMode) -> None:

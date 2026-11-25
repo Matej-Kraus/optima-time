@@ -189,3 +189,25 @@ def test_hub_delay_holds_values_back_in_order() -> None:
     hub.set_mode(OutputMode.LIVE)
     assert rec.flush() and rec.got[-1] == {"a": "3"}
     hub.stop()
+
+
+def test_hub_delay_slow_worker_does_not_hold_back_the_others() -> None:
+    # e.g. vMix API timing out (1 s per try) next to the XML file: the file must stay current
+    class Slow(Recorder):
+        name = "slow"
+
+        def write(self, values: dict[str, str]) -> None:
+            time.sleep(1.0)
+
+    fast, slow = Recorder(), Slow()
+    hub = OutputHub([fast, slow], delay_s=0.2)
+    hub.start()
+    for i in range(30):  # 3 s at 10 Hz
+        hub.publish({"n": str(i)})
+        time.sleep(0.1)
+    deadline = time.monotonic() + 2
+    while fast.got[-1:] != [{"n": "29"}] and time.monotonic() < deadline:
+        time.sleep(0.02)
+    assert fast.got[-1] == {"n": "29"}
+    assert len(hub._queue) == 0  # nothing piling up behind the slow worker
+    hub.stop()
