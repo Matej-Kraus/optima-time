@@ -781,10 +781,21 @@ pre {
   text-align: right;
   font-weight: 700;
   color: var(--accent-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.15;
 }
 
 .field-row .pct.low {
   color: var(--accent-warn);
+}
+
+.field-age {
+  color: var(--text-dim);
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .status-chip {
@@ -808,6 +819,28 @@ pre {
 .status-chip.held {
   color: var(--accent-warn);
   background: rgba(255, 171, 0, 0.1);
+}
+
+.output-mini {
+  list-style: none;
+  margin: 8px 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.output-mini li {
+  display: grid;
+  grid-template-columns: 14px minmax(110px, 1fr) auto auto;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.output-mini small {
+  color: var(--text-dim);
 }
 
 .quick {

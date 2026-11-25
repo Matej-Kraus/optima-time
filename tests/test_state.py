@@ -88,6 +88,17 @@ def test_source_lost_and_back_rewrites_state() -> None:
     assert kinds[-2:] == ["source_lost", "source_ok"]
 
 
+def test_field_state_reports_age_of_last_accepted_reading() -> None:
+    state, _ = make()
+    now = 0
+    for _ in range(15):
+        now = CLOCK()
+        state.update(frame("3"), OK, True, now)
+    fields = state.fields(now + 1_500_000_000)
+    assert fields["scoreh"]["age_ms"] == 1500
+    assert fields["Time"]["age_ms"] == 1500
+
+
 def test_initial_values_from_file_prevent_blank_flash() -> None:
     _, rec = make(initial={"scoreh": "2", "Time": "12:00", "gone": "x"})
     rec.flush()

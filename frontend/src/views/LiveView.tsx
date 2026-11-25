@@ -28,6 +28,7 @@ export function LiveView({ profile, live }: Props) {
   const ago = xml?.last_ok_wall ? Math.max(0, now - xml.last_ok_wall) : null;
   const path = profile.outputs.xml_file.path;
   const scores = live?.guard?.scores ?? [];
+  const workers = Object.entries(live?.outputs.workers ?? {});
 
   return (
     <div>
@@ -66,6 +67,24 @@ export function LiveView({ profile, live }: Props) {
                 cs.noOutputYet
               )}
             </p>
+            {workers.length > 0 && (
+              <ul className="output-mini" aria-label={cs.live.outputsTitle}>
+                {workers.map(([name, output]) => {
+                  const level = output.ok === true ? "ok" : output.ok === false ? "bad" : "warn";
+                  const mark = output.ok === true ? "●" : output.ok === false ? "▲" : "◐";
+                  const state = output.ok === true ? cs.live.outputOk : output.ok === false ? cs.live.outputError : cs.live.outputWaiting;
+                  const outputAgo = output.last_ok_wall ? Math.max(0, now - output.last_ok_wall) : null;
+                  return (
+                    <li key={name} className={level} title={output.message || output.target}>
+                      <span aria-hidden>{mark}</span>
+                      <b>{cs.live.outputNames[name] ?? name}</b>
+                      <span>{state}</span>
+                      {outputAgo !== null && <small>{cs.agoSeconds(outputAgo)}</small>}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
             <div className="quick">
               {mode === "live" ? (
                 <button className="danger" onClick={() => api.output("pause")}>
@@ -80,7 +99,7 @@ export function LiveView({ profile, live }: Props) {
                 {cs.testData}
               </button>
               <button onClick={() => api.output("test-clear")}>{cs.testClear}</button>
-              <button onClick={() => api.clearValues()}>{cs.clearValues}</button>
+              <button onClick={() => window.confirm(cs.confirmClearValues) && api.clearValues()}>{cs.clearValues}</button>
             </div>
             <div className="toggle-row">
               <LockButton live={live} onError={() => {}} />

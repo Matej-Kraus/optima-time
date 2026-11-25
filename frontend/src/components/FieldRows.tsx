@@ -38,7 +38,12 @@ export function FieldRows({ fields, live, selected, onSelect }: Props) {
                 {s?.pending ? ` ${s.pending}` : ""}
               </span>
               <span className={`pct ${conf != null && conf < 0.8 ? "low" : ""}`}>
-                {conf != null ? `${Math.round(conf * 100)} %` : "—"}
+                <span>{conf != null ? `${Math.round(conf * 100)} %` : "—"}</span>
+                {s?.age_ms != null && !s.held && (
+                  <span className="field-age" title={cs.lastValidReading}>
+                    ↻ {cs.ageShort(s.age_ms)}
+                  </span>
+                )}
               </span>
             </button>
           </li>

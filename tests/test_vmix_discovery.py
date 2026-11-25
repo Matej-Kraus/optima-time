@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import socketserver
 import threading
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -92,21 +91,20 @@ def test_fetch_titles_reports_auth_and_response_limit() -> None:
         fetch_titles("127.0.0.1", port, max_bytes=10)
 
 
-def test_fetch_titles_recognizes_tcp_port_response() -> None:
-    class TcpHandler(socketserver.BaseRequestHandler):
-        def handle(self) -> None:
-            self.request.sendall(b"VERSION OK 28.0.0.0\r\n")
+def test_fetch_titles_recognizes_tcp_port_response(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Don't open a real TCP socket: on Windows the peer can abort before http.client
+    # surfaces BadStatusLine("VERSION OK …"), which is the path we care about.
+    import http.client
 
-    server = socketserver.TCPServer(("127.0.0.1", 0), TcpHandler)
-    thread = threading.Thread(target=server.serve_forever, daemon=True)
-    thread.start()
-    try:
-        with pytest.raises(VmixDiscoveryError, match="TCP API"):
-            fetch_titles("127.0.0.1", int(server.server_address[1]))
-    finally:
-        server.shutdown()
-        server.server_close()
-        thread.join(timeout=2)
+    def fake_request(self: http.client.HTTPConnection, *args: object, **kwargs: object) -> None:
+        del self, args, kwargs
+        raise http.client.BadStatusLine("VERSION OK 28.0.0.0")
+
+    monkeypatch.setattr(http.client.HTTPConnection, "request", fake_request)
+    with pytest.raises(VmixDiscoveryError, match="TCP API"):
+        fetch_titles("127.0.0.1", 8099)
 
 
 def test_fetch_titles_rejects_urls_in_host() -> None:
