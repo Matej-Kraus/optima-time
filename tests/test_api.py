@@ -6,10 +6,12 @@ import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 
+from optima_time.api import app as api_app
 from optima_time.api.app import create_app, random_test_values
 from optima_time.config.models import OutputsConfig, Profile, SourceConfig, XmlFileOutput
 from optima_time.config.store import load_profile
 from optima_time.fields.models import ClockField, NumberField, PeriodField, Roi
+from optima_time.outputs.vmix_discovery import Title
 from optima_time.outputs.xml import parse_xml
 from optima_time.recognizers.base import Reading
 from optima_time.runner import Runner
@@ -105,6 +107,29 @@ def test_xml_mapping_is_shared_by_file_and_http(runner: Runner, tmp_path: Path) 
     wait(lambda: read_values(xml_path) == {"HomeScore": "7"})
     assert parse_xml(c.get("/data/values.xml").content) == {"HomeScore": "7"}
     assert c.get("/data/values.json").json() == {"HomeScore": "7"}
+
+
+def test_vmix_discovery_endpoint(
+    runner: Runner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    title = Title(
+        ref="key-1",
+        number="4",
+        title="Skore",
+        kind="GT",
+        selectors=("key-1", "4", "Skore"),
+        fields=("Time.Text", "scoreh.Text"),
+    )
+    monkeypatch.setattr(api_app, "fetch_titles", lambda host, port: (title,))
+    response = client(runner, tmp_path).get(
+        "/api/vmix/discover", params={"host": "vmix-pc", "port": 8088}
+    )
+    assert response.status_code == 200
+    assert response.json() == {
+        "titles": [title.as_dict()],
+        "title_count": 1,
+        "field_count": 2,
+    }
 
 
 def test_hold_pause_test_data(runner: Runner, tmp_path: Path) -> None:

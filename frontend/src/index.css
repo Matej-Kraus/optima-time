@@ -1816,6 +1816,10 @@ pre {
   align-items: center;
 }
 
+.vmix-field-map li {
+  grid-template-columns: minmax(90px, 1fr) minmax(160px, 2fr);
+}
+
 .vmix-command-list input,
 .vmix-command-list select {
   min-width: 0;

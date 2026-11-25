@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { LiveState, Profile, VmixAction, VmixApiConfig, VmixCommand } from "../api";
+import { api, errorText, type LiveState, type Profile, type VmixAction, type VmixApiConfig, type VmixCommand, type VmixDiscovery } from "../api";
 import { useNow } from "../hooks";
 import { cs } from "../i18n/cs";
 import { formatTitleNames, parseTitleNames } from "../setupTools";
@@ -11,13 +11,25 @@ interface Props {
   onProfile: (p: Profile) => void;
 }
 
-const DEFAULT: VmixApiConfig = { enabled: false, host: "127.0.0.1", port: 8099, input: "", suffix: ".Text", names: {}, commands: [] };
+const DEFAULT: VmixApiConfig = {
+  enabled: false,
+  host: "127.0.0.1",
+  web_port: 8088,
+  port: 8099,
+  input: "",
+  suffix: ".Text",
+  names: {},
+  commands: [],
+};
 const ACTIONS = Object.keys(cs.vmixApi.actions) as VmixAction[];
 
 /** Push values straight into a vMix title over the TCP API, next to the XML file. */
 export function VmixApiPanel({ profile, live, locked, onProfile }: Props) {
   const cfg = profile.outputs.vmix_api ?? DEFAULT;
   const [draft, setDraft] = useState(cfg);
+  const [discovery, setDiscovery] = useState<VmixDiscovery | null>(null);
+  const [discovering, setDiscovering] = useState(false);
+  const [discoveryError, setDiscoveryError] = useState<string | null>(null);
   const status = live?.outputs.workers.vmix_api;
   const now = useNow();
   const save = (patch: Partial<VmixApiConfig>) => {
@@ -31,6 +43,29 @@ export function VmixApiPanel({ profile, live, locked, onProfile }: Props) {
   const problems = Object.entries(status?.problems ?? {});
   const commands = draft.commands ?? [];
   const valueIds = [...profile.fields.map((f) => f.id), ...(profile.derived ?? []).map((d) => d.id)];
+  const title = discovery?.titles.find((t) => t.selectors.includes(draft.input));
+  const discover = async () => {
+    setDiscovering(true);
+    try {
+      const result = await api.discoverVmix(draft.host, draft.web_port ?? 8088);
+      setDiscovery(result);
+      setDiscoveryError(null);
+    } catch (error) {
+      setDiscovery(null);
+      setDiscoveryError(errorText(error));
+    } finally {
+      setDiscovering(false);
+    }
+  };
+  const setDiscoveredName = (id: string, target: string) => {
+    const names =
+      Object.keys(draft.names).length > 0
+        ? { ...draft.names }
+        : Object.fromEntries(valueIds.map((valueId) => [valueId, `${valueId}${draft.suffix}`]));
+    if (target) names[id] = target;
+    else delete names[id];
+    save({ names });
+  };
   const setCommand = (i: number, patch: Partial<VmixCommand>) =>
     save({ commands: commands.map((c, j) => (j === i ? { ...c, ...patch } : c)) });
   const addCommand = () =>
@@ -53,13 +88,42 @@ export function VmixApiPanel({ profile, live, locked, onProfile }: Props) {
           <input defaultValue={draft.host} disabled={locked} onBlur={(e) => save({ host: e.target.value.trim() || "127.0.0.1" })} />
         </label>
         <label>
-          {cs.vmixApi.port}
-          <input type="number" defaultValue={draft.port} disabled={locked} onBlur={(e) => save({ port: Number(e.target.value) || 8099 })} />
+          {cs.vmixApi.webPort}
+          <input
+            type="number"
+            defaultValue={draft.web_port ?? 8088}
+            disabled={locked}
+            onBlur={(e) => save({ web_port: Number(e.target.value) || 8088 })}
+          />
         </label>
       </div>
+      <div className="row">
+        <button disabled={locked || discovering} onClick={discover}>
+          {discovering ? cs.vmixApi.discovering : cs.vmixApi.discover}
+        </button>
+        {discovery && <span className="dim">{cs.vmixApi.discoveryFound(discovery.title_count, discovery.field_count)}</span>}
+      </div>
+      {discoveryError && <p className="problem bad">{discoveryError}</p>}
       <label>
         {cs.vmixApi.input}
-        <input defaultValue={draft.input} disabled={locked} placeholder="Skore" onBlur={(e) => save({ input: e.target.value.trim() })} />
+        {discovery ? (
+          <select value={title?.ref ?? draft.input} disabled={locked} onChange={(e) => save({ input: e.target.value })}>
+            {!title && draft.input && <option value={draft.input}>{draft.input}</option>}
+            {!draft.input && <option value="">{cs.vmixApi.chooseTitle}</option>}
+            {discovery.titles.map((item) => (
+              <option key={item.ref} value={item.ref}>
+                {item.title}
+                {item.number ? ` (#${item.number})` : ""}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <input defaultValue={draft.input} disabled={locked} placeholder="Skore" onBlur={(e) => save({ input: e.target.value.trim() })} />
+        )}
+      </label>
+      <label>
+        {cs.vmixApi.port}
+        <input type="number" defaultValue={draft.port} disabled={locked} onBlur={(e) => save({ port: Number(e.target.value) || 8099 })} />
       </label>
       <label>
         {cs.vmixApi.suffix}
@@ -71,6 +135,31 @@ export function VmixApiPanel({ profile, live, locked, onProfile }: Props) {
         <input defaultValue={formatTitleNames(draft.names)} disabled={locked} onBlur={(e) => save({ names: parseTitleNames(e.target.value) })} />
         <small>{cs.vmixApi.namesHelp}</small>
       </label>
+      {title && (
+        <div className="vmix-commands">
+          <strong>{cs.vmixApi.fieldMapping}</strong>
+          <ul className="vmix-command-list vmix-field-map">
+            {valueIds.map((id) => {
+              const explicit = Object.keys(draft.names).length > 0;
+              const current = explicit ? (draft.names[id] ?? "") : `${id}${draft.suffix}`;
+              return (
+                <li key={id}>
+                  <code>{id}</code>
+                  <select value={current} disabled={locked} onChange={(e) => setDiscoveredName(id, e.target.value)}>
+                    <option value="">{cs.vmixApi.doNotSend}</option>
+                    {current && !title.fields.includes(current) && <option value={current}>{cs.vmixApi.manualField(current)}</option>}
+                    {title.fields.map((field) => (
+                      <option key={field} value={field}>
+                        {field}
+                      </option>
+                    ))}
+                  </select>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
       <div className="vmix-commands">
         <strong>{cs.vmixApi.commandsTitle}</strong>
         <p className="hint">{cs.vmixApi.commandsHint}</p>

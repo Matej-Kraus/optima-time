@@ -40,6 +40,7 @@ Copyright (c) 2024 OCC AI: Open tools for Content Creators and Streamers. See TH
 |---|---|---|
 | `spikes/ppocr/ppocr_spike.py` | `src/ppocr_engine.py` (rev `8bef5a9`) | preprocessing (`resize_normalize`), greedy CTC with a character whitelist |
 | `backend/optima_time/recognizers/ppocr.py` | `src/ppocr_engine.py` (rev `8bef5a9`) | `resize_normalize`, `padded_width`, `class_groups`, greedy CTC, `as_probabilities`, batching by padded width |
+| `backend/optima_time/outputs/vmix_discovery.py` | `src/vmix_discovery.py` | parsing vMix title inputs and text fields |
 
 ## Before distributing outside the company
 

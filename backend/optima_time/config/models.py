@@ -115,6 +115,7 @@ class VmixApiOutput(Model):
 
     enabled: bool = False
     host: str = Field(default="127.0.0.1", max_length=255)
+    web_port: int = Field(default=8088, ge=1, le=65535)  # read-only title/field discovery
     port: int = Field(default=8099, ge=1, le=65535)
     input: str = Field(default="", max_length=200)  # title: number, name or key
     suffix: str = Field(default=".Text", max_length=20)  # field id + suffix = title field
