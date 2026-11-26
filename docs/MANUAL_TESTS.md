@@ -238,7 +238,7 @@ Bez `--emulate-lock`: zámky dělá Windows sám. Výsledek musí být `"result"
 
 ## M5-A: instalace balíčku na Windows (asi 20 minut)
 
-0. **Nejjednodušší cesta:** instalátor `OptimaTime-Setup-0.2.0.exe` si stáhni
+0. **Nejjednodušší cesta:** instalátor `OptimaTime-Setup-0.3.0.exe` si stáhni
    z GitHub Releases nebo z posledního zeleného běhu Actions (artifact
    `OptimaTime-win64`). Spusť ho na produkčním PC (administrátor není potřeba)
    a pokračuj krokem 3. Kroky 1–2 jsou jen pro ruční sestavení.

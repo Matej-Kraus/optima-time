@@ -2,9 +2,9 @@
 
 Projekt **optima-time**. Python balíček `optima_time`, příkaz `optima-time`, konfigurace v `%APPDATA%\OptimaTime\`. Zadání je v `docs/SPEC.md` (v1.3).
 
-Stav k 25. 11. 2026: Milníky 0 (13. 11.) a 1–5 (14. 11.) jsou hotové, viz `docs/M0_REPORT.md` až `M5_REPORT.md`. První reálný záznam je vyhodnocený (`REAL_TEST_1.md`, 17. 11.). Z Fáze 2 je hotová úprava obrazu, síťové streamy, zpoždění výstupu, odvozená pole, indikátory a přímý výstup do vMixu včetně obrázků, viditelnosti a barev (D36–D43). Verze 0.2.0 je na GitHubu jako Release s instalátorem.
+Stav k 26. 11. 2026: Milníky 0 (13. 11.) a 1–5 (14. 11.) jsou hotové, viz `docs/M0_REPORT.md` až `M5_REPORT.md`. První reálný záznam je vyhodnocený (`REAL_TEST_1.md`, 17. 11.). Z Fáze 2 je hotová úprava obrazu, síťové streamy, zpoždění výstupu, odvozená pole, indikátory a přímý výstup do vMixu včetně obrázků, viditelnosti a barev (D36–D43). Verze 0.3.0 obsahuje body 1–5 dokončovací série níže.
 
-Zbývá dokončovací série pro verzi 0.3.0 a ruční testy s vMixem a v hale.
+Zbývá bod 6 (ruční testy s vMixem a v hale), ruční oprava pravdy prvního záznamu a druhý cílený záznam.
 Dodatečný referenční balík je vyhodnocený v `REFERENCE_REVIEW.md`; aplikace
 zůstává florbalová a nepřebírá paralelní `scoreboard_io`.
 
